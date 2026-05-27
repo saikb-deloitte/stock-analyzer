@@ -1,0 +1,72 @@
+C:\Users\saikb\.claude\Data\Claude Data\.claude\worktrees\jolly-vaughan-d2001d\backend\main.py:92: FastAPIDeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+  interval: str = Query(default='1d', regex='^(15m|60m|1d|1wk)$'),
+C:\Users\saikb\.claude\Data\Claude Data\.claude\worktrees\jolly-vaughan-d2001d\backend\main.py:93: FastAPIDeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+  period: str = Query(default='6mo', regex='^(5d|1mo|3mo|6mo|1y|2y)$'),
+INFO:     Started server process [36796]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:700: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  start = pd.Timestamp.utcnow().floor("D") - datetime.timedelta(days=365 // 2)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:702: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\fundamentals.py:131: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\fundamentals.py:36: DeprecationWarning: 'Ticker.earnings' is deprecated as not available via API. Look for "Net Income" in Ticker.income_stmt.
+  warnings.warn("'Ticker.earnings' is deprecated as not available via API. Look for \"Net Income\" in Ticker.income_stmt.", DeprecationWarning)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:149: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dnow = pd.Timestamp.utcnow().tz_convert(self.timezone).date()
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:700: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  start = pd.Timestamp.utcnow().floor("D") - datetime.timedelta(days=365 // 2)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:702: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:149: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dnow = pd.Timestamp.utcnow().tz_convert(self.timezone).date()
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:700: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  start = pd.Timestamp.utcnow().floor("D") - datetime.timedelta(days=365 // 2)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:702: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\fundamentals.py:131: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\fundamentals.py:36: DeprecationWarning: 'Ticker.earnings' is deprecated as not available via API. Look for "Net Income" in Ticker.income_stmt.
+  warnings.warn("'Ticker.earnings' is deprecated as not available via API. Look for \"Net Income\" in Ticker.income_stmt.", DeprecationWarning)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:149: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dnow = pd.Timestamp.utcnow().tz_convert(self.timezone).date()
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:700: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  start = pd.Timestamp.utcnow().floor("D") - datetime.timedelta(days=365 // 2)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:702: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:149: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dnow = pd.Timestamp.utcnow().tz_convert(self.timezone).date()
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:700: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  start = pd.Timestamp.utcnow().floor("D") - datetime.timedelta(days=365 // 2)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:702: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\fundamentals.py:131: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\fundamentals.py:36: DeprecationWarning: 'Ticker.earnings' is deprecated as not available via API. Look for "Net Income" in Ticker.income_stmt.
+  warnings.warn("'Ticker.earnings' is deprecated as not available via API. Look for \"Net Income\" in Ticker.income_stmt.", DeprecationWarning)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:149: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dnow = pd.Timestamp.utcnow().tz_convert(self.timezone).date()
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:700: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  start = pd.Timestamp.utcnow().floor("D") - datetime.timedelta(days=365 // 2)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:702: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:149: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dnow = pd.Timestamp.utcnow().tz_convert(self.timezone).date()
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:700: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  start = pd.Timestamp.utcnow().floor("D") - datetime.timedelta(days=365 // 2)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:702: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\fundamentals.py:131: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\fundamentals.py:36: DeprecationWarning: 'Ticker.earnings' is deprecated as not available via API. Look for "Net Income" in Ticker.income_stmt.
+  warnings.warn("'Ticker.earnings' is deprecated as not available via API. Look for \"Net Income\" in Ticker.income_stmt.", DeprecationWarning)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:149: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dnow = pd.Timestamp.utcnow().tz_convert(self.timezone).date()
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:700: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  start = pd.Timestamp.utcnow().floor("D") - datetime.timedelta(days=365 // 2)
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:702: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  end = pd.Timestamp.utcnow().ceil("D")
+C:\Users\saikb\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\yfinance\scrapers\quote.py:149: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  dnow = pd.Timestamp.utcnow().tz_convert(self.timezone).date()

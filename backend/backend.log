@@ -1,0 +1,8 @@
+INFO:     127.0.0.1:50424 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64514 - "GET /analyze/CRON?refresh=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58940 - "GET /analyze/AAPL HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63078 - "GET /analyze/AAPL HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61271 - "GET /analyze/AAPL?refresh=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58922 - "GET /analyze/AAPL?refresh=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52023 - "GET /analyze/AAPL HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62252 - "GET /analyze/AAPL HTTP/1.1" 200 OK
