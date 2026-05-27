@@ -6,9 +6,32 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import pytz
+import time
 from datetime import datetime, time as dtime
 
 from concurrent.futures import ThreadPoolExecutor
+
+
+def _yf_download_with_retry(ticker, **kwargs):
+    """yfinance download with exponential backoff on rate-limit (429) errors."""
+    last_err = None
+    for attempt in range(3):
+        try:
+            df = yf.download(ticker, **kwargs)
+            if not df.empty:
+                return df
+        except Exception as e:
+            last_err = e
+            err_str = str(e).lower()
+            if 'rate limit' in err_str or 'too many' in err_str or '429' in err_str:
+                time.sleep(2 ** attempt * 3)   # 3s, 6s, 12s
+            else:
+                raise
+        if attempt < 2:
+            time.sleep(2 ** attempt * 3)
+    if last_err:
+        raise last_err
+    raise ValueError(f'No data returned for {ticker} after retries')
 
 from technical import (compute_indicators, detect_patterns, compute_signals,
                        score_technical, find_support_resistance, compute_atr_percentile)
@@ -67,8 +90,8 @@ class StockAnalyzer:
         self.ticker = ticker.upper().strip()
 
     def analyze(self):
-        df = yf.download(self.ticker, period='1y', interval='1d',
-                         progress=False, auto_adjust=True)
+        df = _yf_download_with_retry(self.ticker, period='1y', interval='1d',
+                                     progress=False, auto_adjust=True)
 
         if df.empty:
             raise ValueError(f'No price data found for {self.ticker}')
