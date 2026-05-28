@@ -1190,6 +1190,57 @@
 <script>
 // ── State ──
 let currentData = null;
+
+// ──────────────────────────────────────────────────────────────────────
+// fetchJSON — wraps fetch with auto-retry on 502/503/504/empty-body errors.
+// Public Render deploys can return 502 during cold-cache or worker recycle.
+// We silently retry up to 2 times with backoff so the user doesn't see it.
+// ──────────────────────────────────────────────────────────────────────
+async function fetchJSON(url, opts = {}) {
+  const maxRetries = opts.maxRetries ?? 2;
+  const backoffMs = opts.backoffMs ?? 4000;
+  let lastErr;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(url, opts);
+      // Treat 5xx (server errors) as retryable
+      if (res.status >= 500 && res.status < 600) {
+        lastErr = new Error(`Server ${res.status} — retrying…`);
+        if (attempt < maxRetries) {
+          if (opts.onRetry) opts.onRetry(attempt + 1, maxRetries + 1);
+          await new Promise(r => setTimeout(r, backoffMs * (attempt + 1)));
+          continue;
+        }
+        throw lastErr;
+      }
+      // Parse JSON; if the body isn't JSON (HTML error page), treat as retryable
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        if (text.startsWith('<')) {
+          lastErr = new Error('Server returned HTML instead of JSON — retrying…');
+          if (attempt < maxRetries) {
+            if (opts.onRetry) opts.onRetry(attempt + 1, maxRetries + 1);
+            await new Promise(r => setTimeout(r, backoffMs * (attempt + 1)));
+            continue;
+          }
+        }
+        throw new Error('Unexpected response from server');
+      }
+    } catch (e) {
+      lastErr = e;
+      // Network errors (TypeError) are also retryable
+      if (attempt < maxRetries && (e.name === 'TypeError' || e.message.includes('retrying'))) {
+        if (opts.onRetry) opts.onRetry(attempt + 1, maxRetries + 1);
+        await new Promise(r => setTimeout(r, backoffMs * (attempt + 1)));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
 let screenerData = [];
 let sortField = 'short_term';
 let sortAsc = false;
@@ -1406,21 +1457,26 @@ async function loadTicker() {
 // ── Screener ──
 async function loadScreener(forceRefresh=false) {
   const index = document.getElementById('index-select').value;
-  document.getElementById('screener-content').innerHTML = '<div class="loading"><div class="spinner"></div> Fetching ' + index + ' stocks…</div>';
+  const statusEl = document.getElementById('screener-status');
+  const contentEl = document.getElementById('screener-content');
+  contentEl.innerHTML = '<div class="loading"><div class="spinner"></div> Fetching ' + index + ' stocks…</div>';
   document.getElementById('top-picks').style.display = 'none';
-  document.getElementById('screener-status').textContent = '';
+  statusEl.textContent = '';
 
   const t0 = Date.now();
   try {
-    const r = await fetch(`/api/screener?index=${encodeURIComponent(index)}`);
-    const data = await r.json();
+    const data = await fetchJSON(`/api/screener?index=${encodeURIComponent(index)}`, {
+      onRetry: (n, total) => {
+        contentEl.innerHTML = `<div class="loading"><div class="spinner"></div> Building ${index} cache (first load is slow — retry ${n}/${total})…</div>`;
+      }
+    });
     screenerData = data;
     const elapsed = ((Date.now()-t0)/1000).toFixed(1);
-    document.getElementById('screener-status').textContent = `${data.length} stocks · ${elapsed}s`;
+    statusEl.textContent = `${data.length} stocks · ${elapsed}s`;
     renderTopPicks(data);
     renderScreenerTable(data);
   } catch(e) {
-    document.getElementById('screener-content').innerHTML = `<div class="alert-custom"><i class="fa fa-triangle-exclamation"></i> ${e.message}</div>`;
+    contentEl.innerHTML = `<div class="alert-custom"><i class="fa fa-triangle-exclamation"></i> ${e.message}<br><br><button class="primary-btn" onclick="loadScreener(true)">Try again</button></div>`;
   }
 }
 
