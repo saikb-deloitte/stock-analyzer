@@ -6,7 +6,7 @@
  * Bump CACHE_VERSION when you ship UI changes so users get a fresh shell.
  */
 
-const CACHE_VERSION = 'cp-shell-v1';
+const CACHE_VERSION = 'cp-shell-v3';
 const SHELL_ASSETS = [
   '/',
   '/static/manifest.json',
