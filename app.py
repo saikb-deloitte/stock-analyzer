@@ -2096,6 +2096,35 @@ def analyze(ticker):
             stock = None
             info = {}
 
+        # On cloud IPs, yfinance.info often returns empty {} due to Yahoo's
+        # bot-detection. Backfill 52W high/low from our daily history so the
+        # UI doesn't show "undefined".
+        if not info.get('fiftyTwoWeekHigh'):
+            try:
+                # last 252 trading days = ~52 weeks
+                w52 = df.iloc[-252:] if len(df) > 252 else df
+                info['fiftyTwoWeekHigh'] = float(w52['High'].max())
+            except Exception:
+                pass
+        if not info.get('fiftyTwoWeekLow'):
+            try:
+                w52 = df.iloc[-252:] if len(df) > 252 else df
+                info['fiftyTwoWeekLow'] = float(w52['Low'].min())
+            except Exception:
+                pass
+        # Best-effort current price fallback
+        if not info.get('currentPrice'):
+            try:
+                info['currentPrice'] = float(df['Close'].iloc[-1])
+            except Exception:
+                pass
+        # If sector/industry are missing, at least set a generic label so the
+        # screener heat-map doesn't break on grouping
+        if not info.get('sector'):
+            info['sector'] = info.get('sector') or 'Unknown'
+        if not info.get('industry'):
+            info['industry'] = info.get('industry') or 'Unknown'
+
         # All-time high / low. Use auto_adjust=False to get RAW prices (avoids
         # split/bonus-adjusted highs showing up lower than the un-adjusted 52W
         # high reported in yfinance .info).

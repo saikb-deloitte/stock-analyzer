@@ -1818,11 +1818,11 @@ function renderAnalysis(d) {
       </div>
       <div class="stock-name">${d.name}</div>
       <div class="stock-meta">
-        <div class="meta-item"><strong>${d.sector}</strong>Sector</div>
-        <div class="meta-item"><strong>${d.industry}</strong>Industry</div>
+        <div class="meta-item"><strong>${d.sector || '—'}</strong>Sector</div>
+        <div class="meta-item"><strong>${d.industry || '—'}</strong>Industry</div>
         <div class="meta-item"><strong>${fmtMktCap(d.market_cap)}</strong>Market Cap</div>
-        <div class="meta-item"><strong>₹${d.week52_high?.toLocaleString('en-IN')}</strong>52W High</div>
-        <div class="meta-item"><strong>₹${d.week52_low?.toLocaleString('en-IN')}</strong>52W Low</div>
+        <div class="meta-item"><strong>${d.week52_high != null ? '₹' + d.week52_high.toLocaleString('en-IN') : '—'}</strong>52W High</div>
+        <div class="meta-item"><strong>${d.week52_low != null ? '₹' + d.week52_low.toLocaleString('en-IN') : '—'}</strong>52W Low</div>
         ${d.all_time_high ? `<div class="meta-item" title="${d.ath_date||''}"><strong style="color:#ffd740;">₹${d.all_time_high?.toLocaleString('en-IN')}</strong>All-Time High${d.ath_date?` <span style="font-size:9px;color:var(--text-muted);display:block;font-weight:500;">${d.ath_date}</span>`:''}</div>` : ''}
         ${d.all_time_low ? `<div class="meta-item" title="${d.atl_date||''}"><strong style="color:#ff8080;">₹${d.all_time_low?.toLocaleString('en-IN')}</strong>All-Time Low${d.atl_date?` <span style="font-size:9px;color:var(--text-muted);display:block;font-weight:500;">${d.atl_date}</span>`:''}</div>` : ''}
         ${d.data_source ? `<div class="meta-item ds-badge ds-${(d.data_source||'').split(':')[0]}" title="Source of price data"><strong>${d.data_source}</strong>Data</div>` : ''}
@@ -1830,9 +1830,9 @@ function renderAnalysis(d) {
       </div>
     </div>
     <div style="text-align:right;">
-      <div class="stock-price">₹${d.price?.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
+      <div class="stock-price">${d.price != null ? '₹' + d.price.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</div>
       <div class="stock-chg" style="background:${chgColor}22;color:${chgColor};margin-top:4px;display:inline-block;">
-        ${chgSign}${d.day_change?.toFixed(2)}% today
+        ${d.day_change != null ? chgSign + d.day_change.toFixed(2) + '% today' : '—'}
       </div>
       <div class="rec-badges" style="justify-content:flex-end;margin-top:8px;">
         <div style="font-size:11px;color:var(--text-muted);">Short-term:</div>
