@@ -1,0 +1,8 @@
+flask>=3.0.0
+flask-limiter>=3.5.0
+yfinance>=0.2.40,<0.2.66
+pandas>=2.0.0
+numpy>=1.24.0
+gunicorn>=21.2.0
+requests>=2.31.0
+certifi>=2024.0.0

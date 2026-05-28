@@ -1,0 +1,51 @@
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ─── Editor / OS ──────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ─── Data cache (regenerated on demand) ───────────────────
+.data_cache/
+*.db-journal
+*.pkl
+
+# ─── PyInstaller / portable build artifacts ───────────────
+build/
+dist/
+*.spec
+*.spec.bak
+probe.py
+pyi_runtime_hook.py
+
+# ─── Portable build (full directory — heavy, regenerable, not needed on Railway)
+portable_build/
+
+# ─── Claude Code session metadata (never push) ────────────
+.claude/
+
+# ─── Secrets / env ────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Logs ─────────────────────────────────────────────────
+*.log
+nohup.out
+
+# ─── Brand/content design assets (stay local, not part of the app) ────────
+reel_audio/
+reel_audio_preview.html
+# Catch ALL centaur_prism_*.html design files in repo root (brand packs, logo
+# variants, post mockups, reel storyboards, png export tools, etc.). They're
+# content assets, not app code.
+centaur_prism_*.html

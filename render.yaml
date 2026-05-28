@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: centaur-prism
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 2
+    healthCheckPath: /api/freshness
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: PUBLIC_MODE
+        value: "true"
+      - key: FLASK_SECRET
+        generateValue: true
