@@ -1,0 +1,44 @@
+# Centaur Prism — Fly.io config
+# Mumbai region for best latency to Indian audience (~25ms vs 270ms on US hosts)
+# Auto-stops when idle, auto-starts on first request → effectively free for low traffic
+
+app = "centaur-prism"
+primary_region = "bom"          # Mumbai
+kill_signal = "SIGTERM"
+kill_timeout = "30s"
+
+[build]
+  # Use the Dockerfile in repo root
+
+[env]
+  PORT = "8080"
+  PUBLIC_MODE = "true"
+  # FLASK_SECRET is set via `flyctl secrets set` (see DEPLOY_FLY.md)
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"   # idle → stop machine, $0 cost
+  auto_start_machines = true    # request → boot machine (~3s cold start)
+  min_machines_running = 0      # zero machines when idle
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 25             # start new machine above this
+    hard_limit = 50             # reject above this (protects against runaway)
+
+  # Health check — Fly pings this to know if the machine is healthy
+  [[http_service.checks]]
+    grace_period  = "30s"       # wait 30s after boot before first check
+    interval      = "60s"       # check every minute
+    method        = "GET"
+    timeout       = "10s"
+    path          = "/api/freshness"
+
+# VM size — shared-cpu-1x, 512MB (cheapest option that fits pandas+numpy)
+[[vm]]
+  size      = "shared-cpu-1x"
+  memory    = "512mb"
+  cpu_kind  = "shared"
+  cpus      = 1

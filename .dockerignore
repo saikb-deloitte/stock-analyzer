@@ -1,0 +1,41 @@
+__pycache__
+*.pyc
+*.pyo
+.git
+.gitignore
+.venv
+venv
+env
+.env
+.env.*
+
+# Build artifacts
+build/
+dist/
+*.spec
+NSEAnalyzer.spec
+probe.py
+probe.spec
+pyi_runtime_hook.py
+portable_build/
+
+# Cache / data
+.data_cache/
+*.db-journal
+*.pkl
+
+# Local
+.claude/
+.vscode/
+.idea/
+*.swp
+
+# Brand/content design files (not needed at runtime)
+reel_audio/
+centaur_prism_*.html
+reel_audio_preview.html
+
+# Logs / docs not needed in image
+*.log
+DEPLOY*.md
+README.md
