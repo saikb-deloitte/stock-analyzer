@@ -68,10 +68,12 @@ class SafeJSONProvider(app.json_provider_class):
 app.json = SafeJSONProvider(app)
 
 # Simple time-based cache.
-# Public deploys triple the TTL (15 min) — yfinance gets cranky from cloud IPs
-# so we hit it less aggressively per user.
+# Public deploys 6x the TTL (30 min) — yfinance gets cranky from cloud IPs
+# so we hit it less aggressively per user. Also lets cache survive worker
+# recycles (--max-requests 200) which would otherwise drop cold-cache users
+# back into the 38s fetch path that triggers Render's 30s gateway timeout.
 _cache = {}
-CACHE_TTL = 900 if IS_PUBLIC else 300
+CACHE_TTL = 1800 if IS_PUBLIC else 300
 
 # yfinance concurrency: cloud IPs get rate-limited harder than home IPs
 _SCREENER_WORKERS = 4 if IS_PUBLIC else 8
@@ -3171,6 +3173,33 @@ def daily_prism(ticker=None):
     if archive_id:
         prism['archive_id'] = archive_id
     return jsonify(prism)
+
+
+# ─── Pre-warm screener cache on startup (public deploy only) ────────────
+# Render free tier 30s gateway timeout < 38s cold screener fetch.
+# So we kick off the NIFTY 50 fetch in a background thread when the module
+# loads. By the time the first user clicks Screen, the cache is warm and
+# the response is instant.
+def _prewarm_screener_cache():
+    import time as _t
+    _t.sleep(8)  # let app finish booting + first ping from UptimeRobot
+    indices_to_warm = ['NIFTY 50']
+    for idx_name in indices_to_warm:
+        try:
+            scr_cache_key = f'screener:{idx_name}'
+            if get_cached(scr_cache_key) is not None:
+                print(f'  [prewarm] {idx_name} already cached, skip')
+                continue
+            print(f'  [prewarm] building {idx_name} cache...')
+            with app.test_request_context(f'/api/screener?index={idx_name}'):
+                screener()
+            print(f'  [prewarm] {idx_name} ready')
+        except Exception as e:
+            print(f'  [prewarm] {idx_name} failed: {e}')
+
+if IS_PUBLIC:
+    import threading as _th
+    _th.Thread(target=_prewarm_screener_cache, daemon=True).start()
 
 
 if __name__ == '__main__':
