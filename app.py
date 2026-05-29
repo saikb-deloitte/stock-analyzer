@@ -2359,6 +2359,9 @@ def analyze(ticker):
         return jsonify(result)
 
     except Exception as e:
+        print(f'  [analyze {ticker}] error: {e}')
+        if IS_PUBLIC:
+            return jsonify({'error': 'Analysis temporarily unavailable. Please try again in a moment.'}), 503
         return jsonify({'error': str(e)}), 500
 
 
@@ -2398,6 +2401,17 @@ def backtest(ticker):
 @app.route('/api/screener')
 @limiter.limit("8 per minute", exempt_when=lambda: not IS_PUBLIC)
 def screener():
+    try:
+        return _screener_impl()
+    except Exception as e:
+        # Friendly error instead of leaking Python tracebacks to the UI
+        print(f'  [screener] error: {e}')
+        if IS_PUBLIC:
+            return jsonify({'error': 'Screener temporarily unavailable. Please try again in a moment.'}), 503
+        return jsonify({'error': str(e)}), 500
+
+
+def _screener_impl():
     index_name = request.args.get('index', 'NIFTY 50')
     if index_name == 'ALL NSE':
         # Allow overrides via querystring; defaults shrink on public deploy to
@@ -2609,6 +2623,16 @@ def sector_history():
 
 @app.route('/api/long_term_picks')
 def long_term_picks():
+    try:
+        return _long_term_picks_impl()
+    except Exception as e:
+        print(f'  [long_term_picks] error: {e}')
+        if IS_PUBLIC:
+            return jsonify({'error': 'Picks temporarily unavailable. Please try again in a moment.'}), 503
+        return jsonify({'error': str(e)}), 500
+
+
+def _long_term_picks_impl():
     """Curated list of stocks meeting:
        - long-term score >= 60 (Buy / Strong Buy on long horizon)
        - risk_score <= 55 (Low or Medium risk)
@@ -2647,7 +2671,9 @@ def long_term_picks():
                 rows = resp.get_json()
             except Exception:
                 rows = []
-        if not rows:
+        # Defensive: screener wrapper may return an error dict on failure.
+        # Skip such responses — we want only valid stock-row lists.
+        if not rows or not isinstance(rows, list):
             continue
         for r in rows:
             t = r.get('ticker')
@@ -2668,7 +2694,9 @@ def long_term_picks():
         picks.append({**r, 'indices': ticker_to_indices.get(t, [])})
 
     # Sort by composite "long-term safety" score: long_term - 0.5*risk
-    picks.sort(key=lambda x: (x.get('long_term', 0) - 0.5 * (x.get('risk_score') or 50)), reverse=True)
+    # Use `or 0` not `, 0` default — handles the None-value case (corrupt cache,
+    # partial yfinance response) that .get(key, default) doesn't catch.
+    picks.sort(key=lambda x: ((x.get('long_term') or 0) - 0.5 * (x.get('risk_score') or 50)), reverse=True)
 
     # Group by sector
     by_sector = {}
@@ -2676,8 +2704,10 @@ def long_term_picks():
         s = p.get('sector') or 'Other'
         by_sector.setdefault(s, []).append(p)
     sector_groups = sorted(
-        [{'sector': k, 'count': len(v), 'avg_lt': round(sum(x['long_term'] for x in v) / len(v), 1),
-          'avg_risk': round(sum((x['risk_score'] or 50) for x in v) / len(v), 1), 'stocks': v}
+        [{'sector': k, 'count': len(v),
+          'avg_lt':   round(sum((x.get('long_term') or 0) for x in v) / len(v), 1),
+          'avg_risk': round(sum((x.get('risk_score') or 50) for x in v) / len(v), 1),
+          'stocks': v}
          for k, v in by_sector.items()],
         key=lambda x: (-x['avg_lt'], x['avg_risk'])
     )
@@ -2688,8 +2718,10 @@ def long_term_picks():
         for idx in (p.get('indices') or ['Other']):
             by_index.setdefault(idx, []).append(p)
     index_groups = sorted(
-        [{'index': k, 'count': len(v), 'avg_lt': round(sum(x['long_term'] for x in v) / len(v), 1),
-          'avg_risk': round(sum((x['risk_score'] or 50) for x in v) / len(v), 1), 'stocks': v}
+        [{'index': k, 'count': len(v),
+          'avg_lt':   round(sum((x.get('long_term') or 0) for x in v) / len(v), 1),
+          'avg_risk': round(sum((x.get('risk_score') or 50) for x in v) / len(v), 1),
+          'stocks': v}
          for k, v in by_index.items()],
         key=lambda x: (-x['avg_lt'], x['avg_risk'])
     )
