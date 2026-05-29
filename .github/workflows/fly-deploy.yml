@@ -1,0 +1,29 @@
+name: Deploy to Fly.io Mumbai
+
+# Auto-deploy Centaur Prism to Fly.io every time we push to the live branch.
+# Render auto-deploys on its own via webhook — this is the parallel path for Fly.
+
+on:
+  push:
+    branches:
+      - Centaur-prism
+  # Also allow manual trigger from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy app to Fly.io (bom region)
+    runs-on: ubuntu-latest
+    concurrency: deploy-group   # one deploy at a time per branch
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
