@@ -204,6 +204,62 @@ def chart(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get('/quote/{symbol}')
+def quote(symbol: str):
+    """Fast price quote for ticker tape. Returns price + change_pct."""
+    symbol = symbol.upper().strip()
+    cache_key = f'quote:{symbol}'
+    cached = _get_cached(cache_key)
+    if cached:
+        return cached
+    try:
+        from analyzer import _yahoo_chart_direct
+        df = _yahoo_chart_direct(symbol, period='5d')
+        if df is None or df.empty or len(df) < 2:
+            raise HTTPException(status_code=404, detail='No data')
+        cur = float(df['Close'].iloc[-1])
+        prev = float(df['Close'].iloc[-2])
+        result = {
+            'symbol': symbol,
+            'price': round(cur, 2),
+            'change': round(cur - prev, 2),
+            'change_pct': round((cur - prev) / prev * 100, 2),
+        }
+        _set_cached(cache_key, result)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get('/gems')
+def gems(
+    max_price: float = Query(default=200, ge=1),
+    max_pe:    float = Query(default=20, ge=1),
+    min_growth: float = Query(default=5, ge=-50),
+    min_margin: float = Query(default=5, ge=-50),
+    risk:    str = Query(default=''),
+    sectors: str = Query(default=''),
+    tags:    str = Query(default=''),
+):
+    """Find fundamentally strong + undervalued stocks matching filters."""
+    from gems import scan_gems
+    filters = {
+        'max_price':  max_price,
+        'max_pe':     max_pe,
+        'min_growth': min_growth,
+        'min_margin': min_margin,
+        'risk_tiers': [r.strip() for r in risk.split(',') if r.strip()],
+        'sectors':    [s.strip() for s in sectors.split(',') if s.strip()],
+        'tags':       [t.strip() for t in tags.split(',') if t.strip()],
+    }
+    try:
+        return scan_gems(filters)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Gems scan error: {str(e)[:200]}')
+
+
 @app.get('/health')
 def health():
     return {'status': 'ok'}

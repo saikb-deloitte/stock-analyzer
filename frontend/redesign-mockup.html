@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Redesign Mockup — Stock Analyzer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e14; --card:#121821; --card2:#1a2230; --border:#252e3d;
+  --text:#e6edf3; --muted:#7d8590; --accent:#00d9a5;       /* teal-green, like Centaur */
+  --accent2:#58a6ff; --green:#10b981; --red:#ef4444; --yellow:#fbbf24; --purple:#a78bfa;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* ─── Ticker tape ─── */
+.ticker-tape{background:#000;border-bottom:1px solid var(--border);overflow:hidden;position:relative;height:38px}
+.ticker-track{display:flex;gap:48px;padding:10px 0;white-space:nowrap;animation:scroll 60s linear infinite;align-items:center}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-item{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600;letter-spacing:.02em}
+.ti-name{color:var(--muted);text-transform:uppercase;font-size:.75rem;letter-spacing:.08em}
+.ti-price{color:var(--text);font-variant-numeric:tabular-nums}
+.ti-pct.up{color:var(--green)}
+.ti-pct.dn{color:var(--red)}
+.ti-arrow{font-size:.75rem}
+
+/* ─── Disclaimer ─── */
+.disclaimer{background:linear-gradient(90deg,rgba(251,191,36,.08),rgba(251,191,36,.02));border-bottom:1px solid rgba(251,191,36,.18);padding:10px 28px;display:flex;align-items:center;gap:12px;font-size:.83rem;color:#fde68a}
+.disclaimer .icon{font-size:1.1rem}
+.disclaimer-close{margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer}
+
+/* ─── Top bar (header) ─── */
+.topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:12px 28px;display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+.brand-mark{width:38px;height:38px;flex-shrink:0;filter:drop-shadow(0 2px 12px rgba(0,217,165,.25))}
+.brand-text{display:flex;flex-direction:column;line-height:1;gap:3px}
+.brand-name{font-size:1.2rem;font-weight:800;letter-spacing:-.01em;background:linear-gradient(135deg,#00d9a5,#58a6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.brand-tag{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--muted)}
+
+.search-wrap{flex:1;max-width:580px;position:relative}
+.search-box{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 16px 11px 42px;color:var(--text);font-size:.92rem;outline:none;transition:border .2s}
+.search-box::placeholder{color:var(--muted)}
+.search-box:focus{border-color:var(--accent)}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
+
+.status-pill{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:8px 16px;font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.status-dot.open{background:var(--green);box-shadow:0 0 8px var(--green)}
+
+.action-tabs{display:flex;gap:6px}
+.action-tab{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 16px;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s}
+.action-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(0,217,165,.08)}
+.action-tab:hover:not(.active){border-color:var(--muted)}
+
+/* ─── Layout ─── */
+.shell{display:flex;min-height:calc(100vh - 76px - 42px - 38px)}
+.sidebar{width:88px;background:var(--card);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 8px;cursor:pointer;color:var(--muted);font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.02)}
+.nav-item.active{color:var(--accent);background:rgba(0,217,165,.06);border-left-color:var(--accent)}
+.nav-item svg{width:22px;height:22px}
+
+/* ─── Main content ─── */
+.main{flex:1;padding:28px 32px;overflow-x:hidden}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.page-title{font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+.page-title .accent{color:var(--accent)}
+.page-sub{font-size:.85rem;color:var(--muted);margin-top:3px}
+
+/* ─── Picks columns ─── */
+.picks-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}
+@media(max-width:1100px){.picks-row{grid-template-columns:1fr}}
+.picks-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;position:relative;overflow:hidden}
+.picks-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.picks-card.short::before{background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+.picks-card.mid::before{background:linear-gradient(180deg,#10b981,#059669)}
+.picks-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:9px}
+.picks-title .icon{font-size:.95rem}
+.picks-title .green{color:var(--green)}
+.picks-title .yellow{color:var(--yellow)}
+
+.pick-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}
+.pick-row:last-child{border-bottom:none}
+.pick-left{display:flex;flex-direction:column;gap:3px}
+.pick-ticker{font-size:1.08rem;font-weight:800;color:var(--accent);letter-spacing:.01em}
+.pick-company{font-size:.73rem;color:var(--muted)}
+.pick-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.pick-score{font-size:1.45rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums;line-height:1}
+.pick-verdict{font-size:.72rem;color:var(--green);font-weight:700;letter-spacing:.04em}
+.pick-row:hover{background:rgba(255,255,255,.02);margin:0 -22px;padding:14px 22px;border-radius:8px;cursor:pointer}
+
+/* ─── Controls row (screener) ─── */
+.controls-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.ctrl-pill{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 16px;font-size:.85rem;color:var(--text);display:flex;align-items:center;gap:8px}
+.ctrl-pill.btn{cursor:pointer;font-weight:600}
+.ctrl-pill.btn:hover{border-color:var(--accent);color:var(--accent)}
+.stats-pill{color:var(--muted);font-size:.85rem;margin-left:auto}
+.input-mini{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 14px;font-size:.85rem;color:var(--text);outline:none;min-width:200px}
+.input-mini:focus{border-color:var(--accent)}
+
+/* ─── Sector heatmap ─── */
+.heatmap-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px}
+.heatmap-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+.heatmap-title{font-size:1rem;font-weight:700}
+.heatmap-meta{font-size:.78rem;color:var(--muted)}
+.heatmap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.heatmap-tile{padding:14px 12px;border-radius:8px;text-align:center;cursor:pointer;transition:transform .15s;position:relative;overflow:hidden}
+.heatmap-tile:hover{transform:translateY(-2px)}
+.ht-name{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px;color:rgba(255,255,255,.8)}
+.ht-val{font-size:1.05rem;font-weight:800;font-variant-numeric:tabular-nums}
+.tile-1{background:rgba(16,185,129,.45)}
+.tile-2{background:rgba(16,185,129,.30)}
+.tile-3{background:rgba(16,185,129,.18)}
+.tile-4{background:rgba(245,158,11,.20)}
+.tile-5{background:rgba(239,68,68,.18)}
+.tile-6{background:rgba(239,68,68,.30)}
+
+/* ─── Floating note ─── */
+.compare-note{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:16px 20px;max-width:340px;font-size:.85rem;line-height:1.5;box-shadow:0 8px 30px rgba(0,217,165,.15);z-index:100}
+.compare-note strong{color:var(--accent)}
+
+/* Responsive */
+@media(max-width:780px){
+  .sidebar{width:64px}
+  .nav-item{font-size:.6rem;padding:12px 4px}
+  .nav-item svg{width:18px;height:18px}
+  .main{padding:18px 16px}
+  .topbar{padding:10px 16px;gap:10px;flex-wrap:wrap}
+  .brand-tag{display:none}
+  .search-wrap{order:3;flex-basis:100%;max-width:none}
+  .status-pill{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── Live ticker tape ─── -->
+<div class="ticker-tape">
+  <div class="ticker-track">
+    <span class="ticker-item"><span class="ti-name">S&P 500</span><span class="ti-price">5,847.32</span><span class="ti-pct up">▲ 0.42%</span></span>
+    <span class="ticker-item"><span class="ti-name">NASDAQ</span><span class="ti-price">19,224.17</span><span class="ti-pct up">▲ 0.61%</span></span>
+    <span class="ticker-item"><span class="ti-name">DOW</span><span class="ti-price">42,932.84</span><span class="ti-pct dn">▼ 0.18%</span></span>
+    <span class="ticker-item"><span class="ti-name">VIX</span><span class="ti-price">14.82</span><span class="ti-pct dn">▼ 2.30%</span></span>
+    <span class="ticker-item"><span class="ti-name">AAPL</span><span class="ti-price">$226.51</span><span class="ti-pct up">▲ 1.21%</span></span>
+    <span class="ticker-item"><span class="ti-name">NVDA</span><span class="ti-price">$138.42</span><span class="ti-pct up">▲ 2.84%</span></span>
+    <span class="ticker-item"><span class="ti-name">TSLA</span><span class="ti-price">$338.74</span><span class="ti-pct dn">▼ 1.07%</span></span>
+    <span class="ticker-item"><span class="ti-name">10Y YIELD</span><span class="ti-price">4.21%</span><span class="ti-pct up">▲ 0.04</span></span>
+    <span class="ticker-item"><span class="ti-name">BTC</span><span class="ti-price">$97,421</span><span class="ti-pct up">▲ 1.84%</span></span>
+    <!-- duplicate for seamless scroll -->
+    <span class="ticker-item"><span class="ti-name">S&P 500</span><span class="ti-price">5,847.32</span><span class="ti-pct up">▲ 0.42%</span></span>
+    <span class="ticker-item"><span class="ti-name">NASDAQ</span><span class="ti-price">19,224.17</span><span class="ti-pct up">▲ 0.61%</span></span>
+    <span class="ticker-item"><span class="ti-name">DOW</span><span class="ti-price">42,932.84</span><span class="ti-pct dn">▼ 0.18%</span></span>
+    <span class="ticker-item"><span class="ti-name">VIX</span><span class="ti-price">14.82</span><span class="ti-pct dn">▼ 2.30%</span></span>
+    <span class="ticker-item"><span class="ti-name">AAPL</span><span class="ti-price">$226.51</span><span class="ti-pct up">▲ 1.21%</span></span>
+    <span class="ticker-item"><span class="ti-name">NVDA</span><span class="ti-price">$138.42</span><span class="ti-pct up">▲ 2.84%</span></span>
+  </div>
+</div>
+
+<!-- ─── Educational disclaimer ─── -->
+<div class="disclaimer">
+  <span class="icon">🎓</span>
+  <span><strong>For educational purposes only</strong> — not investment advice. Markets are risky. Always do your own research (DYOR) before any trade.</span>
+  <button class="disclaimer-close">×</button>
+</div>
+
+<!-- ─── Top bar ─── -->
+<div class="topbar">
+  <a class="brand">
+    <svg class="brand-mark" viewBox="0 0 40 40">
+      <defs>
+        <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00d9a5"/><stop offset="100%" stop-color="#0d3b8a"/></linearGradient>
+      </defs>
+      <rect width="40" height="40" rx="10" fill="url(#pg)"/>
+      <!-- prism triangle -->
+      <path d="M20 8 L32 30 L8 30 Z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" opacity=".4"/>
+      <!-- refracted light rays -->
+      <line x1="20" y1="20" x2="14" y2="34" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="20" y1="20" x2="20" y2="36" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="20" y1="20" x2="26" y2="34" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-text">
+      <div class="brand-name">Prism</div>
+      <div class="brand-tag">Stocks Refracted</div>
+    </div>
+  </a>
+
+  <div class="search-wrap">
+    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input class="search-box" placeholder="Refract a stock (e.g. AAPL, NVDA, TSLA)…">
+  </div>
+
+  <div class="status-pill">
+    <span class="status-dot open"></span>
+    <span>Market Open · 11:24 ET</span>
+  </div>
+
+  <div class="action-tabs">
+    <button class="action-tab active">📊 Screener</button>
+    <button class="action-tab">📈 Analyze</button>
+  </div>
+</div>
+
+<!-- ─── Shell with sidebar + main ─── -->
+<div class="shell">
+  <nav class="sidebar">
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Screen
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Analyze
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2"/></svg>
+      Watch
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3v18M8 21V3M3 7h5M16 7h5M3 17h5M16 17h5"/></svg>
+      Compare
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
+      Gems
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/></svg>
+      Picks
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Market <span class="accent">Screener</span></div>
+        <div class="page-sub">Top picks from your watchlist universe — refreshed continuously</div>
+      </div>
+      <div class="status-pill" style="margin:0">
+        <span class="status-dot open"></span>
+        <span>Last fetch: 2 min ago</span>
+      </div>
+    </div>
+
+    <!-- Screener controls -->
+    <div class="controls-row">
+      <select class="input-mini" style="cursor:pointer">
+        <option>S&P 500 · 500 stocks</option>
+        <option>Mid-Term &lt;$5 · 70 stocks</option>
+        <option>Tech Sector · 84 stocks</option>
+      </select>
+      <button class="ctrl-pill btn">↻ Refresh</button>
+      <button class="ctrl-pill btn">📥 Export CSV</button>
+      <input class="input-mini" placeholder="Filter by ticker…">
+      <span class="stats-pill">500 stocks · 4.2s scan time</span>
+    </div>
+
+    <!-- Picks row -->
+    <div class="picks-row">
+      <div class="picks-card short">
+        <div class="picks-title"><span class="icon yellow">⚡</span> Top Short-Term Picks</div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">NVDA</div><div class="pick-company">NVIDIA Corp</div></div>
+          <div class="pick-right"><div class="pick-score">82</div><div class="pick-verdict">STRONG BUY</div></div>
+        </div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">AMD</div><div class="pick-company">Advanced Micro Devices</div></div>
+          <div class="pick-right"><div class="pick-score">76</div><div class="pick-verdict">STRONG BUY</div></div>
+        </div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">META</div><div class="pick-company">Meta Platforms</div></div>
+          <div class="pick-right"><div class="pick-score">71</div><div class="pick-verdict">BUY</div></div>
+        </div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">GOOGL</div><div class="pick-company">Alphabet Class A</div></div>
+          <div class="pick-right"><div class="pick-score">68</div><div class="pick-verdict">BUY</div></div>
+        </div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">CRM</div><div class="pick-company">Salesforce</div></div>
+          <div class="pick-right"><div class="pick-score">64</div><div class="pick-verdict">BUY</div></div>
+        </div>
+      </div>
+
+      <div class="picks-card mid">
+        <div class="picks-title"><span class="icon green">🌱</span> Top Mid-Term Picks</div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">MSFT</div><div class="pick-company">Microsoft Corp</div></div>
+          <div class="pick-right"><div class="pick-score">85</div><div class="pick-verdict">STRONG BUY</div></div>
+        </div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">AAPL</div><div class="pick-company">Apple Inc</div></div>
+          <div class="pick-right"><div class="pick-score">79</div><div class="pick-verdict">STRONG BUY</div></div>
+        </div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">V</div><div class="pick-company">Visa Inc</div></div>
+          <div class="pick-right"><div class="pick-score">74</div><div class="pick-verdict">BUY</div></div>
+        </div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">UNH</div><div class="pick-company">UnitedHealth Group</div></div>
+          <div class="pick-right"><div class="pick-score">71</div><div class="pick-verdict">BUY</div></div>
+        </div>
+        <div class="pick-row">
+          <div class="pick-left"><div class="pick-ticker">JPM</div><div class="pick-company">JPMorgan Chase</div></div>
+          <div class="pick-right"><div class="pick-score">68</div><div class="pick-verdict">BUY</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sector heatmap -->
+    <div class="heatmap-card">
+      <div class="heatmap-head">
+        <div class="heatmap-title">Sector Heatmap</div>
+        <div class="heatmap-meta">cap-weighted · universe avg 64 · 7/11 positive · vol 1.8%</div>
+      </div>
+      <div class="heatmap-grid">
+        <div class="heatmap-tile tile-1"><div class="ht-name">Technology</div><div class="ht-val">+78</div></div>
+        <div class="heatmap-tile tile-1"><div class="ht-name">Communications</div><div class="ht-val">+72</div></div>
+        <div class="heatmap-tile tile-2"><div class="ht-name">Healthcare</div><div class="ht-val">+58</div></div>
+        <div class="heatmap-tile tile-2"><div class="ht-name">Financials</div><div class="ht-val">+54</div></div>
+        <div class="heatmap-tile tile-3"><div class="ht-name">Consumer Disc</div><div class="ht-val">+42</div></div>
+        <div class="heatmap-tile tile-3"><div class="ht-name">Industrials</div><div class="ht-val">+38</div></div>
+        <div class="heatmap-tile tile-4"><div class="ht-name">Real Estate</div><div class="ht-val">+12</div></div>
+        <div class="heatmap-tile tile-4"><div class="ht-name">Utilities</div><div class="ht-val">+4</div></div>
+        <div class="heatmap-tile tile-5"><div class="ht-name">Energy</div><div class="ht-val">−18</div></div>
+        <div class="heatmap-tile tile-5"><div class="ht-name">Materials</div><div class="ht-val">−24</div></div>
+        <div class="heatmap-tile tile-6"><div class="ht-name">Consumer Staples</div><div class="ht-val">−42</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ─── DIVIDER ─── -->
+<div style="background:linear-gradient(90deg,transparent,var(--accent),transparent);height:1px;margin:60px 0 0 0;opacity:.3"></div>
+<div style="text-align:center;padding:40px 0 20px;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.15em;font-weight:700">↓ Below: How the new "Gems" page would look ↓</div>
+
+<!-- ─── GEMS PAGE PREVIEW ─── -->
+<style>
+.gems-shell{display:flex;min-height:600px;background:var(--bg)}
+.filters-panel{width:280px;background:var(--card);border-right:1px solid var(--border);padding:24px 22px;flex-shrink:0;overflow-y:auto}
+.filters-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.filters-title button{background:none;border:none;color:var(--accent);font-size:.7rem;cursor:pointer;font-weight:600;letter-spacing:.04em}
+.filter-group{margin-bottom:22px;padding-bottom:22px;border-bottom:1px solid var(--border)}
+.filter-group:last-child{border-bottom:none}
+.filter-label{font-size:.75rem;color:var(--text);font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between}
+.filter-label .filter-val{color:var(--accent);font-variant-numeric:tabular-nums;font-weight:700}
+.filter-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.85rem;outline:none}
+.filter-input:focus{border-color:var(--accent)}
+.filter-range{width:100%;-webkit-appearance:none;background:var(--border);height:4px;border-radius:2px;outline:none;margin:8px 0}
+.filter-range::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--accent);border-radius:50%;cursor:pointer;border:2px solid var(--bg)}
+.filter-chips{display:flex;gap:5px;flex-wrap:wrap}
+.fchip{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:.74rem;color:var(--muted);cursor:pointer;transition:all .15s}
+.fchip:hover{color:var(--text);border-color:var(--muted)}
+.fchip.active{background:rgba(0,217,165,.12);border-color:var(--accent);color:var(--accent)}
+.btn-apply{width:100%;background:var(--accent);color:#000;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:.85rem;cursor:pointer;margin-top:8px}
+
+.gems-main{flex:1;padding:28px 32px}
+.gems-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.gem-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;transition:border .2s;cursor:pointer;position:relative;overflow:hidden}
+.gem-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#00d9a5,#10b981)}
+.gem-card:hover{border-color:var(--accent)}
+.gem-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.gem-tk{font-size:1.2rem;font-weight:800;color:var(--accent)}
+.gem-co{font-size:.72rem;color:var(--muted);margin-top:2px}
+.gem-pr{text-align:right;font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums}
+.gem-ch{font-size:.72rem;font-weight:600}
+.gem-metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}
+.gem-m{background:var(--bg);border-radius:6px;padding:6px 9px}
+.gem-ml{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.gem-mv{font-size:.85rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green)}
+.gem-mv.warn{color:var(--yellow)}
+.gem-mv.bad{color:var(--red)}
+.gem-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.gem-tag{font-size:.62rem;padding:3px 8px;border-radius:10px;font-weight:600;letter-spacing:.04em}
+.gtag-undervalued{background:rgba(0,217,165,.15);color:var(--accent);border:1px solid rgba(0,217,165,.3)}
+.gtag-quality{background:rgba(168,139,250,.15);color:var(--purple);border:1px solid rgba(168,139,250,.3)}
+.gtag-grower{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.gtag-lowrisk{background:rgba(88,166,255,.15);color:var(--accent2);border:1px solid rgba(88,166,255,.3)}
+.gtag-divi{background:rgba(251,191,36,.15);color:var(--yellow);border:1px solid rgba(251,191,36,.3)}
+.gem-score-bar{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.gem-score{font-size:1.35rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums;line-height:1}
+.gem-score-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+.gems-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.gems-title{font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+.gems-title .accent{color:var(--accent)}
+.gems-sub{font-size:.85rem;color:var(--muted);margin-top:3px}
+</style>
+
+<!-- Header for Gems page -->
+<div class="topbar" style="border-top:1px solid var(--border)">
+  <a class="brand">
+    <svg class="brand-mark" viewBox="0 0 40 40">
+      <defs>
+        <linearGradient id="pg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00d9a5"/><stop offset="100%" stop-color="#0d3b8a"/></linearGradient>
+      </defs>
+      <rect width="40" height="40" rx="10" fill="url(#pg2)"/>
+      <path d="M20 8 L32 30 L8 30 Z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" opacity=".4"/>
+      <line x1="20" y1="20" x2="14" y2="34" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="20" y1="20" x2="20" y2="36" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="20" y1="20" x2="26" y2="34" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-text"><div class="brand-name">Prism</div><div class="brand-tag">Stocks Refracted</div></div>
+  </a>
+  <div class="search-wrap"><svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input class="search-box" placeholder="Search a gem (e.g. BRK.B)…"></div>
+  <div class="status-pill"><span class="status-dot open"></span><span>Market Open · 11:24 ET</span></div>
+</div>
+
+<div class="gems-shell">
+
+  <!-- LEFT: Filters sidebar nav -->
+  <nav class="sidebar">
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Screen
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Analyze
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2"/></svg>
+      Watch
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3v18M8 21V3M3 7h5M16 7h5M3 17h5M16 17h5"/></svg>
+      Compare
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
+      Gems
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/></svg>
+      Picks
+    </div>
+  </nav>
+
+  <!-- Filters panel -->
+  <aside class="filters-panel">
+    <div class="filters-title"><span>Filters</span><button>Reset all</button></div>
+
+    <div class="filter-group">
+      <div class="filter-label">Max Price <span class="filter-val">$50</span></div>
+      <input type="range" min="1" max="500" value="50" class="filter-range">
+      <input type="number" class="filter-input" value="50" placeholder="$ max">
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Max P/E Ratio <span class="filter-val">15</span></div>
+      <input type="range" min="0" max="50" value="15" class="filter-range">
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Min Revenue Growth <span class="filter-val">10%</span></div>
+      <input type="range" min="0" max="100" value="10" class="filter-range">
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Min Profit Margin <span class="filter-val">10%</span></div>
+      <input type="range" min="0" max="50" value="10" class="filter-range">
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label" style="margin-bottom:10px">Risk Tier</div>
+      <div class="filter-chips">
+        <span class="fchip active">Low</span>
+        <span class="fchip active">Medium</span>
+        <span class="fchip">High</span>
+        <span class="fchip">Very High</span>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label" style="margin-bottom:10px">Sector</div>
+      <div class="filter-chips">
+        <span class="fchip active">All</span>
+        <span class="fchip">Tech</span>
+        <span class="fchip">Finance</span>
+        <span class="fchip">Healthcare</span>
+        <span class="fchip">Energy</span>
+        <span class="fchip">Industrials</span>
+        <span class="fchip">Cons. Disc.</span>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label" style="margin-bottom:10px">Quality Tags</div>
+      <div class="filter-chips">
+        <span class="fchip active">Undervalued</span>
+        <span class="fchip active">Quality</span>
+        <span class="fchip">Dividend</span>
+        <span class="fchip">Growth</span>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Min Market Cap <span class="filter-val">$2B</span></div>
+      <input type="range" min="0" max="100" value="20" class="filter-range">
+    </div>
+
+    <button class="btn-apply">Find Gems →</button>
+  </aside>
+
+  <!-- Right: results -->
+  <main class="gems-main">
+    <div class="gems-toolbar">
+      <div>
+        <div class="gems-title">💎 <span class="accent">Hidden Gems</span></div>
+        <div class="gems-sub">Fundamentally strong &amp; undervalued — found 23 stocks matching your filters</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <select class="input-mini" style="cursor:pointer">
+          <option>Sort: Composite Score ↓</option>
+          <option>Sort: P/E ↑</option>
+          <option>Sort: Revenue Growth ↓</option>
+          <option>Sort: Margin ↓</option>
+        </select>
+        <button class="ctrl-pill btn">📥 Export</button>
+      </div>
+    </div>
+
+    <div class="gems-results">
+
+      <!-- Gem card 1 -->
+      <div class="gem-card">
+        <div class="gem-head">
+          <div><div class="gem-tk">SOFI</div><div class="gem-co">SoFi Technologies</div></div>
+          <div><div class="gem-pr">$13.42</div><div class="gem-ch" style="color:var(--green)">▲ 1.8%</div></div>
+        </div>
+        <div class="gem-metrics">
+          <div class="gem-m"><div class="gem-ml">P/E</div><div class="gem-mv">12.4</div></div>
+          <div class="gem-m"><div class="gem-ml">Rev Growth</div><div class="gem-mv">+28%</div></div>
+          <div class="gem-m"><div class="gem-ml">Margin</div><div class="gem-mv">14.2%</div></div>
+          <div class="gem-m"><div class="gem-ml">Debt/Eq</div><div class="gem-mv">0.31</div></div>
+        </div>
+        <div class="gem-tags">
+          <span class="gem-tag gtag-undervalued">UNDERVALUED</span>
+          <span class="gem-tag gtag-grower">HIGH GROWTH</span>
+        </div>
+        <div class="gem-score-bar">
+          <div class="gem-score">82</div>
+          <div><div class="gem-score-label">Composite Score</div><div style="font-size:.75rem;color:var(--green);font-weight:700">STRONG BUY</div></div>
+        </div>
+      </div>
+
+      <!-- Gem card 2 -->
+      <div class="gem-card">
+        <div class="gem-head">
+          <div><div class="gem-tk">PFE</div><div class="gem-co">Pfizer Inc</div></div>
+          <div><div class="gem-pr">$24.18</div><div class="gem-ch" style="color:var(--red)">▼ 0.4%</div></div>
+        </div>
+        <div class="gem-metrics">
+          <div class="gem-m"><div class="gem-ml">P/E</div><div class="gem-mv">9.2</div></div>
+          <div class="gem-m"><div class="gem-ml">Div Yield</div><div class="gem-mv">5.8%</div></div>
+          <div class="gem-m"><div class="gem-ml">Margin</div><div class="gem-mv">18.1%</div></div>
+          <div class="gem-m"><div class="gem-ml">Debt/Eq</div><div class="gem-mv warn">0.52</div></div>
+        </div>
+        <div class="gem-tags">
+          <span class="gem-tag gtag-undervalued">UNDERVALUED</span>
+          <span class="gem-tag gtag-divi">DIVIDEND</span>
+          <span class="gem-tag gtag-lowrisk">LOW RISK</span>
+        </div>
+        <div class="gem-score-bar">
+          <div class="gem-score">76</div>
+          <div><div class="gem-score-label">Composite Score</div><div style="font-size:.75rem;color:var(--green);font-weight:700">STRONG BUY</div></div>
+        </div>
+      </div>
+
+      <!-- Gem card 3 -->
+      <div class="gem-card">
+        <div class="gem-head">
+          <div><div class="gem-tk">VZ</div><div class="gem-co">Verizon Communications</div></div>
+          <div><div class="gem-pr">$41.83</div><div class="gem-ch" style="color:var(--green)">▲ 0.6%</div></div>
+        </div>
+        <div class="gem-metrics">
+          <div class="gem-m"><div class="gem-ml">P/E</div><div class="gem-mv">8.1</div></div>
+          <div class="gem-m"><div class="gem-ml">Div Yield</div><div class="gem-mv">6.4%</div></div>
+          <div class="gem-m"><div class="gem-ml">Margin</div><div class="gem-mv">15.8%</div></div>
+          <div class="gem-m"><div class="gem-ml">FCF</div><div class="gem-mv">$18.7B</div></div>
+        </div>
+        <div class="gem-tags">
+          <span class="gem-tag gtag-undervalued">DEEP VALUE</span>
+          <span class="gem-tag gtag-divi">DIVIDEND</span>
+          <span class="gem-tag gtag-lowrisk">LOW RISK</span>
+        </div>
+        <div class="gem-score-bar">
+          <div class="gem-score">71</div>
+          <div><div class="gem-score-label">Composite Score</div><div style="font-size:.75rem;color:var(--green);font-weight:700">BUY</div></div>
+        </div>
+      </div>
+
+      <!-- Gem card 4 -->
+      <div class="gem-card">
+        <div class="gem-head">
+          <div><div class="gem-tk">PYPL</div><div class="gem-co">PayPal Holdings</div></div>
+          <div><div class="gem-pr">$87.21</div><div class="gem-ch" style="color:var(--green)">▲ 2.4%</div></div>
+        </div>
+        <div class="gem-metrics">
+          <div class="gem-m"><div class="gem-ml">P/E</div><div class="gem-mv">14.7</div></div>
+          <div class="gem-m"><div class="gem-ml">Rev Growth</div><div class="gem-mv">+11%</div></div>
+          <div class="gem-m"><div class="gem-ml">Margin</div><div class="gem-mv">15.1%</div></div>
+          <div class="gem-m"><div class="gem-ml">Cash</div><div class="gem-mv">$13.4B</div></div>
+        </div>
+        <div class="gem-tags">
+          <span class="gem-tag gtag-undervalued">UNDERVALUED</span>
+          <span class="gem-tag gtag-quality">QUALITY</span>
+        </div>
+        <div class="gem-score-bar">
+          <div class="gem-score">69</div>
+          <div><div class="gem-score-label">Composite Score</div><div style="font-size:.75rem;color:var(--green);font-weight:700">BUY</div></div>
+        </div>
+      </div>
+
+      <!-- Gem card 5 -->
+      <div class="gem-card">
+        <div class="gem-head">
+          <div><div class="gem-tk">BAC</div><div class="gem-co">Bank of America</div></div>
+          <div><div class="gem-pr">$44.96</div><div class="gem-ch" style="color:var(--green)">▲ 0.9%</div></div>
+        </div>
+        <div class="gem-metrics">
+          <div class="gem-m"><div class="gem-ml">P/E</div><div class="gem-mv">13.8</div></div>
+          <div class="gem-m"><div class="gem-ml">Div Yield</div><div class="gem-mv">2.3%</div></div>
+          <div class="gem-m"><div class="gem-ml">ROE</div><div class="gem-mv">10.4%</div></div>
+          <div class="gem-m"><div class="gem-ml">P/B</div><div class="gem-mv">1.2</div></div>
+        </div>
+        <div class="gem-tags">
+          <span class="gem-tag gtag-quality">QUALITY</span>
+          <span class="gem-tag gtag-divi">DIVIDEND</span>
+        </div>
+        <div class="gem-score-bar">
+          <div class="gem-score">67</div>
+          <div><div class="gem-score-label">Composite Score</div><div style="font-size:.75rem;color:var(--green);font-weight:700">BUY</div></div>
+        </div>
+      </div>
+
+      <!-- Gem card 6 -->
+      <div class="gem-card">
+        <div class="gem-head">
+          <div><div class="gem-tk">INTC</div><div class="gem-co">Intel Corp</div></div>
+          <div><div class="gem-pr">$24.07</div><div class="gem-ch" style="color:var(--red)">▼ 1.1%</div></div>
+        </div>
+        <div class="gem-metrics">
+          <div class="gem-m"><div class="gem-ml">P/B</div><div class="gem-mv">1.0</div></div>
+          <div class="gem-m"><div class="gem-ml">P/S</div><div class="gem-mv">1.9</div></div>
+          <div class="gem-m"><div class="gem-ml">Margin</div><div class="gem-mv warn">8.2%</div></div>
+          <div class="gem-m"><div class="gem-ml">Cash</div><div class="gem-mv">$24.5B</div></div>
+        </div>
+        <div class="gem-tags">
+          <span class="gem-tag gtag-undervalued">DEEP VALUE</span>
+        </div>
+        <div class="gem-score-bar">
+          <div class="gem-score">64</div>
+          <div><div class="gem-score-label">Composite Score</div><div style="font-size:.75rem;color:var(--green);font-weight:700">BUY</div></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Floating note -->
+<div class="compare-note">
+  <strong>👀 Mockup — both views</strong><br>
+  Scroll up = Screener · Below = Gems<br>
+  Tell me what to refine.
+</div>
+
+</body>
+</html>

@@ -14,21 +14,72 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0d1117;--card:#161b22;--card2:#1c2128;--border:#30363d;
-  --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;
-  --green:#10b981;--red:#ef4444;--yellow:#f59e0b;--purple:#8b5cf6;
+  --bg:#0a0e14;--card:#121821;--card2:#1a2230;--border:#252e3d;
+  --text:#e6edf3;--muted:#7d8590;--accent:#00d9a5;--accent2:#58a6ff;
+  --green:#10b981;--red:#ef4444;--yellow:#fbbf24;--purple:#a78bfa;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-/* ── Header ── */
-header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 24px;position:sticky;top:0;z-index:100}
-.header-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-/* ── Logo ── */
+/* ══════ TICKER TAPE ══════ */
+.ticker-tape{background:#000;border-bottom:1px solid var(--border);overflow:hidden;position:relative;height:38px;z-index:101}
+.ticker-track{display:flex;gap:48px;padding:10px 0;white-space:nowrap;animation:tickerScroll 90s linear infinite;align-items:center;will-change:transform}
+@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-tape:hover .ticker-track{animation-play-state:paused}
+.ticker-item{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600;letter-spacing:.02em}
+.ti-name{color:var(--muted);text-transform:uppercase;font-size:.75rem;letter-spacing:.08em}
+.ti-price{color:var(--text);font-variant-numeric:tabular-nums}
+.ti-pct.up{color:var(--green)}.ti-pct.dn{color:var(--red)}
+
+/* ══════ DISCLAIMER ══════ */
+.disclaimer{background:linear-gradient(90deg,rgba(251,191,36,.10),rgba(251,191,36,.02));border-bottom:1px solid rgba(251,191,36,.20);padding:10px 28px;display:flex;align-items:center;gap:12px;font-size:.83rem;color:#fde68a}
+.disclaimer .icon{font-size:1.1rem;flex-shrink:0}
+.disclaimer-close{margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;line-height:1;padding:0 8px}
+.disclaimer-close:hover{color:var(--text)}
+
+/* ══════ TOP BAR ══════ */
+.topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:12px 28px;display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;cursor:pointer}
+.brand-mark{width:38px;height:38px;flex-shrink:0;filter:drop-shadow(0 2px 12px rgba(0,217,165,.30));transition:transform .25s}
+.brand:hover .brand-mark{transform:scale(1.06) rotate(-3deg)}
+.brand-text{display:flex;flex-direction:column;line-height:1;gap:3px}
+.brand-name{font-size:1.2rem;font-weight:800;letter-spacing:-.01em;background:linear-gradient(135deg,#00d9a5,#58a6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.brand-tag{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--muted)}
+
+.search-wrap{flex:1;max-width:520px;position:relative}
+.search-box{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 16px 11px 42px;color:var(--text);font-size:.92rem;outline:none;transition:border .2s}
+.search-box::placeholder{color:var(--muted)}
+.search-box:focus{border-color:var(--accent)}
+.search-icon-svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);width:18px;height:18px;pointer-events:none}
+.btn-analyze{background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;font-size:.87rem;transition:opacity .2s;white-space:nowrap}
+.btn-analyze:hover{opacity:.88}
+
+.status-pill{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:8px 16px;font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.status-dot.open{background:var(--green);box-shadow:0 0 8px var(--green)}
+.status-dot.pre,.status-dot.after{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}
+
+/* ══════ SHELL (sidebar + main) ══════ */
+.shell{display:flex;min-height:calc(100vh - 76px - 42px - 38px)}
+.sidebar{width:88px;background:var(--card);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;gap:6px;flex-shrink:0;position:sticky;top:76px;height:calc(100vh - 76px);overflow-y:auto}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 8px;cursor:pointer;color:var(--muted);font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-left:3px solid transparent;transition:all .15s;background:none;border-top:none;border-right:none;border-bottom:none;width:100%;font-family:inherit}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.02)}
+.nav-item.active{color:var(--accent);background:rgba(0,217,165,.06);border-left-color:var(--accent)}
+.nav-item svg{width:22px;height:22px}
+.nav-item .badge{position:absolute;top:8px;right:14px;background:var(--accent);color:#000;font-size:.55rem;padding:1px 5px;border-radius:8px;font-weight:700}
+.nav-item.soon{opacity:.45;cursor:not-allowed}
+.nav-item.soon:hover{color:var(--muted);background:none}
+
+.main-content{flex:1;padding:24px 28px;max-width:calc(100vw - 88px);overflow-x:hidden}
+
+/* Legacy header → hidden (we now use .topbar) */
+header{display:none}
+
+/* ── Legacy logo (kept for backward compat with logo-mark in topbar) ── */
 .logo{display:flex;align-items:center;gap:10px;white-space:nowrap;text-decoration:none;color:inherit;cursor:pointer}
-.logo-mark{width:38px;height:38px;flex-shrink:0;filter:drop-shadow(0 2px 10px rgba(88,166,255,.25));transition:transform .25s}
+.logo-mark{width:38px;height:38px;flex-shrink:0;transition:transform .25s}
 .logo:hover .logo-mark{transform:scale(1.06) rotate(-3deg)}
 .logo-text{display:flex;flex-direction:column;line-height:1;gap:3px}
-.logo-brand{font-size:1.05rem;font-weight:800;letter-spacing:.01em;background:linear-gradient(135deg,#58a6ff 0%,#10b981 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-brand{font-size:1.05rem;font-weight:800;letter-spacing:.01em;background:linear-gradient(135deg,#00d9a5,#58a6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .logo-sub{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--muted)}
 @media(max-width:720px){
   .logo-mark{width:32px;height:32px}
@@ -50,18 +101,99 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 .qbtn.recent{border-color:rgba(88,166,255,.35);color:var(--accent);background:rgba(88,166,255,.06)}
 .qpick-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
 
-/* Mobile: collapse header tightly */
+/* ══════ GEMS SCREEN ══════ */
+.gems-layout{display:flex;gap:0;margin:-24px -28px;min-height:calc(100vh - 76px - 42px - 38px)}
+.filters-panel{width:290px;background:var(--card);border-right:1px solid var(--border);padding:24px 22px;flex-shrink:0;overflow-y:auto;position:sticky;top:76px;height:calc(100vh - 76px - 42px - 38px)}
+.filters-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.btn-reset{background:none;border:none;color:var(--accent);font-size:.7rem;cursor:pointer;font-weight:600;letter-spacing:.04em}
+.filter-group{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.filter-group:last-of-type{border-bottom:none}
+.filter-label{font-size:.75rem;color:var(--text);font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between}
+.filter-val{color:var(--accent);font-variant-numeric:tabular-nums;font-weight:700}
+.filter-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.85rem;outline:none}
+.filter-input:focus{border-color:var(--accent)}
+.filter-range{width:100%;-webkit-appearance:none;background:var(--border);height:4px;border-radius:2px;outline:none;margin:8px 0}
+.filter-range::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--accent);border-radius:50%;cursor:pointer;border:2px solid var(--bg)}
+.filter-range::-moz-range-thumb{width:16px;height:16px;background:var(--accent);border-radius:50%;cursor:pointer;border:2px solid var(--bg)}
+.filter-chips{display:flex;gap:5px;flex-wrap:wrap}
+.fchip{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:.74rem;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit}
+.fchip:hover{color:var(--text);border-color:var(--muted)}
+.fchip.active{background:rgba(0,217,165,.12);border-color:var(--accent);color:var(--accent)}
+.btn-find-gems{width:100%;background:var(--accent);color:#000;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:.85rem;cursor:pointer;margin-top:8px;font-family:inherit;transition:opacity .2s}
+.btn-find-gems:hover{opacity:.88}
+.btn-find-gems:disabled{opacity:.5;cursor:not-allowed}
+
+.gems-main{flex:1;padding:24px 28px;overflow-x:hidden}
+.gems-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.gems-title{font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+.gems-title .accent{color:var(--accent)}
+.gems-sub{font-size:.85rem;color:var(--muted);margin-top:3px}
+.gems-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:14px}
+@media(max-width:1100px){.gems-results{grid-template-columns:1fr}}
+
+.gem-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden;cursor:pointer;transition:border .2s,transform .15s}
+.gem-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#00d9a5,#10b981)}
+.gem-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.gem-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.gem-tk{font-size:1.2rem;font-weight:800;color:var(--accent)}
+.gem-co{font-size:.72rem;color:var(--muted);margin-top:2px}
+.gem-pr{text-align:right;font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums}
+.gem-ch{font-size:.72rem;font-weight:600}
+.gem-ch.up{color:var(--green)}.gem-ch.dn{color:var(--red)}
+
+.gem-spark{margin:10px 0;padding:8px;background:var(--bg);border-radius:6px}
+.gem-spark-head{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-bottom:4px}
+.gem-spark-head strong{color:var(--green);font-weight:700}
+.gem-spark svg{display:block;width:100%;height:36px}
+
+.gem-metrics-8{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.gem-m{background:var(--bg);border-radius:5px;padding:5px 7px;text-align:center}
+.gem-ml{font-size:.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.gem-mv{font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green)}
+.gem-mv.warn{color:var(--yellow)}
+.gem-mv.bad{color:var(--red)}
+.gem-mv.neutral{color:var(--text)}
+
+.gem-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.gem-tag{font-size:.62rem;padding:3px 8px;border-radius:10px;font-weight:600;letter-spacing:.04em}
+.gtag-undervalued{background:rgba(0,217,165,.15);color:var(--accent);border:1px solid rgba(0,217,165,.3)}
+.gtag-quality{background:rgba(168,139,250,.15);color:var(--purple);border:1px solid rgba(168,139,250,.3)}
+.gtag-grower{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.gtag-divi{background:rgba(251,191,36,.15);color:var(--yellow);border:1px solid rgba(251,191,36,.3)}
+.gtag-lowrisk{background:rgba(88,166,255,.15);color:var(--accent2);border:1px solid rgba(88,166,255,.3)}
+
+.gem-score-bar{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.gem-score{font-size:1.35rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums;line-height:1}
+.gem-score-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+/* Placeholder screens (Watch/Compare/Picks) */
+.coming-soon{text-align:center;padding:80px 20px;color:var(--muted)}
+.coming-soon-icon{font-size:3rem;margin-bottom:16px;opacity:.5}
+.coming-soon h2{font-size:1.4rem;font-weight:700;color:var(--text);margin-bottom:8px}
+.coming-soon p{font-size:.9rem;max-width:480px;margin:0 auto;line-height:1.6}
+
+/* Mobile breakpoints */
+@media(max-width:900px){
+  .sidebar{width:64px}
+  .nav-item{font-size:.6rem;padding:12px 4px}
+  .nav-item svg{width:18px;height:18px}
+  .main-content{padding:18px 16px}
+  .topbar{padding:10px 14px;gap:10px;flex-wrap:wrap}
+  .brand-tag{display:none}
+  .status-pill{font-size:.7rem;padding:6px 10px}
+  .disclaimer{padding:8px 14px;font-size:.74rem;gap:8px}
+  .gems-layout{margin:-18px -16px}
+  .filters-panel{width:250px;padding:18px}
+}
 @media(max-width:720px){
-  header{padding:10px 14px}
-  .header-inner{gap:8px}
-  .logo{font-size:1rem;flex:1}
-  .tab-bar{order:3;width:100%;justify-content:center}
-  .tab-btn{padding:6px 10px;font-size:.78rem}
-  .search-wrap{order:2;max-width:none}
-  .quick-picks{order:4;width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px;-webkit-overflow-scrolling:touch}
-  .quick-picks::-webkit-scrollbar{height:3px}
-  .quick-picks::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-  main{padding:14px 12px}
+  .topbar{padding:8px 12px;gap:8px}
+  .brand-name{font-size:1rem}
+  .brand-mark{width:32px;height:32px}
+  .search-wrap{order:3;flex-basis:100%;max-width:none}
+  .status-pill{display:none}
+  .gems-layout{flex-direction:column}
+  .filters-panel{width:100%;position:relative;top:0;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  .main-content{padding:14px 12px}
   .section{padding:14px;border-radius:10px}
   .verdict-banner{padding:14px}
   .verdict-label{font-size:1.5rem}
@@ -418,55 +550,84 @@ main{max-width:1400px;margin:0 auto;padding:20px}
 </head>
 <body>
 
-<header>
-  <div class="header-inner">
-    <a class="logo" onclick="switchTab('analyzer')" title="SK's Stock Analyzer — Home">
-      <svg class="logo-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="logoBg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#1f6feb"/>
-            <stop offset="100%" stop-color="#0d3b8a"/>
-          </linearGradient>
-          <linearGradient id="logoGreen" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0%" stop-color="#059669"/>
-            <stop offset="100%" stop-color="#10b981"/>
-          </linearGradient>
-        </defs>
-        <!-- rounded square w/ subtle inner glow -->
-        <rect width="40" height="40" rx="10" fill="url(#logoBg)"/>
-        <rect x="1" y="1" width="38" height="38" rx="9" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
-        <!-- candlestick chart bars -->
-        <line x1="9"  y1="9"  x2="9"  y2="30" stroke="#58a6ff" stroke-width="1" opacity=".5"/>
-        <rect x="7"  y="18" width="4" height="9"  rx="1.2" fill="#58a6ff" opacity=".7"/>
-        <line x1="16" y1="12" x2="16" y2="32" stroke="#58a6ff" stroke-width="1" opacity=".6"/>
-        <rect x="14" y="15" width="4" height="14" rx="1.2" fill="#58a6ff" opacity=".85"/>
-        <line x1="23" y1="6"  x2="23" y2="30" stroke="#10b981" stroke-width="1" opacity=".7"/>
-        <rect x="21" y="10" width="4" height="17" rx="1.2" fill="url(#logoGreen)"/>
-        <!-- breakout arrow on top-right -->
-        <path d="M28 14 L33 9 L33 14 M33 9 L28.5 9" fill="none" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="logo-text">
-        <div class="logo-brand">Stock Analyzer</div>
-        <div class="logo-sub">By SK · Pro Edition</div>
-      </div>
-    </a>
-    <div class="tab-bar">
-      <button class="tab-btn active" id="tab-analyzer" onclick="switchTab('analyzer')">📈 Stock Analyzer</button>
-      <button class="tab-btn" id="tab-scanner" onclick="switchTab('scanner')">🔍 Mid-Term Scanner &lt;$5</button>
-      <button class="tab-btn" id="tab-about" onclick="switchTab('about')">⚠ Limitations &amp; Roadmap</button>
-    </div>
-    <!-- Search bar only shown on analyzer tab -->
-    <div id="analyzer-controls" style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap">
-      <div class="search-wrap">
-        <input id="search-input" class="search-input" type="text" placeholder="Ticker (e.g. AAPL) — press Enter" maxlength="10" autocomplete="off" autocapitalize="characters">
-        <button class="btn-primary" onclick="doSearch()">Analyze</button>
-      </div>
-      <div class="quick-picks" id="quick-picks"></div>
-    </div>
+<!-- ══════ TICKER TAPE ══════ -->
+<div class="ticker-tape">
+  <div class="ticker-track" id="ticker-track">
+    <!-- Populated by JS — duplicated for seamless scroll -->
   </div>
-</header>
+</div>
 
-<main>
+<!-- ══════ DISCLAIMER ══════ -->
+<div class="disclaimer" id="disclaimer-bar">
+  <span class="icon">🎓</span>
+  <span><strong>For educational purposes only</strong> — not investment advice. Markets are risky. Always do your own research (DYOR) before any trade.</span>
+  <button class="disclaimer-close" onclick="document.getElementById('disclaimer-bar').style.display='none';localStorage.setItem('hide_disclaimer','1')" title="Dismiss">×</button>
+</div>
+
+<!-- ══════ TOP BAR ══════ -->
+<div class="topbar">
+  <a class="brand" onclick="switchTab('analyzer')" title="Prism — Home">
+    <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="prismBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00d9a5"/><stop offset="100%" stop-color="#0d3b8a"/></linearGradient>
+      </defs>
+      <rect width="40" height="40" rx="10" fill="url(#prismBg)"/>
+      <rect x="1" y="1" width="38" height="38" rx="9" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <!-- Prism triangle -->
+      <path d="M20 8 L32 30 L8 30 Z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" opacity=".4"/>
+      <!-- Refracted light rays -->
+      <line x1="20" y1="20" x2="14" y2="34" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="20" y1="20" x2="20" y2="36" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="20" y1="20" x2="26" y2="34" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-text">
+      <div class="brand-name">Prism</div>
+      <div class="brand-tag">Stocks Refracted</div>
+    </div>
+  </a>
+
+  <div class="search-wrap" id="topbar-search">
+    <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="search-input" class="search-box" type="text" placeholder="Refract a stock (e.g. AAPL, NVDA, TSLA) — press Enter" maxlength="10" autocomplete="off" autocapitalize="characters">
+  </div>
+  <button class="btn-analyze" onclick="doSearch()">Analyze</button>
+
+  <div class="status-pill" id="market-status">
+    <span class="status-dot"></span>
+    <span id="market-status-text">Loading…</span>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- ══════ SIDEBAR NAVIGATION ══════ -->
+  <nav class="sidebar">
+    <button class="nav-item active" id="nav-analyzer" onclick="switchTab('analyzer')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Analyze
+    </button>
+    <button class="nav-item" id="nav-scanner" onclick="switchTab('scanner')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Screen
+    </button>
+    <button class="nav-item" id="nav-gems" onclick="switchTab('gems')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
+      Gems
+    </button>
+    <button class="nav-item soon" id="nav-watch" onclick="alert('Watchlist coming soon!')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2"/></svg>
+      Watch
+    </button>
+    <button class="nav-item soon" id="nav-compare" onclick="alert('Compare coming soon!')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3v18M8 21V3M3 7h5M16 7h5M3 17h5M16 17h5"/></svg>
+      Compare
+    </button>
+    <button class="nav-item" id="nav-about" onclick="switchTab('about')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16"/></svg>
+      About
+    </button>
+  </nav>
+
+  <main class="main-content">
   <!-- ══════════ ANALYZER TAB ══════════ -->
   <div id="analyzer-screen">
     <div id="landing">
@@ -970,7 +1131,109 @@ main{max-width:1400px;margin:0 auto;padding:20px}
 
     </div><!-- /about-grid -->
   </div><!-- /about-screen -->
-</main>
+
+  <!-- ══════════ GEMS TAB (NEW) ══════════ -->
+  <div id="gems-screen" style="display:none">
+    <div class="gems-layout">
+      <aside class="filters-panel">
+        <div class="filters-title">
+          <span>💎 Gem Filters</span>
+          <button class="btn-reset" onclick="resetGemFilters()">Reset all</button>
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-label">Max Price <span class="filter-val" id="f-price-val">$200</span></div>
+          <input type="range" id="f-price" min="5" max="500" value="200" class="filter-range" oninput="document.getElementById('f-price-val').textContent='$'+this.value">
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-label">Max P/E Ratio <span class="filter-val" id="f-pe-val">20</span></div>
+          <input type="range" id="f-pe" min="5" max="50" value="20" class="filter-range" oninput="document.getElementById('f-pe-val').textContent=this.value">
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-label">Min Revenue Growth <span class="filter-val" id="f-growth-val">5%</span></div>
+          <input type="range" id="f-growth" min="-20" max="50" value="5" class="filter-range" oninput="document.getElementById('f-growth-val').textContent=this.value+'%'">
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-label">Min Profit Margin <span class="filter-val" id="f-margin-val">5%</span></div>
+          <input type="range" id="f-margin" min="-10" max="40" value="5" class="filter-range" oninput="document.getElementById('f-margin-val').textContent=this.value+'%'">
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-label" style="margin-bottom:10px">Risk Tier</div>
+          <div class="filter-chips" id="f-risk">
+            <button class="fchip active" data-val="Low">Low</button>
+            <button class="fchip active" data-val="Medium">Medium</button>
+            <button class="fchip" data-val="High">High</button>
+            <button class="fchip" data-val="Very High">Very High</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-label" style="margin-bottom:10px">Sector</div>
+          <div class="filter-chips" id="f-sector">
+            <button class="fchip active" data-val="ALL">All</button>
+            <button class="fchip" data-val="Technology">Tech</button>
+            <button class="fchip" data-val="Financial Services">Finance</button>
+            <button class="fchip" data-val="Healthcare">Healthcare</button>
+            <button class="fchip" data-val="Energy">Energy</button>
+            <button class="fchip" data-val="Consumer Cyclical">Cons. Disc.</button>
+            <button class="fchip" data-val="Industrials">Industrials</button>
+            <button class="fchip" data-val="Consumer Defensive">Cons. Stap.</button>
+            <button class="fchip" data-val="Communication Services">Comm.</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-label" style="margin-bottom:10px">Quality Style</div>
+          <div class="filter-chips" id="f-tags">
+            <button class="fchip active" data-val="undervalued">Undervalued</button>
+            <button class="fchip active" data-val="quality">Quality</button>
+            <button class="fchip" data-val="dividend">Dividend</button>
+            <button class="fchip" data-val="growth">Growth</button>
+          </div>
+        </div>
+
+        <button class="btn-find-gems" onclick="findGems()" id="btn-find-gems">Find Gems →</button>
+      </aside>
+
+      <main class="gems-main">
+        <div class="gems-toolbar">
+          <div>
+            <div class="gems-title">💎 <span class="accent">Hidden Gems</span></div>
+            <div class="gems-sub" id="gems-sub">Fundamentally strong &amp; undervalued — set filters and click "Find Gems"</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+            <select class="filter-input" id="gems-sort" onchange="renderGems()" style="min-width:160px;cursor:pointer">
+              <option value="score">Sort: Score ↓</option>
+              <option value="pe">Sort: P/E ↑</option>
+              <option value="growth">Sort: Growth ↓</option>
+              <option value="margin">Sort: Margin ↓</option>
+              <option value="div">Sort: Dividend ↓</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="gems-loading" style="display:none;text-align:center;padding:60px 20px">
+          <div class="spinner"></div>
+          <p class="loading-status" id="gems-loading-text">Scanning quality universe…</p>
+        </div>
+
+        <div id="gems-empty" class="coming-soon">
+          <div class="coming-soon-icon">💎</div>
+          <h2>No gems found yet</h2>
+          <p>Click <strong>"Find Gems"</strong> to scan ~150 quality US stocks against your filters. Results are FA-weighted (65% Fundamentals, 10% Technicals, 15% News, 5% Social, +5% Value bonus).</p>
+        </div>
+
+        <div class="gems-results" id="gems-results"></div>
+      </main>
+    </div>
+  </div><!-- /gems-screen -->
+
+  </main><!-- /main-content -->
+</div><!-- /shell -->
 
 <button id="to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top" title="Back to top">↑</button>
 
@@ -986,14 +1249,15 @@ let scanES = null;
 let currentSortKey = 'mid_term';
 
 // ── Tab switching ─────────────────────────────────────────────
+const SCREENS = ['analyzer', 'scanner', 'gems', 'about'];
 function switchTab(tab) {
-  document.getElementById('analyzer-screen').style.display = tab === 'analyzer' ? 'block' : 'none';
-  document.getElementById('scanner-screen').style.display  = tab === 'scanner'  ? 'block' : 'none';
-  document.getElementById('about-screen').style.display    = tab === 'about'    ? 'block' : 'none';
-  document.getElementById('analyzer-controls').style.display = tab === 'analyzer' ? 'flex' : 'none';
-  document.getElementById('tab-analyzer').classList.toggle('active', tab === 'analyzer');
-  document.getElementById('tab-scanner').classList.toggle('active', tab === 'scanner');
-  document.getElementById('tab-about').classList.toggle('active', tab === 'about');
+  SCREENS.forEach(s => {
+    const el = document.getElementById(s + '-screen');
+    if (el) el.style.display = (s === tab) ? 'block' : 'none';
+    const nav = document.getElementById('nav-' + s);
+    if (nav) nav.classList.toggle('active', s === tab);
+  });
+  // Search bar is global now (top-bar) — always visible
 }
 
 // ── Formatters ───────────────────────────────────────────────
@@ -1167,6 +1431,272 @@ window.addEventListener('scroll', () => {
 
 // Initialize quick-picks on load
 renderQuickPicks();
+
+// ═══════════════════════════════════════════════════════════════════
+// ── PRISM REDESIGN: Ticker tape, market status, Gems logic ────────
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Ticker tape — fetches major indices and your recent tickers ───
+const TICKER_INDICES = [
+  { sym: 'SPY',  name: 'S&P 500' },
+  { sym: 'QQQ',  name: 'NASDAQ' },
+  { sym: 'DIA',  name: 'DOW' },
+  { sym: 'IWM',  name: 'RUSSELL' },
+  { sym: 'VIX',  name: 'VIX' },
+  { sym: 'GLD',  name: 'GOLD' },
+  { sym: 'TLT',  name: '20Y BOND' },
+  { sym: 'BTC-USD', name: 'BTC' },
+];
+
+async function loadTickerTape() {
+  const track = document.getElementById('ticker-track');
+  if (!track) return;
+  // Render placeholder skeleton first
+  const skeleton = TICKER_INDICES.map(t => `<span class="ticker-item"><span class="ti-name">${t.name}</span><span class="ti-price">—</span></span>`).join('');
+  track.innerHTML = skeleton + skeleton;
+
+  // Fetch live prices in background
+  const results = await Promise.all(TICKER_INDICES.map(async (t) => {
+    try {
+      const r = await fetch(`${API}/quote/${encodeURIComponent(t.sym)}`);
+      if (!r.ok) return null;
+      const d = await r.json();
+      return { ...t, ...d };
+    } catch { return null; }
+  }));
+
+  const valid = results.filter(r => r && r.price);
+  if (valid.length === 0) return;  // keep skeleton if all failed
+
+  const items = valid.map(r => {
+    const up = r.change_pct >= 0;
+    const cls = up ? 'up' : 'dn';
+    const arrow = up ? '▲' : '▼';
+    const price = r.price < 100 ? r.price.toFixed(2) : r.price.toLocaleString('en-US', {maximumFractionDigits: 2});
+    return `<span class="ticker-item"><span class="ti-name">${r.name}</span><span class="ti-price">${price}</span><span class="ti-pct ${cls}">${arrow} ${Math.abs(r.change_pct).toFixed(2)}%</span></span>`;
+  }).join('');
+  // Duplicate for seamless infinite scroll
+  track.innerHTML = items + items;
+}
+
+// ── Market status pill ────────────────────────────────────────────
+function updateMarketStatus() {
+  const now = new Date();
+  // Convert to ET (NY time)
+  const et = new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
+  const day = et.getDay();   // 0=Sun, 6=Sat
+  const hour = et.getHours();
+  const min = et.getMinutes();
+  const totalMin = hour * 60 + min;
+  const dot = document.querySelector('#market-status .status-dot');
+  const txt = document.getElementById('market-status-text');
+  if (!dot || !txt) return;
+
+  let status, dotClass;
+  if (day === 0 || day === 6) {
+    status = 'Closed · Weekend';
+    dotClass = '';
+  } else if (totalMin >= 9*60+30 && totalMin <= 16*60) {
+    status = 'Open · ' + et.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York'}) + ' ET';
+    dotClass = 'open';
+  } else if (totalMin >= 4*60 && totalMin < 9*60+30) {
+    status = 'Pre-market · ' + et.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York'}) + ' ET';
+    dotClass = 'pre';
+  } else if (totalMin > 16*60 && totalMin <= 20*60) {
+    status = 'After-hours · ' + et.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York'}) + ' ET';
+    dotClass = 'after';
+  } else {
+    status = 'Closed';
+    dotClass = '';
+  }
+  dot.className = 'status-dot ' + dotClass;
+  txt.textContent = status;
+}
+
+// ── Disclaimer dismissal persistence ──────────────────────────────
+if (localStorage.getItem('hide_disclaimer') === '1') {
+  const db = document.getElementById('disclaimer-bar');
+  if (db) db.style.display = 'none';
+}
+
+// ── Wire up ticker tape + status on load ──────────────────────────
+loadTickerTape();
+updateMarketStatus();
+setInterval(updateMarketStatus, 30000);     // refresh every 30s
+setInterval(loadTickerTape, 5 * 60 * 1000); // refresh prices every 5 min
+
+// ═══════════════════════════════════════════════════════════════════
+// ── GEMS LOGIC ────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+let _gemsData = [];
+
+// Toggle filter chips
+document.querySelectorAll('.filter-chips').forEach(group => {
+  group.addEventListener('click', e => {
+    const chip = e.target.closest('.fchip');
+    if (!chip) return;
+    // For sector "ALL" — clicking it deselects others; clicking others deselects "ALL"
+    if (group.id === 'f-sector') {
+      if (chip.dataset.val === 'ALL') {
+        group.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      } else {
+        group.querySelector('[data-val="ALL"]').classList.remove('active');
+        chip.classList.toggle('active');
+        if (!group.querySelector('.fchip.active')) {
+          group.querySelector('[data-val="ALL"]').classList.add('active');
+        }
+      }
+    } else {
+      chip.classList.toggle('active');
+    }
+  });
+});
+
+function getGemFilters() {
+  const chips = (id) => Array.from(document.querySelectorAll(`#${id} .fchip.active`)).map(c => c.dataset.val);
+  return {
+    max_price: parseFloat(document.getElementById('f-price').value),
+    max_pe:    parseFloat(document.getElementById('f-pe').value),
+    min_growth: parseFloat(document.getElementById('f-growth').value),
+    min_margin: parseFloat(document.getElementById('f-margin').value),
+    risk_tiers: chips('f-risk'),
+    sectors:    chips('f-sector'),
+    tags:       chips('f-tags'),
+  };
+}
+
+function resetGemFilters() {
+  document.getElementById('f-price').value = 200;   document.getElementById('f-price-val').textContent = '$200';
+  document.getElementById('f-pe').value = 20;       document.getElementById('f-pe-val').textContent = '20';
+  document.getElementById('f-growth').value = 5;    document.getElementById('f-growth-val').textContent = '5%';
+  document.getElementById('f-margin').value = 5;    document.getElementById('f-margin-val').textContent = '5%';
+  // Reset chips
+  document.querySelectorAll('#f-risk .fchip').forEach((c,i) => c.classList.toggle('active', i < 2));
+  document.querySelectorAll('#f-sector .fchip').forEach((c,i) => c.classList.toggle('active', i === 0));
+  document.querySelectorAll('#f-tags .fchip').forEach((c,i) => c.classList.toggle('active', i < 2));
+}
+
+async function findGems() {
+  const btn = document.getElementById('btn-find-gems');
+  btn.disabled = true;
+  btn.textContent = 'Scanning…';
+  document.getElementById('gems-empty').style.display = 'none';
+  document.getElementById('gems-results').innerHTML = '';
+  document.getElementById('gems-loading').style.display = 'block';
+
+  const filters = getGemFilters();
+  const params = new URLSearchParams({
+    max_price:  filters.max_price,
+    max_pe:     filters.max_pe,
+    min_growth: filters.min_growth,
+    min_margin: filters.min_margin,
+    risk:       filters.risk_tiers.join(','),
+    sectors:    filters.sectors.includes('ALL') ? '' : filters.sectors.join(','),
+    tags:       filters.tags.join(','),
+  });
+
+  try {
+    const r = await fetch(`${API}/gems?${params}`);
+    if (!r.ok) throw new Error('Backend error');
+    const data = await r.json();
+    _gemsData = data.gems || [];
+    document.getElementById('gems-loading').style.display = 'none';
+    document.getElementById('gems-sub').textContent = `Found ${_gemsData.length} gems matching your filters · ${data.universe_scanned || 0} stocks scanned in ${data.duration_s || 0}s`;
+    renderGems();
+  } catch (e) {
+    document.getElementById('gems-loading').style.display = 'none';
+    document.getElementById('gems-empty').style.display = 'block';
+    document.getElementById('gems-empty').innerHTML = `<div class="coming-soon-icon">⚠</div><h2>Couldn't load gems</h2><p>${e.message}. Try again, or check that the backend is awake.</p>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Find Gems →';
+  }
+}
+
+function renderGems() {
+  const sortKey = document.getElementById('gems-sort').value;
+  const sorted = [..._gemsData].sort((a, b) => {
+    if (sortKey === 'score') return b.score - a.score;
+    if (sortKey === 'pe')    return (a.pe || 999) - (b.pe || 999);
+    if (sortKey === 'growth') return (b.revenue_growth || -999) - (a.revenue_growth || -999);
+    if (sortKey === 'margin') return (b.profit_margin || -999) - (a.profit_margin || -999);
+    if (sortKey === 'div')   return (b.div_yield || 0) - (a.div_yield || 0);
+    return 0;
+  });
+
+  const root = document.getElementById('gems-results');
+  if (sorted.length === 0) {
+    root.innerHTML = '';
+    document.getElementById('gems-empty').style.display = 'block';
+    document.getElementById('gems-empty').innerHTML = `<div class="coming-soon-icon">🔍</div><h2>No gems match these filters</h2><p>Try loosening your criteria — increase Max P/E, lower Min Growth, or add more sectors.</p>`;
+    return;
+  }
+  document.getElementById('gems-empty').style.display = 'none';
+  root.innerHTML = sorted.map(gemCardHTML).join('');
+}
+
+function gemCardHTML(g) {
+  const verdict = g.score >= 70 ? 'STRONG BUY' : g.score >= 55 ? 'BUY' : g.score >= 40 ? 'WATCH' : 'AVOID';
+  const verdictColor = g.score >= 70 ? 'var(--green)' : g.score >= 55 ? 'var(--green)' : g.score >= 40 ? 'var(--yellow)' : 'var(--red)';
+  const ch = (g.change_pct || 0);
+  const chCls = ch >= 0 ? 'up' : 'dn';
+  const arrow = ch >= 0 ? '▲' : '▼';
+
+  // Mini sparkline from 30-day prices
+  let sparkSVG = '';
+  if (g.spark && g.spark.length > 1) {
+    const min = Math.min(...g.spark), max = Math.max(...g.spark);
+    const rng = max - min || 1;
+    const w = 280, h = 36;
+    const pts = g.spark.map((p, i) => `${(i / (g.spark.length - 1) * w).toFixed(1)} ${(h - ((p - min) / rng) * (h - 4) - 2).toFixed(1)}`);
+    const line = 'M' + pts.join(' L');
+    const area = line + ` L${w} ${h} L0 ${h} Z`;
+    const color = g.spark[g.spark.length - 1] >= g.spark[0] ? '#10b981' : '#ef4444';
+    sparkSVG = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <defs><linearGradient id="sp${g.ticker}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity=".35"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+      <path d="${area}" fill="url(#sp${g.ticker})"/>
+      <path d="${line}" stroke="${color}" stroke-width="1.5" fill="none"/>
+      <circle cx="${w}" cy="${pts[pts.length-1].split(' ')[1]}" r="2.5" fill="${color}"/>
+    </svg>`;
+  }
+
+  const spark30Pct = g.spark && g.spark.length > 1 ?
+    (((g.spark[g.spark.length-1] - g.spark[0]) / g.spark[0]) * 100).toFixed(1) : null;
+
+  const fmtN = (n, dec=1) => (n === null || n === undefined || isNaN(n)) ? '—' : Number(n).toFixed(dec);
+  const fmtPct = (n) => (n === null || n === undefined || isNaN(n)) ? '—' : (n > 0 ? '+' : '') + Number(n).toFixed(1) + '%';
+  const cls = (val, good, warn) => val >= good ? '' : (val >= warn ? 'warn' : 'bad');
+
+  const tagsHTML = (g.tags || []).map(t => `<span class="gem-tag gtag-${t}">${t.toUpperCase()}</span>`).join('');
+
+  return `
+    <div class="gem-card" onclick="document.getElementById('search-input').value='${g.ticker}';switchTab('analyzer');analyzeStock('${g.ticker}')">
+      <div class="gem-head">
+        <div><div class="gem-tk">${g.ticker}</div><div class="gem-co">${g.company || ''} · ${g.sector || ''}${g.market_cap ? ' · $' + (g.market_cap/1e9).toFixed(1) + 'B' : ''}</div></div>
+        <div><div class="gem-pr">$${fmtN(g.price, 2)}</div><div class="gem-ch ${chCls}">${arrow} ${Math.abs(ch).toFixed(1)}%</div></div>
+      </div>
+      ${sparkSVG ? `<div class="gem-spark">
+        <div class="gem-spark-head"><span>30-day price</span><span><strong>${spark30Pct >= 0 ? '+' : ''}${spark30Pct}%</strong>${g.low_52w && g.high_52w ? ` · 52w: <strong>$${fmtN(g.low_52w)} — $${fmtN(g.high_52w)}</strong>` : ''}</span></div>
+        ${sparkSVG}
+      </div>` : ''}
+      <div class="gem-metrics-8">
+        <div class="gem-m"><div class="gem-ml">P/E</div><div class="gem-mv">${fmtN(g.pe)}</div></div>
+        <div class="gem-m"><div class="gem-ml">P/B</div><div class="gem-mv">${fmtN(g.pb)}</div></div>
+        <div class="gem-m"><div class="gem-ml">P/S</div><div class="gem-mv">${fmtN(g.ps)}</div></div>
+        <div class="gem-m"><div class="gem-ml">PEG</div><div class="gem-mv">${fmtN(g.peg)}</div></div>
+        <div class="gem-m"><div class="gem-ml">Margin</div><div class="gem-mv ${cls(g.profit_margin*100, 10, 0)}">${fmtPct(g.profit_margin*100)}</div></div>
+        <div class="gem-m"><div class="gem-ml">ROE</div><div class="gem-mv ${cls(g.roe*100, 10, 0)}">${fmtPct(g.roe*100)}</div></div>
+        <div class="gem-m"><div class="gem-ml">Div Yld</div><div class="gem-mv">${fmtPct(g.div_yield*100)}</div></div>
+        <div class="gem-m"><div class="gem-ml">Debt/Eq</div><div class="gem-mv ${cls(2 - (g.debt_equity || 0), 1, 0)}">${fmtN(g.debt_equity, 2)}</div></div>
+      </div>
+      <div class="gem-tags">${tagsHTML}</div>
+      <div class="gem-score-bar">
+        <div class="gem-score" style="color:${verdictColor}">${g.score}</div>
+        <div style="flex:1"><div class="gem-score-label">Composite (FA 65% · TA 10% · News 15% · Soc 5% · Value +5%)</div><div style="font-size:.75rem;color:${verdictColor};font-weight:700">${verdict}</div></div>
+      </div>
+    </div>`;
+}
 
 // ── Analyzer render ──────────────────────────────────────────
 function renderAll(d) {

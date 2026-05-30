@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gems Card Layouts</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e14;--card:#121821;--card2:#1a2230;--border:#252e3d;
+  --text:#e6edf3;--muted:#7d8590;--accent:#00d9a5;--accent2:#58a6ff;
+  --green:#10b981;--red:#ef4444;--yellow:#fbbf24;--purple:#a78bfa;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);padding:30px}
+h1{font-size:1.5rem;font-weight:700;text-align:center;margin-bottom:6px}
+.subtitle{color:var(--muted);font-size:.88rem;text-align:center;margin-bottom:30px}
+.section{max-width:1100px;margin:0 auto 50px}
+.opt-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.opt-letter{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:rgba(0,217,165,.12);border:1px solid var(--accent);color:var(--accent);font-size:1rem;font-weight:800}
+.opt-name{font-size:1.1rem;font-weight:700}
+.opt-tagline{font-size:.82rem;color:var(--muted);margin-left:auto}
+.opt-grid{display:grid;gap:14px;margin-bottom:10px}
+.compact-grid{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.detail-grid{grid-template-columns:repeat(auto-fill,minmax(370px,1fr))}
+.action-grid{grid-template-columns:repeat(auto-fill,minmax(420px,1fr))}
+.opt-meta{font-size:.78rem;color:var(--muted);line-height:1.55;background:var(--card);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;margin-top:10px}
+.opt-meta strong{color:var(--text)}
+
+/* ─── Shared card base ─── */
+.gem-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden}
+.gem-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#00d9a5,#10b981)}
+.gem-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.gem-tk{font-size:1.2rem;font-weight:800;color:var(--accent)}
+.gem-co{font-size:.72rem;color:var(--muted);margin-top:2px}
+.gem-pr{text-align:right;font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums}
+.gem-ch{font-size:.72rem;font-weight:600}
+
+.gem-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.gem-tag{font-size:.62rem;padding:3px 8px;border-radius:10px;font-weight:600;letter-spacing:.04em}
+.gtag-undervalued{background:rgba(0,217,165,.15);color:var(--accent);border:1px solid rgba(0,217,165,.3)}
+.gtag-quality{background:rgba(168,139,250,.15);color:var(--purple);border:1px solid rgba(168,139,250,.3)}
+.gtag-grower{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.gtag-divi{background:rgba(251,191,36,.15);color:var(--yellow);border:1px solid rgba(251,191,36,.3)}
+
+.gem-score-bar{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.gem-score{font-size:1.35rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums;line-height:1}
+.gem-score-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+/* ─── A: Compact (4 metrics) ─── */
+.metrics-4{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}
+.m{background:var(--bg);border-radius:6px;padding:6px 9px}
+.ml{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.mv{font-size:.85rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green)}
+.mv.warn{color:var(--yellow)}.mv.bad{color:var(--red)}.mv.neutral{color:var(--text)}
+
+/* ─── B: Detailed (8 metrics + sparkline) ─── */
+.metrics-8{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.m-mini{background:var(--bg);border-radius:5px;padding:5px 7px;text-align:center}
+.m-mini .ml{font-size:.55rem}
+.m-mini .mv{font-size:.78rem}
+.spark{margin:10px 0;padding:8px;background:var(--bg);border-radius:6px}
+.spark-head{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-bottom:4px}
+.spark-head strong{color:var(--green);font-weight:700}
+.spark svg{display:block;width:100%;height:36px}
+
+/* ─── C: Action-oriented ─── */
+.trade-preview{background:var(--bg);border-radius:8px;padding:11px;margin-top:10px}
+.trade-title{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;display:flex;justify-content:space-between}
+.trade-row{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.tr-item{text-align:center}
+.tr-lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase}
+.tr-val{font-size:.82rem;font-weight:700;font-variant-numeric:tabular-nums}
+.tr-val.stop{color:var(--red)}
+.tr-val.entry{color:var(--accent)}
+.tr-val.t1{color:var(--green)}
+.tr-val.rr{color:var(--yellow)}
+.signals-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.sig-pill{font-size:.62rem;padding:3px 7px;border-radius:5px;background:var(--card2);border:1px solid var(--border);color:var(--muted)}
+.sig-pill.bull{color:var(--green);background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25)}
+.sig-pill.bear{color:var(--red);background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25)}
+.btn-mini{background:rgba(0,217,165,.12);border:1px solid rgba(0,217,165,.3);color:var(--accent);border-radius:6px;padding:6px 12px;font-size:.74rem;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+
+<h1>💎 Three Card Density Options for Gems</h1>
+<p class="subtitle">Same PFE stock shown three ways — pick the density that fits how you'd actually use it.</p>
+
+<!-- ═══════ OPTION A: COMPACT ═══════ -->
+<div class="section">
+  <div class="opt-head">
+    <span class="opt-letter">A</span>
+    <div>
+      <div class="opt-name">Compact — 4 key metrics</div>
+      <div style="font-size:.78rem;color:var(--muted)">~3-4 cards per row · best for fast skimming</div>
+    </div>
+    <span class="opt-tagline">CURRENT MOCKUP DEFAULT</span>
+  </div>
+
+  <div class="opt-grid compact-grid">
+    <div class="gem-card">
+      <div class="gem-head">
+        <div><div class="gem-tk">PFE</div><div class="gem-co">Pfizer Inc · Healthcare</div></div>
+        <div><div class="gem-pr">$24.18</div><div class="gem-ch" style="color:var(--red)">▼ 0.4%</div></div>
+      </div>
+      <div class="metrics-4">
+        <div class="m"><div class="ml">P/E</div><div class="mv">9.2</div></div>
+        <div class="m"><div class="ml">Div Yield</div><div class="mv">5.8%</div></div>
+        <div class="m"><div class="ml">Margin</div><div class="mv">18.1%</div></div>
+        <div class="m"><div class="ml">Debt/Eq</div><div class="mv warn">0.52</div></div>
+      </div>
+      <div class="gem-tags">
+        <span class="gem-tag gtag-undervalued">UNDERVALUED</span>
+        <span class="gem-tag gtag-divi">DIVIDEND</span>
+      </div>
+      <div class="gem-score-bar">
+        <div class="gem-score">76</div>
+        <div><div class="gem-score-label">Composite</div><div style="font-size:.75rem;color:var(--green);font-weight:700">STRONG BUY</div></div>
+      </div>
+    </div>
+    <div class="gem-card" style="opacity:.6"><div class="gem-head"><div><div class="gem-tk">VZ</div><div class="gem-co">Verizon · Telecom</div></div><div><div class="gem-pr">$41.83</div><div class="gem-ch" style="color:var(--green)">▲ 0.6%</div></div></div><div class="metrics-4"><div class="m"><div class="ml">P/E</div><div class="mv">8.1</div></div><div class="m"><div class="ml">Div Yield</div><div class="mv">6.4%</div></div><div class="m"><div class="ml">Margin</div><div class="mv">15.8%</div></div><div class="m"><div class="ml">FCF</div><div class="mv">$18.7B</div></div></div><div class="gem-tags"><span class="gem-tag gtag-undervalued">DEEP VALUE</span><span class="gem-tag gtag-divi">DIVIDEND</span></div><div class="gem-score-bar"><div class="gem-score">71</div><div><div class="gem-score-label">Composite</div><div style="font-size:.75rem;color:var(--green);font-weight:700">BUY</div></div></div></div>
+    <div class="gem-card" style="opacity:.4"><div class="gem-head"><div><div class="gem-tk">BAC</div><div class="gem-co">Bank of America</div></div><div><div class="gem-pr">$44.96</div><div class="gem-ch" style="color:var(--green)">▲ 0.9%</div></div></div><div class="metrics-4"><div class="m"><div class="ml">P/E</div><div class="mv">13.8</div></div><div class="m"><div class="ml">Div Yield</div><div class="mv">2.3%</div></div><div class="m"><div class="ml">ROE</div><div class="mv">10.4%</div></div><div class="m"><div class="ml">P/B</div><div class="mv">1.2</div></div></div><div class="gem-tags"><span class="gem-tag gtag-quality">QUALITY</span></div><div class="gem-score-bar"><div class="gem-score">67</div><div><div class="gem-score-label">Composite</div><div style="font-size:.75rem;color:var(--green);font-weight:700">BUY</div></div></div></div>
+  </div>
+
+  <div class="opt-meta">
+    <strong>👍 Best for:</strong> Casual browsing, fast filtering, picking a few candidates to deep-dive.<br>
+    <strong>👎 Trade-off:</strong> Need to click into Analyzer for full picture. Misses: P/B, P/S, sector growth, news sentiment.
+  </div>
+</div>
+
+<!-- ═══════ OPTION B: DETAILED ═══════ -->
+<div class="section">
+  <div class="opt-head">
+    <span class="opt-letter">B</span>
+    <div>
+      <div class="opt-name">Detailed — 8 metrics + 30-day sparkline</div>
+      <div style="font-size:.78rem;color:var(--muted)">~2-3 cards per row · best for evaluating without clicking through</div>
+    </div>
+    <span class="opt-tagline">RECOMMENDED</span>
+  </div>
+
+  <div class="opt-grid detail-grid">
+    <div class="gem-card">
+      <div class="gem-head">
+        <div><div class="gem-tk">PFE</div><div class="gem-co">Pfizer Inc · Healthcare · $137B</div></div>
+        <div><div class="gem-pr">$24.18</div><div class="gem-ch" style="color:var(--red)">▼ 0.4%</div></div>
+      </div>
+      <div class="spark">
+        <div class="spark-head"><span>30-day price</span><span><strong>+4.2%</strong> · 52w: <strong>$22.50 — $34.18</strong></span></div>
+        <svg viewBox="0 0 280 36" preserveAspectRatio="none">
+          <defs><linearGradient id="sp1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity=".4"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
+          <path d="M2 28 L20 25 L40 26 L60 23 L80 24 L100 20 L120 18 L140 15 L160 17 L180 14 L200 12 L220 14 L240 10 L260 11 L278 8 L278 36 L2 36 Z" fill="url(#sp1)"/>
+          <path d="M2 28 L20 25 L40 26 L60 23 L80 24 L100 20 L120 18 L140 15 L160 17 L180 14 L200 12 L220 14 L240 10 L260 11 L278 8" stroke="#10b981" stroke-width="1.5" fill="none"/>
+          <circle cx="278" cy="8" r="2.5" fill="#10b981"/>
+        </svg>
+      </div>
+      <div class="metrics-8">
+        <div class="m m-mini"><div class="ml">P/E</div><div class="mv">9.2</div></div>
+        <div class="m m-mini"><div class="ml">P/B</div><div class="mv">1.6</div></div>
+        <div class="m m-mini"><div class="ml">P/S</div><div class="mv">2.4</div></div>
+        <div class="m m-mini"><div class="ml">PEG</div><div class="mv">0.8</div></div>
+        <div class="m m-mini"><div class="ml">Margin</div><div class="mv">18.1%</div></div>
+        <div class="m m-mini"><div class="ml">ROE</div><div class="mv">14.2%</div></div>
+        <div class="m m-mini"><div class="ml">Div Yld</div><div class="mv">5.8%</div></div>
+        <div class="m m-mini"><div class="ml">Debt/Eq</div><div class="mv warn">0.52</div></div>
+      </div>
+      <div class="gem-tags">
+        <span class="gem-tag gtag-undervalued">UNDERVALUED</span>
+        <span class="gem-tag gtag-divi">DIVIDEND</span>
+        <span class="gem-tag gtag-quality">QUALITY</span>
+      </div>
+      <div class="gem-score-bar">
+        <div class="gem-score">76</div>
+        <div style="flex:1"><div class="gem-score-label">Composite (FA 65% · TA 10% · News 15% · Soc 5% · Value +5%)</div><div style="font-size:.75rem;color:var(--green);font-weight:700">STRONG BUY</div></div>
+      </div>
+    </div>
+    <div class="gem-card" style="opacity:.5"><div class="gem-head"><div><div class="gem-tk">VZ</div><div class="gem-co">Verizon · Telecom · $176B</div></div><div><div class="gem-pr">$41.83</div><div class="gem-ch" style="color:var(--green)">▲ 0.6%</div></div></div><div class="spark"><div class="spark-head"><span>30-day price</span><span><strong>+2.1%</strong> · 52w: <strong>$37.50 — $45.20</strong></span></div><svg viewBox="0 0 280 36" preserveAspectRatio="none"><path d="M2 22 L40 24 L80 23 L120 20 L160 18 L200 17 L240 16 L278 15" stroke="#10b981" stroke-width="1.5" fill="none"/><circle cx="278" cy="15" r="2.5" fill="#10b981"/></svg></div><div class="metrics-8"><div class="m m-mini"><div class="ml">P/E</div><div class="mv">8.1</div></div><div class="m m-mini"><div class="ml">P/B</div><div class="mv">1.8</div></div><div class="m m-mini"><div class="ml">P/S</div><div class="mv">1.3</div></div><div class="m m-mini"><div class="ml">PEG</div><div class="mv">1.2</div></div><div class="m m-mini"><div class="ml">Margin</div><div class="mv">15.8%</div></div><div class="m m-mini"><div class="ml">ROE</div><div class="mv">22.1%</div></div><div class="m m-mini"><div class="ml">Div Yld</div><div class="mv">6.4%</div></div><div class="m m-mini"><div class="ml">Debt/Eq</div><div class="mv bad">1.8</div></div></div><div class="gem-tags"><span class="gem-tag gtag-undervalued">DEEP VALUE</span><span class="gem-tag gtag-divi">DIVIDEND</span></div><div class="gem-score-bar"><div class="gem-score">71</div><div><div class="gem-score-label">Composite</div><div style="font-size:.75rem;color:var(--green);font-weight:700">BUY</div></div></div></div>
+  </div>
+
+  <div class="opt-meta">
+    <strong>👍 Best for:</strong> Making decisions without leaving the page. The 30-day sparkline shows momentum, 52-week range gives context, and 8 metrics cover all classical value indicators (P/E, P/B, P/S, PEG, Margin, ROE, Div, Debt).<br>
+    <strong>👎 Trade-off:</strong> Bigger cards = less per screen. ~25% more scrolling on mobile.
+  </div>
+</div>
+
+<!-- ═══════ OPTION C: ACTION-ORIENTED ═══════ -->
+<div class="section">
+  <div class="opt-head">
+    <span class="opt-letter">C</span>
+    <div>
+      <div class="opt-name">Action-oriented — adds buy trade setup inline</div>
+      <div style="font-size:.78rem;color:var(--muted)">~2 cards per row · best when you want to act immediately</div>
+    </div>
+    <span class="opt-tagline">FOR ACTIVE INVESTORS</span>
+  </div>
+
+  <div class="opt-grid action-grid">
+    <div class="gem-card">
+      <div class="gem-head">
+        <div><div class="gem-tk">PFE</div><div class="gem-co">Pfizer Inc · Healthcare · $137B</div></div>
+        <div><div class="gem-pr">$24.18</div><div class="gem-ch" style="color:var(--red)">▼ 0.4%</div></div>
+      </div>
+      <div class="metrics-4">
+        <div class="m"><div class="ml">P/E</div><div class="mv">9.2</div></div>
+        <div class="m"><div class="ml">Div Yield</div><div class="mv">5.8%</div></div>
+        <div class="m"><div class="ml">Margin</div><div class="mv">18.1%</div></div>
+        <div class="m"><div class="ml">Debt/Eq</div><div class="mv warn">0.52</div></div>
+      </div>
+      <div class="signals-row">
+        <span class="sig-pill bull">RSI 38 · oversold</span>
+        <span class="sig-pill bull">Above SMA 200</span>
+        <span class="sig-pill bull">News +24</span>
+        <span class="sig-pill">Reddit +12 mentions</span>
+      </div>
+      <div class="trade-preview">
+        <div class="trade-title"><span>📈 Long-term setup (3–12 mo)</span><span style="color:var(--green)">BULLISH</span></div>
+        <div class="trade-row">
+          <div class="tr-item"><div class="tr-lbl">Entry</div><div class="tr-val entry">$24.18</div></div>
+          <div class="tr-item"><div class="tr-lbl">Stop</div><div class="tr-val stop">$21.50</div></div>
+          <div class="tr-item"><div class="tr-lbl">Target</div><div class="tr-val t1">$32.00</div></div>
+          <div class="tr-item"><div class="tr-lbl">R:R</div><div class="tr-val rr">2.9:1</div></div>
+        </div>
+      </div>
+      <div class="gem-tags" style="margin-top:10px">
+        <span class="gem-tag gtag-undervalued">UNDERVALUED</span>
+        <span class="gem-tag gtag-divi">DIVIDEND</span>
+      </div>
+      <div class="gem-score-bar">
+        <div class="gem-score">76</div>
+        <div style="flex:1"><div class="gem-score-label">Composite Score</div><div style="font-size:.75rem;color:var(--green);font-weight:700">STRONG BUY</div></div>
+        <button class="btn-mini">Deep Analyze →</button>
+      </div>
+    </div>
+    <div class="gem-card" style="opacity:.5"><div class="gem-head"><div><div class="gem-tk">VZ</div><div class="gem-co">Verizon · Telecom · $176B</div></div><div><div class="gem-pr">$41.83</div><div class="gem-ch" style="color:var(--green)">▲ 0.6%</div></div></div><div class="metrics-4"><div class="m"><div class="ml">P/E</div><div class="mv">8.1</div></div><div class="m"><div class="ml">Div Yield</div><div class="mv">6.4%</div></div><div class="m"><div class="ml">Margin</div><div class="mv">15.8%</div></div><div class="m"><div class="ml">FCF</div><div class="mv">$18.7B</div></div></div><div class="signals-row"><span class="sig-pill bull">Above SMA 50/200</span><span class="sig-pill">MACD neutral</span><span class="sig-pill bull">News +18</span></div><div class="trade-preview"><div class="trade-title"><span>📈 Long-term setup</span><span style="color:var(--green)">BULLISH</span></div><div class="trade-row"><div class="tr-item"><div class="tr-lbl">Entry</div><div class="tr-val entry">$41.83</div></div><div class="tr-item"><div class="tr-lbl">Stop</div><div class="tr-val stop">$38.50</div></div><div class="tr-item"><div class="tr-lbl">Target</div><div class="tr-val t1">$52.00</div></div><div class="tr-item"><div class="tr-lbl">R:R</div><div class="tr-val rr">3.1:1</div></div></div></div><div class="gem-tags" style="margin-top:10px"><span class="gem-tag gtag-undervalued">DEEP VALUE</span><span class="gem-tag gtag-divi">DIVIDEND</span></div><div class="gem-score-bar"><div class="gem-score">71</div><div style="flex:1"><div class="gem-score-label">Composite</div><div style="font-size:.75rem;color:var(--green);font-weight:700">BUY</div></div><button class="btn-mini">Deep Analyze →</button></div></div>
+  </div>
+
+  <div class="opt-meta">
+    <strong>👍 Best for:</strong> When you actually want to TAKE A TRADE from the list — entry/stop/target ready, R:R visible, technical signal pills tell you the chart context. One-click "Deep Analyze" opens the full Analyzer view.<br>
+    <strong>👎 Trade-off:</strong> Most info-dense — busier visually. Fewer cards per screen. Trade setup needs computing for every result.
+  </div>
+</div>
+
+<div style="max-width:780px;margin:30px auto;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:20px;text-align:center;font-size:.9rem;line-height:1.6">
+  <strong style="color:var(--accent);font-size:1rem">My recommendation: Option B (Detailed)</strong><br>
+  <span style="color:var(--muted)">Sparkline + 8 metrics covers all the value-investing decision data without requiring a click-through.<br>Option C is great but adds compute cost and makes Gems feel like the Analyzer.</span>
+</div>
+
+</body>
+</html>
