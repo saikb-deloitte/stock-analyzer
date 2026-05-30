@@ -75,45 +75,58 @@ def _stooq_download(ticker, period_days=365):
 
 _DIRECT_YAHOO_LAST_ERROR = None
 
+# Rotate through different browser fingerprints — Yahoo blocks individual profiles
+# but rotating diversifies enough to often slip through.
+_IMPERSONATE_POOL = ['chrome131', 'chrome124', 'chrome120', 'safari17_2_ios', 'edge101']
+
 def _yahoo_chart_direct(ticker, period='1y'):
-    """Call Yahoo's chart API DIRECTLY with curl_cffi — bypasses yfinance library quirks."""
+    """Call Yahoo's chart API DIRECTLY, rotating through 5 browser fingerprints."""
     global _DIRECT_YAHOO_LAST_ERROR
-    session = _get_yf_session()
-    if session is None:
-        _DIRECT_YAHOO_LAST_ERROR = 'no curl_cffi session'
+    try:
+        from curl_cffi import requests as curl_requests
+    except Exception as e:
+        _DIRECT_YAHOO_LAST_ERROR = f'curl_cffi missing: {e}'
         return None
+
     url = f'https://query1.finance.yahoo.com/v8/finance/chart/{ticker}'
     params = {'range': period, 'interval': '1d', 'includePrePost': 'false', 'events': 'div,split'}
-    try:
-        r = session.get(url, params=params, timeout=15)
-        if r.status_code != 200:
-            _DIRECT_YAHOO_LAST_ERROR = f'HTTP {r.status_code}'
-            return None
-        j = r.json()
-        result = (j.get('chart', {}).get('result') or [None])[0]
-        if not result:
-            _DIRECT_YAHOO_LAST_ERROR = 'no result in JSON'
-            return None
-        timestamps = result.get('timestamp', [])
-        ind = result.get('indicators', {})
-        quote = (ind.get('quote') or [{}])[0]
-        adj = ((ind.get('adjclose') or [{}])[0]).get('adjclose', [])
-        if not timestamps or not quote.get('close'):
-            _DIRECT_YAHOO_LAST_ERROR = 'empty timestamps/close'
-            return None
-        df = pd.DataFrame({
-            'Open':   quote.get('open', []),
-            'High':   quote.get('high', []),
-            'Low':    quote.get('low', []),
-            'Close':  adj if adj else quote.get('close', []),
-            'Volume': quote.get('volume', []),
-        }, index=pd.to_datetime(timestamps, unit='s'))
-        df = df.dropna(subset=['Close'])
-        _DIRECT_YAHOO_LAST_ERROR = None
-        return df if not df.empty else None
-    except Exception as e:
-        _DIRECT_YAHOO_LAST_ERROR = f'{type(e).__name__}: {e}'
-        return None
+
+    for impersonate in _IMPERSONATE_POOL:
+        try:
+            s = curl_requests.Session(impersonate=impersonate)
+            r = s.get(url, params=params, timeout=12)
+            if r.status_code != 200:
+                _DIRECT_YAHOO_LAST_ERROR = f'{impersonate}: HTTP {r.status_code}'
+                continue
+            j = r.json()
+            result = (j.get('chart', {}).get('result') or [None])[0]
+            if not result:
+                _DIRECT_YAHOO_LAST_ERROR = f'{impersonate}: no result in JSON'
+                continue
+            timestamps = result.get('timestamp', [])
+            ind = result.get('indicators', {})
+            quote = (ind.get('quote') or [{}])[0]
+            adj = ((ind.get('adjclose') or [{}])[0]).get('adjclose', [])
+            if not timestamps or not quote.get('close'):
+                _DIRECT_YAHOO_LAST_ERROR = f'{impersonate}: empty timestamps/close'
+                continue
+            df = pd.DataFrame({
+                'Open':   quote.get('open', []),
+                'High':   quote.get('high', []),
+                'Low':    quote.get('low', []),
+                'Close':  adj if adj else quote.get('close', []),
+                'Volume': quote.get('volume', []),
+            }, index=pd.to_datetime(timestamps, unit='s'))
+            df = df.dropna(subset=['Close'])
+            if df.empty:
+                _DIRECT_YAHOO_LAST_ERROR = f'{impersonate}: empty df after dropna'
+                continue
+            _DIRECT_YAHOO_LAST_ERROR = None
+            return df
+        except Exception as e:
+            _DIRECT_YAHOO_LAST_ERROR = f'{impersonate}: {type(e).__name__}: {e}'
+            continue
+    return None
 
 
 _TWELVE_DATA_LAST_ERROR = None
