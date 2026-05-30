@@ -1297,13 +1297,17 @@ def calculate_levels(df, info=None, earnings=None):
     st_stop = max(st_stop, curr * 0.94)      # max 6% stop
     st_risk = curr - st_stop
 
-    # Short-term targets: prefer real resistance zones if they sit within reach
-    st_t1_method = 'R:R 2.0×'
-    st_t2_method = 'R:R 3.0×'
+    # Short-term targets: prefer real resistance, fall back to ATR-projected
+    # (ATR is the stock's typical daily move — 3× ATR ≈ 3 weeks of normal volatility).
+    # Way more realistic than blind R:R multiples.
     st_t1_info = None
     st_t2_info = None
-    st_t1 = curr + st_risk * 2.0
-    st_t2 = curr + st_risk * 3.0
+    # Fallback: ATR-anchored, with R:R as a floor so we never undercut SL meaningfully
+    st_t1 = max(curr + 3.0 * atr, curr + st_risk * 1.8)
+    st_t2 = max(curr + 5.0 * atr, curr + st_risk * 2.5)
+    st_t1_method = 'ATR ×3 (volatility)'
+    st_t2_method = 'ATR ×5 (volatility)'
+
     # If we have resistance zones above us in a reasonable range (within ~15% for short-term), use them
     short_range_max = curr * 1.18
     near_res = [r for r in res_above if r['level'] <= short_range_max]
@@ -1326,18 +1330,29 @@ def calculate_levels(df, info=None, earnings=None):
             # No second resistance available — extend by 1.5× the T1 distance
             st_t2 = max(st_t2, curr + (st_t1 - curr) * 1.5)
 
+    # 52W high is a hard ceiling — short-term breakouts past it are rare
+    if high52 > 0 and 'Resistance' not in st_t2_method:
+        if st_t2 > high52:
+            st_t2 = min(st_t2, high52)
+            st_t2_method = '52W high (ceiling)'
+        if st_t1 > high52:
+            st_t1 = min(st_t1, high52 * 0.99)
+            st_t1_method = 'Near 52W high'
+
     # ── Mid-term: stop at max(swing low, 3×ATR, EMA50 × 0.95), capped at -12%
     mt_stop_raw = max(swing_low_mt * 0.97, curr - 3 * atr, ema50 * 0.95 if ema50 > 0 else 0)
     mt_stop = min(mt_stop_raw, curr * 0.92)
     mt_stop = max(mt_stop, curr * 0.85)
     mt_risk = curr - mt_stop
 
-    mt_t1_method = 'R:R 2.0×'
-    mt_t2_method = 'R:R 3.5×'
     mt_t1_info = None
     mt_t2_info = None
-    mt_t1 = curr + mt_risk * 2.0
-    mt_t2 = curr + mt_risk * 3.5
+    # ATR-anchored fallback: 8×ATR ≈ ~8 weeks of normal movement, 14×ATR ≈ ~3 months
+    mt_t1 = max(curr + 8.0 * atr, curr + mt_risk * 2.0)
+    mt_t2 = max(curr + 14.0 * atr, curr + mt_risk * 3.0)
+    mt_t1_method = 'ATR ×8 (volatility)'
+    mt_t2_method = 'ATR ×14 (volatility)'
+
     # Mid-term: look further out — up to ~40% above CMP — and use resistance zones
     mid_range_max = curr * 1.45
     mid_res = [r for r in res_above if r['level'] <= mid_range_max]
@@ -1358,9 +1373,19 @@ def calculate_levels(df, info=None, earnings=None):
                 break
         else:
             mt_t2 = max(mt_t2, curr + (mt_t1 - curr) * 1.5)
-    # Final cap on T2: don't promise crazy stretches
-    if mt_t2 > high52 * 1.20 and 'Resistance' not in mt_t2_method:
-        mt_t2 = high52 * 1.10
+
+    # Mid-term ceiling: 52W high acts as a soft cap. We can slightly exceed it
+    # for genuine resistance breaks but not for blind ATR projections.
+    if 'Resistance' not in mt_t2_method and high52 > 0 and mt_t2 > high52 * 1.05:
+        mt_t2 = high52 * 1.05
+        mt_t2_method = '52W high × 1.05 (cap)'
+    if 'Resistance' not in mt_t1_method and high52 > 0 and mt_t1 > high52:
+        mt_t1 = high52
+        mt_t1_method = '52W high (ceiling)'
+    # Final hard cap on T2: don't promise more than +40% over 6 months
+    if mt_t2 > curr * 1.40:
+        mt_t2 = curr * 1.40
+        mt_t2_method = '+40% (mid-term ceiling)'
 
     # ── Long-term: EMA200-anchored stop (up to -22%), targets driven by fair value
     ema200 = float(close.ewm(span=200, adjust=False).mean().iloc[-1]) if len(close) >= 50 else ema50
@@ -1369,10 +1394,11 @@ def calculate_levels(df, info=None, earnings=None):
     lt_stop = max(lt_stop, curr * 0.78)        # cap at -22%
     lt_risk = curr - lt_stop
 
-    lt_t1_method = 'R:R 3.0×'
-    lt_t2_method = 'R:R 5.0×'
-    lt_t1 = curr + lt_risk * 3.0
-    lt_t2 = curr + lt_risk * 5.0
+    # ATR-anchored fallback for LT (~18×ATR ≈ 6 months, ~32×ATR ≈ 1 year)
+    lt_t1 = max(curr + 18.0 * atr, curr + lt_risk * 2.0)
+    lt_t2 = max(curr + 32.0 * atr, curr + lt_risk * 3.5)
+    lt_t1_method = 'ATR ×18 (volatility)'
+    lt_t2_method = 'ATR ×32 (volatility)'
 
     fair_value = compute_fair_value(info, curr) if info else None
     if fair_value and fair_value.get('fair_value') and fair_value['fair_value'] > curr * 1.05:
@@ -1383,32 +1409,62 @@ def calculate_levels(df, info=None, earnings=None):
         lt_t1_method = 'Midpoint to Fair Value'
         lt_t2_method = f"Fair Value × 1.05 ({fair_value['verdict']})"
     elif fair_value and fair_value.get('fair_value') and fair_value['fair_value'] >= curr * 0.95:
-        # Near fair value — conservative targets
+        # Near fair value — conservative targets driven by earnings growth
         fv = fair_value['fair_value']
-        # Target a modest 15-25% above CMP (organic earnings growth over 1-2y)
         lt_t1 = max(curr * 1.15, fv)
         lt_t2 = curr * 1.30
         lt_t1_method = 'Earnings Growth Anchor'
         lt_t2_method = '12-24m Conservative Target'
     else:
-        # Overvalued or no fair value — fall back to R:R math with caps
+        # Overvalued case (curr > fv * 1.05 from above) OR no fair value.
+        # Even without explicit overvalued flag, we don't want runaway targets.
         near_high = high52 > 0 and curr >= high52 * 0.95
         if near_high:
-            lt_t1 = max(lt_t1, curr + 10 * atr)
-            lt_t2 = max(lt_t2, curr + 20 * atr)
             lt_t1 = min(lt_t1, curr * 1.60)
             lt_t2 = min(lt_t2, curr * 2.20)
         else:
             if lt_t2 > high52 * 1.30:
                 lt_t2 = high52 * 1.25
+                lt_t2_method = '52W high × 1.25 (cap)'
             if lt_t1 > high52 * 1.10 and high52 > curr:
                 lt_t1 = max(curr * 1.20, high52 * 1.05)
+                lt_t1_method = '52W high × 1.05 (anchor)'
+
+    # ── OVERVALUED HARD CAP (new in Tier 1) ───────────────────────────────
+    # When the stock is materially above fair value, we should NOT publish
+    # bullish LT targets that suggest chasing. Cap targets to reflect
+    # cautious "mean-reversion or modest continuation" expectations.
+    if fair_value and fair_value.get('fair_value'):
+        fv = fair_value['fair_value']
+        overval_ratio = curr / fv if fv > 0 else 1.0
+        if overval_ratio > 1.40:
+            # Strongly overvalued — minimal upside expectation
+            cap_t1 = curr * 1.05
+            cap_t2 = curr * 1.12
+            if lt_t1 > cap_t1:
+                lt_t1 = cap_t1
+                lt_t1_method = f"Capped +5% (overvalued · {int((overval_ratio-1)*100)}% above FV)"
+            if lt_t2 > cap_t2:
+                lt_t2 = cap_t2
+                lt_t2_method = f"Capped +12% (overvalued · {int((overval_ratio-1)*100)}% above FV)"
+        elif overval_ratio > 1.20:
+            # Moderately overvalued — modest upside only
+            cap_t1 = curr * 1.10
+            cap_t2 = curr * 1.20
+            if lt_t1 > cap_t1:
+                lt_t1 = cap_t1
+                lt_t1_method = f"Capped +10% (overvalued · {int((overval_ratio-1)*100)}% above FV)"
+            if lt_t2 > cap_t2:
+                lt_t2 = cap_t2
+                lt_t2_method = f"Capped +20% (overvalued · {int((overval_ratio-1)*100)}% above FV)"
 
     # Final sanity guards
     if lt_t1 <= curr:
-        lt_t1 = curr * 1.20
+        lt_t1 = curr * 1.05      # minimum +5% (not 20% — could be overvalued)
+        if 'Capped' not in lt_t1_method:
+            lt_t1_method = 'Minimum +5%'
     if lt_t2 <= lt_t1:
-        lt_t2 = lt_t1 * 1.20
+        lt_t2 = lt_t1 * 1.10
 
     # ── Risk score — smooth scoring + expanded inputs ────────────────────────
     pct_from_low_52w  = (curr - low52)  / low52  * 100 if low52  > 0 else 0
