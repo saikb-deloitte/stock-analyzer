@@ -472,6 +472,34 @@
 
   /* Long-Term Picks */
   .picks-header { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  /* VALUE view */
+  .val-filters { display: flex; gap: 10px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .vf-item { display: flex; flex-direction: column; gap: 4px; min-width: 110px; }
+  .vf-item label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+  .vf-item select { background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-primary); padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+  .vf-item select:hover { border-color: var(--accent); }
+  .val-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .val-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; text-align: center; }
+  .val-stat .vs-num { font-size: 22px; font-weight: 800; color: #7dd3fc; }
+  .val-stat .vs-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .val-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+  .val-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s; }
+  .val-card:hover { border-color: #7dd3fc; transform: translateY(-2px); box-shadow: 0 4px 18px rgba(125,211,252,0.18); }
+  .vc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .vc-tkr { font-size: 16px; font-weight: 800; color: var(--text-primary); }
+  .vc-name { font-size: 11px; color: var(--text-muted); line-height: 1.25; margin-top: 1px; }
+  .vc-sector { font-size: 10px; color: #b794f6; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+  .vc-upside { font-size: 18px; font-weight: 800; color: #69f0ae; text-align: right; line-height: 1; }
+  .vc-upside-lbl { font-size: 10px; color: var(--text-muted); margin-top: 2px; text-align: right; }
+  .vc-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .vc-cell { text-align: center; }
+  .vc-cell .vcv { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .vc-cell .vcl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+  .vc-fv-bar { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--text-secondary); }
+  .vc-fv-bar .vfvc { color: #f85149; font-weight: 700; }
+  .vc-fv-bar .vfvf { color: #69f0ae; font-weight: 700; }
+  .vc-empty { padding: 30px 20px; text-align: center; color: var(--text-muted); }
+  .vc-empty i { font-size: 36px; color: #7dd3fc; opacity: 0.5; display: block; margin-bottom: 10px; }
   .picks-toggle { display: flex; background: var(--bg-elevated); border-radius: 8px; padding: 3px; gap: 2px; }
   .pt-btn { background: transparent; border: none; color: var(--text-secondary); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
   .pt-btn.active { background: var(--accent); color: #000; }
@@ -1054,8 +1082,8 @@
     <button class="sb-btn" onclick="showView('compare')" id="sb-compare" title="Compare 2-3 stocks side-by-side">
       <i class="fa fa-scale-balanced"></i><span>Compare</span>
     </button>
-    <button class="sb-btn" onclick="jumpToDailyPrism()" id="sb-share" title="Generate today's shareable Prism for Instagram">
-      <i class="fa fa-share-nodes"></i><span>Share</span>
+    <button class="sb-btn" onclick="showView('value')" id="sb-value" title="Value — undervalued stocks with strong fundamentals">
+      <i class="fa fa-gem"></i><span>Value</span>
     </button>
     <button class="sb-btn" onclick="showView('picks')" id="sb-picks" title="Long-Term Picks — low/medium risk + positive trend">
       <i class="fa fa-tree"></i><span>Picks</span>
@@ -1343,6 +1371,84 @@
 
     </div>
 
+    <!-- ═══════════════════ VALUE VIEW ═══════════════════ -->
+    <div id="view-value" style="display:none;">
+      <div class="picks-header">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <h2 style="margin:0;font-size:20px;font-weight:800;">
+            <i class="fa fa-gem" style="color:#7dd3fc;"></i> Value Picks
+          </h2>
+          <span style="color:var(--text-muted);font-size:12px;">
+            Undervalued (price &lt; fair value) · strong fundamentals (ROE filter) · risk-capped
+          </span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;">
+          <select id="val-index" class="index-select" onchange="loadValuePicks()">
+            <option value="all">All Indices</option>
+            <option value="NIFTY 50">NIFTY 50</option>
+            <option value="NIFTY Next 50">NIFTY Next 50</option>
+            <option value="NIFTY Midcap 100">NIFTY Midcap</option>
+            <option value="NIFTY Bank">NIFTY Bank</option>
+            <option value="NIFTY IT">NIFTY IT</option>
+            <option value="NIFTY Pharma">NIFTY Pharma</option>
+            <option value="NIFTY Auto">NIFTY Auto</option>
+          </select>
+          <button class="refresh-btn" onclick="loadValuePicks(true)"><i class="fa fa-rotate-right"></i> Refresh</button>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="val-filters">
+        <div class="vf-item">
+          <label>Max Price</label>
+          <select id="vf-price" onchange="loadValuePicks()">
+            <option value="">Any</option>
+            <option value="500">≤ ₹500</option>
+            <option value="1000">≤ ₹1,000</option>
+            <option value="5000">≤ ₹5,000</option>
+            <option value="10000">≤ ₹10,000</option>
+          </select>
+        </div>
+        <div class="vf-item">
+          <label>Max Risk</label>
+          <select id="vf-risk" onchange="loadValuePicks()">
+            <option value="40">Low only</option>
+            <option value="60" selected>Low–Medium</option>
+            <option value="100">Any</option>
+          </select>
+        </div>
+        <div class="vf-item">
+          <label>Min ROE</label>
+          <select id="vf-roe" onchange="loadValuePicks()">
+            <option value="0.05">≥ 5%</option>
+            <option value="0.10" selected>≥ 10%</option>
+            <option value="0.15">≥ 15%</option>
+            <option value="0.20">≥ 20%</option>
+          </select>
+        </div>
+        <div class="vf-item">
+          <label>Min Upside vs FV</label>
+          <select id="vf-upside" onchange="loadValuePicks()">
+            <option value="0">Any</option>
+            <option value="5" selected>≥ 5%</option>
+            <option value="15">≥ 15%</option>
+            <option value="25">≥ 25% (deep value)</option>
+          </select>
+        </div>
+        <div class="vf-item">
+          <label>Sector</label>
+          <select id="vf-sector" onchange="loadValuePicks()">
+            <option value="">All sectors</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="val-summary" style="display:none;"></div>
+      <div id="val-content">
+        <div class="loading"><div class="spinner"></div> Scanning for undervalued, fundamentally strong stocks…</div>
+      </div>
+    </div>
+
     <!-- ═══════════════════ WATCHLIST VIEW ═══════════════════ -->
     <div id="view-watchlist" style="display:none;">
       <div class="wl-header">
@@ -1467,6 +1573,8 @@ function showView(view) {
   if (watchView) watchView.style.display = view === 'watchlist' ? 'block' : 'none';
   const cmpView = document.getElementById('view-compare');
   if (cmpView) cmpView.style.display = view === 'compare' ? 'block' : 'none';
+  const valView = document.getElementById('view-value');
+  if (valView) valView.style.display = view === 'value' ? 'block' : 'none';
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
   if (view === 'screener') {
@@ -1477,6 +1585,10 @@ function showView(view) {
     document.getElementById('sb-picks').classList.add('active');
     if (!window.__picksLoaded) { loadPicks(); window.__picksLoaded = true; }
     setPageTitle(VIEW_TITLE.picks);
+  } else if (view === 'value') {
+    document.getElementById('sb-value').classList.add('active');
+    if (!window.__valueLoaded) { loadValuePicks(); window.__valueLoaded = true; }
+    setPageTitle(VIEW_TITLE.value);
   } else if (view === 'watchlist') {
     document.getElementById('sb-watchlist').classList.add('active');
     loadWatchlist();
@@ -1500,6 +1612,117 @@ function setPicksGroup(mode) {
   document.getElementById('ptg-sector').classList.toggle('active', mode === 'sector');
   document.getElementById('ptg-index').classList.toggle('active', mode === 'index');
   if (picksData) renderPicks(picksData);
+}
+
+// ── Value Picks (undervalued + strong fundamentals) ──
+let valueData = null;
+
+async function loadValuePicks(force) {
+  const idx     = document.getElementById('val-index').value;
+  const price   = document.getElementById('vf-price').value;
+  const risk    = document.getElementById('vf-risk').value;
+  const roe     = document.getElementById('vf-roe').value;
+  const upside  = document.getElementById('vf-upside').value;
+  const sector  = document.getElementById('vf-sector').value;
+
+  const el = document.getElementById('val-content');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning ' + (idx === 'all' ? 'all indices' : idx) + ' for undervalued, fundamentally strong stocks…</div>';
+  document.getElementById('val-summary').style.display = 'none';
+
+  const params = new URLSearchParams();
+  params.set('index', idx);
+  if (price)  params.set('max_price', price);
+  if (risk)   params.set('max_risk',  risk);
+  if (roe)    params.set('min_roe',   roe);
+  if (upside !== '') params.set('min_upside', upside);
+  if (sector) params.set('sector',    sector);
+  if (force)  params.set('_t', Date.now());
+
+  try {
+    const r = await fetch('/api/value_picks?' + params.toString());
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    valueData = d;
+    renderValuePicks(d);
+  } catch (e) {
+    el.innerHTML = '<div class="alert-custom"><i class="fa fa-triangle-exclamation"></i> Could not load value picks: ' + e.message + '</div>';
+  }
+}
+
+function renderValuePicks(d) {
+  // Populate sector dropdown (first time only — preserve user's choice)
+  const secSel = document.getElementById('vf-sector');
+  const current = secSel.value;
+  if (d.sectors && d.sectors.length && secSel.options.length <= 1) {
+    d.sectors.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s; o.textContent = s;
+      secSel.appendChild(o);
+    });
+    if (current) secSel.value = current;
+  }
+
+  // Summary stats
+  const sum = document.getElementById('val-summary');
+  sum.style.display = 'block';
+  sum.innerHTML = `
+    <div class="val-stats">
+      <div class="val-stat"><div class="vs-num">${d.total_picks}</div><div class="vs-lbl">Matches</div></div>
+      <div class="val-stat"><div class="vs-num">${d.total_scanned}</div><div class="vs-lbl">Scanned</div></div>
+      <div class="val-stat"><div class="vs-num">${d.avg_upside_pct}%</div><div class="vs-lbl">Avg Upside</div></div>
+      <div class="val-stat"><div class="vs-num">${d.avg_roe_pct}%</div><div class="vs-lbl">Avg ROE</div></div>
+    </div>
+  `;
+
+  const el = document.getElementById('val-content');
+  if (!d.picks || !d.picks.length) {
+    el.innerHTML = `
+      <div class="vc-empty">
+        <i class="fa fa-magnifying-glass"></i>
+        <h3 style="margin:6px 0;color:var(--text-secondary);">No matches with current filters</h3>
+        <div style="font-size:13px;">Try loosening Min ROE, increasing Max Price, or lowering Min Upside.</div>
+      </div>`;
+    return;
+  }
+
+  const cards = d.picks.map(p => {
+    const upClass = (p.upside_pct >= 25) ? '#69f0ae' : (p.upside_pct >= 10 ? '#7dd3fc' : '#ffd740');
+    const upIcon  = (p.upside_pct >= 25) ? '🚀' : (p.upside_pct >= 10 ? '📈' : '↗');
+    const priceStr = p.price != null ? '₹' + Number(p.price).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
+    const fvStr    = p.fair_value != null ? '₹' + Number(p.fair_value).toLocaleString('en-IN', {maximumFractionDigits: 0}) : '—';
+    const roeStr   = p.roe != null ? (p.roe * 100).toFixed(1) + '%' : '—';
+    const peStr    = p.pe != null ? p.pe.toFixed(1) : '—';
+    const riskStr  = p.risk_score != null ? p.risk_score : '—';
+    const riskBadge = p.risk_score <= 40 ? '🟢 Low' : (p.risk_score <= 60 ? '🟡 Med' : '🔴 High');
+    const safeTkr  = (p.ticker || '').replace(/'/g, "\\'");
+    return `
+      <div class="val-card" onclick="analyzeStock('${safeTkr}')">
+        <div class="vc-top">
+          <div>
+            <div class="vc-tkr">${p.ticker}</div>
+            <div class="vc-name">${(p.name || '').slice(0, 38)}</div>
+            <div class="vc-sector">${p.sector || ''}</div>
+          </div>
+          <div>
+            <div class="vc-upside" style="color:${upClass};">${upIcon} +${p.upside_pct}%</div>
+            <div class="vc-upside-lbl">Upside to FV</div>
+          </div>
+        </div>
+        <div class="vc-fv-bar">
+          <span class="vfvc">${priceStr}</span>
+          <span style="color:var(--text-muted);">→</span>
+          <span class="vfvf">${fvStr}</span>
+          <span style="color:var(--text-muted); margin-left:auto;">${p.fv_verdict || ''}</span>
+        </div>
+        <div class="vc-row">
+          <div class="vc-cell"><div class="vcv">${roeStr}</div><div class="vcl">ROE</div></div>
+          <div class="vc-cell"><div class="vcv">${peStr}</div><div class="vcl">P/E</div></div>
+          <div class="vc-cell"><div class="vcv">${riskBadge}</div><div class="vcl">Risk ${riskStr}</div></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="val-grid">${cards}</div>`;
 }
 
 async function loadPicks(force) {
@@ -3748,26 +3971,20 @@ function copyPrismCaption() {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// SHARE — jump to Picks view + scroll to Daily Prism section + focus input
+// jumpToDailyPrism — kept for welcome-modal CTA + any external callers.
+// Routes to the Picks view (where the Daily Prism builder lives).
 // ──────────────────────────────────────────────────────────────────────
 function jumpToDailyPrism() {
   showView('picks');
-  // Wait for picks view to render, then scroll to the Daily Prism section
   setTimeout(() => {
     const target = document.querySelector('.dp-wrap');
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Focus the ticker input so user can type immediately
       setTimeout(() => {
         const inp = document.getElementById('dp-ticker');
         if (inp) inp.focus();
       }, 600);
     }
-    // Highlight the sidebar item
-    document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
-    const sb = document.getElementById('sb-share');
-    if (sb) sb.classList.add('active');
-    setPageTitle('Share');
   }, 80);
 }
 
@@ -4220,6 +4437,7 @@ const VIEW_TITLE = {
   watchlist: 'Watchlist',
   compare:   'Compare',
   picks:     'Long-Term Picks',
+  value:     'Value Picks',
 };
 function setPageTitle(parts) {
   const arr = Array.isArray(parts) ? parts : [parts];

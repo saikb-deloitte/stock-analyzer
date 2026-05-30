@@ -2967,6 +2967,18 @@ def _screener_impl():
                             or (static_info[0] if static_info else clean_sym))
             sector_val   = info.get('sector') or (static_info[1] if static_info else 'Other')
             industry_val = info.get('industry') or (static_info[2] if static_info else 'Other')
+            # Fair value (cheap — pure math on info). Powers the VALUE view.
+            curr_for_fv = float(close.iloc[-1])
+            fv_obj = None
+            try:
+                fv_obj = compute_fair_value(info, curr_for_fv)
+            except Exception:
+                fv_obj = None
+            fv_val      = fv_obj.get('fair_value')  if fv_obj else None
+            fv_verdict  = fv_obj.get('verdict')     if fv_obj else None
+            upside_pct  = None
+            if fv_val and curr_for_fv > 0:
+                upside_pct = round((fv_val - curr_for_fv) / curr_for_fv * 100, 1)
             return {
                 'ticker':    clean_sym,
                 'name':      display_name,
@@ -2985,6 +2997,13 @@ def _screener_impl():
                 'short_term': st_sc,
                 'mid_term':   mt_sc,
                 'pe':        safe_round(info.get('trailingPE')),
+                'pb':        safe_round(info.get('priceToBook')),
+                'roe':       safe_round(info.get('returnOnEquity'), 4),
+                'debt_eq':   safe_round(info.get('debtToEquity')),
+                'div_yield': safe_round(info.get('dividendYield'), 4),
+                'fair_value':  fv_val,
+                'fv_verdict':  fv_verdict,
+                'upside_pct':  upside_pct,
                 'mktcap':    info.get('marketCap'),
                 'sector':    sector_val,
                 'sector_grouped': standardize_sector(sector_val, industry_val),
@@ -3200,6 +3219,133 @@ def _long_term_picks_impl():
         'by_sector':    sector_groups,
         'by_index':     index_groups,
         'available_indices': list(NSE_INDICES.keys()),
+    }
+    set_cached(cache_key, result)
+    return jsonify(result)
+
+
+@app.route('/api/value_picks')
+def value_picks():
+    """Undervalued + fundamentally strong stocks.
+
+    Filters (all optional query params):
+      max_price   — cap stock price (₹). Default unlimited.
+      max_risk    — cap risk_score (0-100). Default 60.
+      min_roe     — minimum ROE as decimal (e.g. 0.12). Default 0.10.
+      min_upside  — minimum % upside vs fair value. Default 5.
+      sector      — exact sector match (case-insensitive). Default any.
+      index       — universe to scan (default: scan a few common indices).
+    """
+    try:
+        return _value_picks_impl()
+    except Exception as e:
+        print(f'  [value_picks] error: {e}')
+        if IS_PUBLIC:
+            return jsonify({'error': 'Value picks temporarily unavailable. Please try again.'}), 503
+        return jsonify({'error': str(e)}), 500
+
+
+def _value_picks_impl():
+    # Parse filters
+    def _f(name, default):
+        v = request.args.get(name)
+        if v is None or v == '' or v == 'any':
+            return default
+        try:
+            return float(v)
+        except Exception:
+            return default
+
+    max_price   = _f('max_price', None)         # None = unlimited
+    max_risk    = _f('max_risk', 60)            # 60 = Low + Medium
+    min_roe     = _f('min_roe', 0.10)           # 10%
+    min_upside  = _f('min_upside', 5.0)         # ≥5% below fair value
+    sector_q    = (request.args.get('sector') or '').strip().lower()
+    index_q     = request.args.get('index', 'NIFTY 500')
+
+    # Default universe = NIFTY 500 if present, else fall back to broader scan
+    if index_q == 'all':
+        indices_to_scan = ['NIFTY 50', 'NIFTY Next 50', 'NIFTY Midcap 100']
+    elif index_q in NSE_INDICES:
+        indices_to_scan = [index_q]
+    elif index_q == 'NIFTY 500' and 'NIFTY 500' not in NSE_INDICES:
+        # Fall back if NIFTY 500 isn't in the static map
+        indices_to_scan = ['NIFTY 50', 'NIFTY Next 50', 'NIFTY Midcap 100']
+    else:
+        indices_to_scan = [index_q] if index_q in NSE_INDICES else ['NIFTY 50']
+
+    cache_key = (f'value_picks:{":".join(indices_to_scan)}'
+                 f':p{max_price}:r{max_risk}:e{min_roe}:u{min_upside}:s{sector_q}')
+    cached = get_cached(cache_key)
+    if cached:
+        return jsonify(cached)
+
+    # Gather rows from screener cache
+    all_rows = {}
+    for idx_name in indices_to_scan:
+        scr_cache_key = f'screener:{idx_name}'
+        rows = get_cached(scr_cache_key)
+        if rows is None:
+            with app.test_request_context(f'/api/screener?index={idx_name}'):
+                resp = screener()
+            try:
+                rows = resp.get_json()
+            except Exception:
+                rows = []
+        if not rows or not isinstance(rows, list):
+            continue
+        for r in rows:
+            t = r.get('ticker')
+            if t not in all_rows:
+                all_rows[t] = r
+
+    # Filter
+    picks = []
+    for t, r in all_rows.items():
+        price   = r.get('price')
+        risk    = r.get('risk_score')
+        roe     = r.get('roe')
+        upside  = r.get('upside_pct')
+        fv      = r.get('fair_value')
+        sector  = (r.get('sector') or '').lower()
+
+        if price is None or risk is None: continue
+        if max_price is not None and price > max_price: continue
+        if risk > max_risk: continue
+        if roe is None or roe < min_roe: continue
+        # Must be undervalued by at least min_upside %
+        if fv is None or upside is None or upside < min_upside: continue
+        if sector_q and sector_q not in sector: continue
+        # Quality gate: long-term score floor so we don't surface broken names
+        if (r.get('long_term') or 0) < 50: continue
+
+        picks.append(r)
+
+    # Sort by upside desc, then by ROE desc
+    picks.sort(key=lambda x: ((x.get('upside_pct') or 0), (x.get('roe') or 0)), reverse=True)
+
+    # Stats
+    avg_upside = round(sum((p.get('upside_pct') or 0) for p in picks) / len(picks), 1) if picks else 0
+    avg_roe    = round(sum((p.get('roe') or 0) for p in picks) / len(picks) * 100, 1) if picks else 0
+
+    # Distinct sectors present (for the filter dropdown)
+    sectors_seen = sorted({(r.get('sector') or 'Other') for r in all_rows.values() if r.get('sector')})
+
+    result = {
+        'filter': {
+            'max_price':  max_price,
+            'max_risk':   max_risk,
+            'min_roe':    min_roe,
+            'min_upside': min_upside,
+            'sector':     request.args.get('sector') or '',
+            'indices':    indices_to_scan,
+        },
+        'total_scanned': len(all_rows),
+        'total_picks':   len(picks),
+        'avg_upside_pct': avg_upside,
+        'avg_roe_pct':    avg_roe,
+        'sectors':       sectors_seen,
+        'picks':         picks,
     }
     set_cached(cache_key, result)
     return jsonify(result)
