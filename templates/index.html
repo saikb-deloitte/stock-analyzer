@@ -803,16 +803,181 @@
   .week52-bar { height: 4px; background: var(--border); border-radius: 2px; position: relative; margin: 4px 0; }
   .week52-marker { position: absolute; width: 10px; height: 10px; background: var(--accent); border-radius: 50%; top: -3px; transform: translateX(-50%); }
 
+  /* ── Welcome modal (first-visit) ── */
+  .welcome-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.78);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 20px;
+    animation: welcomeFadeIn 0.4s ease;
+  }
+  @keyframes welcomeFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .welcome-card {
+    background: var(--bg-card); border: 2px solid var(--accent);
+    border-radius: 18px; padding: 36px 36px 28px;
+    max-width: 540px; width: 100%; position: relative;
+    box-shadow: 0 0 60px rgba(0,212,170,0.25);
+    animation: welcomeSlide 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  }
+  @keyframes welcomeSlide {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .welcome-mark { width: 80px; height: 80px; margin: 0 auto 18px; display: block;
+                  filter: drop-shadow(0 0 16px rgba(0,212,170,0.5)); }
+  .welcome-card h1 {
+    text-align: center; font-size: 26px; font-weight: 900; margin-bottom: 6px;
+    background: linear-gradient(90deg, #00d4aa, #388bfd, #b794f6);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .welcome-tagline {
+    text-align: center; color: var(--text-secondary); font-size: 15px;
+    font-style: italic; margin-bottom: 22px;
+  }
+  .welcome-pitch {
+    background: var(--bg-elevated); border-radius: 10px;
+    padding: 14px 18px; font-size: 13px; color: var(--text-secondary);
+    line-height: 1.6; margin-bottom: 22px;
+  }
+  .welcome-pitch strong { color: var(--text-primary); }
+  .welcome-pitch .spectrum-dots {
+    display: flex; gap: 14px; justify-content: center; margin-top: 10px;
+    font-size: 12px; flex-wrap: wrap;
+  }
+  .welcome-pitch .spectrum-dots span {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--text-muted);
+  }
+  .welcome-pitch .spectrum-dots i {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+  }
+  .welcome-actions { display: flex; flex-direction: column; gap: 10px; }
+  .welcome-btn {
+    background: var(--accent); color: #000; border: none;
+    padding: 14px 18px; border-radius: 10px;
+    font-weight: 800; font-size: 14px; cursor: pointer;
+    font-family: inherit; transition: transform 0.1s, box-shadow 0.2s;
+  }
+  .welcome-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,212,170,0.3); }
+  .welcome-btn.alt {
+    background: transparent; color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+  .welcome-btn.alt:hover { border-color: var(--accent); color: var(--accent); }
+  .welcome-btn.ghost {
+    background: transparent; color: var(--text-muted);
+    font-weight: 500; font-size: 12px; padding: 6px;
+  }
+  .welcome-btn.ghost:hover { color: var(--text-primary); box-shadow: none; transform: none; }
+  .welcome-foot {
+    margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border);
+    font-size: 11px; color: var(--text-muted); text-align: center;
+  }
+
+  /* ── Toast notifications ── */
+  .toast-wrap {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    display: flex; flex-direction: column; gap: 10px;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 18px;
+    color: var(--text-primary); font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+    display: flex; align-items: center; gap: 10px;
+    min-width: 240px; max-width: 380px;
+    animation: toastIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+    pointer-events: auto;
+  }
+  .toast.toast-success { border-left: 3px solid var(--green); }
+  .toast.toast-info    { border-left: 3px solid var(--accent); }
+  .toast.toast-warn    { border-left: 3px solid var(--yellow); }
+  .toast.toast-error   { border-left: 3px solid var(--red); }
+  .toast .toast-icon { font-size: 16px; }
+  .toast.toast-success .toast-icon { color: var(--green); }
+  .toast.toast-info    .toast-icon { color: var(--accent); }
+  .toast.toast-warn    .toast-icon { color: var(--yellow); }
+  .toast.toast-error   .toast-icon { color: var(--red); }
+  .toast.toast-out { animation: toastOut 0.3s ease forwards; }
+  @keyframes toastIn  { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes toastOut { to   { opacity: 0; transform: translateX(40px); } }
+  @media (max-width: 600px) {
+    .toast-wrap { left: 16px; right: 16px; bottom: 16px; }
+    .toast { min-width: 0; }
+  }
+
+  /* ── Skeleton loaders ── */
+  .skel { background: linear-gradient(90deg, var(--bg-elevated) 0%, var(--bg-card) 50%, var(--bg-elevated) 100%);
+          background-size: 200% 100%; animation: skelShimmer 1.6s linear infinite;
+          border-radius: 6px; }
+  @keyframes skelShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skel-card { padding: 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; }
+  .skel-line { height: 12px; margin-bottom: 8px; }
+  .skel-line.w70 { width: 70%; }
+  .skel-line.w50 { width: 50%; }
+  .skel-line.w90 { width: 90%; }
+  .skel-line.h20 { height: 20px; }
+  .skel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+
   /* ── Responsive ── */
   @media (max-width: 768px) {
     .score-grid { grid-template-columns: 1fr 1fr; }
     .top-picks { grid-template-columns: 1fr; }
     .fund-grid { grid-template-columns: 1fr; }
     .sidebar { display: none; }
+    .welcome-card { padding: 28px 22px 22px; }
+    .welcome-card h1 { font-size: 22px; }
   }
 </style>
 </head>
 <body>
+
+<!-- ═══════════ WELCOME MODAL (shown once per browser) ═══════════ -->
+<div id="welcome-overlay" class="welcome-overlay" style="display:none;">
+  <div class="welcome-card">
+    <svg class="welcome-mark" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="wm-bg" cx="0.5" cy="0.5"><stop offset="0%" stop-color="#0d2334"/><stop offset="100%" stop-color="#070a0e"/></radialGradient>
+        <linearGradient id="wm-face" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00d4aa" stop-opacity="0.45"/><stop offset="100%" stop-color="#00d4aa" stop-opacity="0.08"/></linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="92" fill="url(#wm-bg)"/>
+      <polygon points="260,130 380,400 140,400" fill="url(#wm-face)" stroke="#00d4aa" stroke-width="14" stroke-linejoin="round"/>
+      <polygon points="158,236 196,256 158,276" fill="#00d4aa"/>
+      <g stroke-width="10" stroke-linecap="round">
+        <line x1="380" y1="290" x2="492" y2="190" stroke="#388bfd"/>
+        <line x1="382" y1="302" x2="492" y2="240" stroke="#ffd740"/>
+        <line x1="384" y1="314" x2="492" y2="294" stroke="#69f0ae"/>
+        <line x1="386" y1="326" x2="492" y2="348" stroke="#f85149"/>
+        <line x1="388" y1="338" x2="492" y2="402" stroke="#b794f6"/>
+      </g>
+    </svg>
+    <h1>Welcome to Centaur Prism</h1>
+    <div class="welcome-tagline">"Markets are light. We are the prism."</div>
+    <div class="welcome-pitch">
+      Every NSE stock, refracted into <strong>5 honest spectrums</strong>:
+      <div class="spectrum-dots">
+        <span><i style="background:#388bfd;"></i>Technical</span>
+        <span><i style="background:#ffd740;"></i>Fundamental</span>
+        <span><i style="background:#69f0ae;"></i>Sentiment</span>
+        <span><i style="background:#f85149;"></i>Risk</span>
+        <span><i style="background:#b794f6;"></i>Trade Plan</span>
+      </div>
+    </div>
+    <div class="welcome-actions">
+      <button class="welcome-btn" onclick="welcomeDemoTCS()">🔍 Try the demo — analyze TCS</button>
+      <button class="welcome-btn alt" onclick="welcomePicks()">🌲 Browse Long-Term Picks</button>
+      <button class="welcome-btn ghost" onclick="welcomeDismiss()">Just let me explore</button>
+    </div>
+    <div class="welcome-foot">
+      Educational tool only · not investment advice · DYOR
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TOAST NOTIFICATIONS ═══════════ -->
+<div id="toast-wrap" class="toast-wrap"></div>
 
 <!-- Ticker tape -->
 <div class="ticker-wrap">
@@ -888,6 +1053,9 @@
     </button>
     <button class="sb-btn" onclick="showView('compare')" id="sb-compare" title="Compare 2-3 stocks side-by-side">
       <i class="fa fa-scale-balanced"></i><span>Compare</span>
+    </button>
+    <button class="sb-btn" onclick="jumpToDailyPrism()" id="sb-share" title="Generate today's shareable Prism for Instagram">
+      <i class="fa fa-share-nodes"></i><span>Share</span>
     </button>
     <button class="sb-btn" onclick="showView('picks')" id="sb-picks" title="Long-Term Picks — low/medium risk + positive trend">
       <i class="fa fa-tree"></i><span>Picks</span>
@@ -1304,17 +1472,22 @@ function showView(view) {
   if (view === 'screener') {
     document.querySelector('.nav-btn:first-child').classList.add('active');
     document.getElementById('sb-screener').classList.add('active');
+    setPageTitle(VIEW_TITLE.screener);
   } else if (view === 'picks') {
     document.getElementById('sb-picks').classList.add('active');
     if (!window.__picksLoaded) { loadPicks(); window.__picksLoaded = true; }
+    setPageTitle(VIEW_TITLE.picks);
   } else if (view === 'watchlist') {
     document.getElementById('sb-watchlist').classList.add('active');
     loadWatchlist();
+    setPageTitle(VIEW_TITLE.watchlist);
   } else if (view === 'compare') {
     document.getElementById('sb-compare').classList.add('active');
+    setPageTitle(VIEW_TITLE.compare);
   } else {
     document.getElementById('analyze-nav-btn').classList.add('active');
     document.getElementById('sb-analyze').classList.add('active');
+    // Don't override title here — analyzeStock() sets stock-specific title
   }
 }
 
@@ -1511,7 +1684,7 @@ async function loadScreenerWithFallback(index) {
       backoffMs: 2500,
       onRetry: (n, total) => {
         const el = document.getElementById('screener-content');
-        if (el) el.innerHTML = `<div class="loading"><div class="spinner"></div> Live fetch slow — retrying (${n}/${total})…</div>`;
+        if (el) el.innerHTML = skeletonScreener(`Live fetch slow — retrying (${n}/${total})`);
       }
     });
     if (Array.isArray(data) && data.length > 0) {
@@ -1523,7 +1696,7 @@ async function loadScreenerWithFallback(index) {
 
   // 2) Fall back to the daily static snapshot
   const el = document.getElementById('screener-content');
-  if (el) el.innerHTML = `<div class="loading"><div class="spinner"></div> Loading daily snapshot…</div>`;
+  if (el) el.innerHTML = skeletonScreener('Loading daily snapshot');
   const url = `/static/data/snapshot_${snapshotSlug(index)}.json`;
   const snap = await fetchJSON(url, { maxRetries: 0 });
   if (!snap || !Array.isArray(snap.stocks)) {
@@ -1536,11 +1709,32 @@ async function loadScreenerWithFallback(index) {
   };
 }
 
+function skeletonScreener(label) {
+  // Show 8 placeholder rows that shimmer while live data loads
+  let rows = '';
+  for (let i = 0; i < 8; i++) {
+    rows += `<div class="skel-card" style="padding:14px 18px;display:grid;grid-template-columns:60px 1fr 60px 60px 60px 60px;gap:14px;align-items:center;">
+      <div class="skel skel-line h20" style="width:50px;margin:0;"></div>
+      <div><div class="skel skel-line w70"></div><div class="skel skel-line w50" style="height:9px;"></div></div>
+      <div class="skel skel-line h20" style="width:40px;margin:0;"></div>
+      <div class="skel skel-line h20" style="width:40px;margin:0;"></div>
+      <div class="skel skel-line h20" style="width:40px;margin:0;"></div>
+      <div class="skel skel-line h20" style="width:40px;margin:0;"></div>
+    </div>`;
+  }
+  return `<div style="margin-top:8px;">
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+      <i class="fa fa-spinner fa-spin"></i> ${label}…
+    </div>
+    ${rows}
+  </div>`;
+}
+
 async function loadScreener(forceRefresh=false) {
   const index = document.getElementById('index-select').value;
   const statusEl = document.getElementById('screener-status');
   const contentEl = document.getElementById('screener-content');
-  contentEl.innerHTML = '<div class="loading"><div class="spinner"></div> Fetching ' + index + ' stocks…</div>';
+  contentEl.innerHTML = skeletonScreener('Fetching ' + index + ' stocks');
   document.getElementById('top-picks').style.display = 'none';
   statusEl.textContent = '';
 
@@ -1926,6 +2120,7 @@ function exportScreenerCSV() {
 // ── Analyze ──
 async function analyzeStock(sym) {
   showView('analyze');
+  setPageTitle([sym.toUpperCase(), 'Analyze']);
   document.getElementById('analyze-placeholder').style.display = 'none';
   document.getElementById('analyze-loading').style.display = 'flex';
   document.getElementById('analyze-data').style.display = 'none';
@@ -1937,10 +2132,13 @@ async function analyzeStock(sym) {
     if (d.error) throw new Error(d.error);
     currentData = d;
     renderAnalysis(d);
+    // Tab title gets the display name once data lands
+    setPageTitle([d.symbol || sym, d.name ? d.name.split(' ').slice(0, 2).join(' ') : 'Analyze']);
   } catch(e) {
     document.getElementById('analyze-loading').style.display = 'none';
     document.getElementById('analyze-error').style.display = 'block';
     document.getElementById('analyze-error').innerHTML = `<i class="fa fa-triangle-exclamation"></i> ${e.message}`;
+    toast(`Couldn't analyze ${sym}: ${e.message}`, 'error');
   }
 }
 
@@ -3526,7 +3724,32 @@ function copyPrismCaption() {
     const orig = btn.textContent;
     btn.textContent = '✅ Copied';
     setTimeout(() => { btn.textContent = orig; }, 1500);
+    toast('Caption copied — paste into Instagram', 'success');
   });
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// SHARE — jump to Picks view + scroll to Daily Prism section + focus input
+// ──────────────────────────────────────────────────────────────────────
+function jumpToDailyPrism() {
+  showView('picks');
+  // Wait for picks view to render, then scroll to the Daily Prism section
+  setTimeout(() => {
+    const target = document.querySelector('.dp-wrap');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Focus the ticker input so user can type immediately
+      setTimeout(() => {
+        const inp = document.getElementById('dp-ticker');
+        if (inp) inp.focus();
+      }, 600);
+    }
+    // Highlight the sidebar item
+    document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
+    const sb = document.getElementById('sb-share');
+    if (sb) sb.classList.add('active');
+    setPageTitle('Share');
+  }, 80);
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -3770,17 +3993,21 @@ function isInWatchlist(symbol) {
 }
 function toggleWatchlist(symbol, name) {
   let list = getWatchlist();
-  if (list.some(w => w.symbol === symbol)) {
+  const wasIn = list.some(w => w.symbol === symbol);
+  if (wasIn) {
     list = list.filter(w => w.symbol !== symbol);
+    toast(`${symbol} removed from watchlist`, 'info');
   } else {
     list.push({ symbol: symbol, name: name || symbol, added_ts: Date.now() });
+    toast(`⭐ ${symbol} added to watchlist`, 'success');
   }
   saveWatchlist(list);
-  // Update sidebar badge if visible
   updateWatchlistBadge();
 }
+
 function removeFromWatchlist(symbol) {
   saveWatchlist(getWatchlist().filter(w => w.symbol !== symbol));
+  toast(`${symbol} removed from watchlist`, 'info');
   loadWatchlist();
 }
 function updateWatchlistBadge() {
@@ -3917,6 +4144,69 @@ async function refreshFreshness() {
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────
+// WELCOME MODAL — shown once per browser, gates on localStorage flag
+// ──────────────────────────────────────────────────────────────────────
+const WELCOME_KEY = 'cp_welcomed_v1';
+function showWelcomeIfFirstVisit() {
+  try {
+    if (localStorage.getItem(WELCOME_KEY)) return;  // already welcomed
+    const el = document.getElementById('welcome-overlay');
+    if (el) el.style.display = 'flex';
+  } catch (e) {}
+}
+function welcomeDismiss() {
+  const el = document.getElementById('welcome-overlay');
+  if (el) el.style.display = 'none';
+  try { localStorage.setItem(WELCOME_KEY, Date.now().toString()); } catch (e) {}
+}
+function welcomeDemoTCS() {
+  welcomeDismiss();
+  setTimeout(() => analyzeStock('TCS'), 200);
+}
+function welcomePicks() {
+  welcomeDismiss();
+  setTimeout(() => showView('picks'), 200);
+}
+// Close on overlay click (but not card click)
+document.addEventListener('click', (e) => {
+  const overlay = document.getElementById('welcome-overlay');
+  if (overlay && e.target === overlay) welcomeDismiss();
+});
+
+// ──────────────────────────────────────────────────────────────────────
+// TOAST NOTIFICATIONS — non-blocking feedback for user actions
+// ──────────────────────────────────────────────────────────────────────
+function toast(message, type = 'success', durationMs = 2800) {
+  const wrap = document.getElementById('toast-wrap');
+  if (!wrap) return;
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  const iconMap = { success: 'fa-check-circle', info: 'fa-circle-info', warn: 'fa-triangle-exclamation', error: 'fa-circle-xmark' };
+  t.innerHTML = `<i class="fa ${iconMap[type] || iconMap.info} toast-icon"></i><span>${message}</span>`;
+  wrap.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('toast-out');
+    setTimeout(() => t.remove(), 300);
+  }, durationMs);
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// DYNAMIC PAGE TITLES — tab title reflects current stock or view
+// ──────────────────────────────────────────────────────────────────────
+const BASE_TITLE = 'Centaur Prism';
+const VIEW_TITLE = {
+  screener:  'Screener',
+  analyze:   'Analyze',
+  watchlist: 'Watchlist',
+  compare:   'Compare',
+  picks:     'Long-Term Picks',
+};
+function setPageTitle(parts) {
+  const arr = Array.isArray(parts) ? parts : [parts];
+  document.title = arr.filter(Boolean).concat([BASE_TITLE]).join(' · ');
+}
+
 // ── Educational disclaimer bar ──
 function dismissEduBar() {
   const bar = document.getElementById('edu-bar');
@@ -3939,6 +4229,8 @@ loadTicker();
 loadScreener();
 refreshFreshness();
 updateWatchlistBadge();
+showWelcomeIfFirstVisit();          // ← first-visit modal
+setPageTitle(VIEW_TITLE.screener);  // ← initial tab title
 setInterval(loadTicker, 120000); // refresh indices every 2 min
 setInterval(refreshFreshness, 60000); // freshness badge every 60s
 
