@@ -649,6 +649,47 @@
   .kelly-panel   { margin-top: 12px; padding: 12px 14px; background: var(--bg-elevated); border-radius: 8px; }
   .kelly-h       { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; color: var(--text-primary); }
   .kelly-stats   { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 10px; }
+  /* Kelly v2 — fractions + vol scaling */
+  .kelly-v2 .kv-bt-stats { grid-template-columns: repeat(6, 1fr); }
+  .kv-frac-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    margin: 12px 0;
+  }
+  .kv-frac {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; text-align: center;
+    transition: all 0.2s;
+  }
+  .kv-frac-rec {
+    border: 2px solid #69f0ae;
+    background: rgba(105,240,174,0.08);
+    box-shadow: 0 0 14px rgba(105,240,174,0.18);
+  }
+  .kv-frac-name { font-size: 10px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; }
+  .kv-frac-val  { font-size: 20px; font-weight: 800; margin: 4px 0 2px; color: var(--text-primary); }
+  .kv-frac-rec .kv-frac-val { color: #69f0ae; }
+  .kv-frac-note { font-size: 9px; color: var(--text-muted); line-height: 1.3; }
+  .kv-vol-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; margin: 12px 0;
+    font-size: 12px;
+  }
+  .kv-vol-h { font-weight: 700; color: var(--text-primary); margin-bottom: 6px; font-size: 11px; letter-spacing: 0.5px; }
+  .kv-vol-row { display: flex; justify-content: space-between; padding: 3px 0; color: var(--text-secondary); }
+  .kv-recommend {
+    background: linear-gradient(135deg, rgba(105,240,174,0.12), rgba(0,212,170,0.08));
+    border: 2px solid #69f0ae;
+    border-radius: 10px; padding: 14px 18px; margin: 12px 0;
+    box-shadow: 0 0 22px rgba(105,240,174,0.18);
+  }
+  .kv-recommend strong { font-size: 16px; color: #69f0ae; }
+  .kv-rec-sub { font-size: 11px; color: var(--text-secondary); margin: 6px 0 10px; }
+  .kv-rec-skip { background: linear-gradient(135deg, rgba(255,82,82,0.12), rgba(255,128,128,0.08)); border-color: #ff5252; box-shadow: 0 0 22px rgba(255,82,82,0.18); }
+  .kv-rec-skip strong { color: #ff5252; }
+  @media (max-width: 760px) {
+    .kv-frac-grid { grid-template-columns: 1fr 1fr; }
+    .kelly-v2 .kv-bt-stats { grid-template-columns: 1fr 1fr 1fr; }
+  }
   .ks-stat       { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; text-align: center; }
   .ks-lbl        { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
   .ks-val        { font-size: 13px; font-weight: 700; margin-top: 2px; }
@@ -2825,11 +2866,13 @@ async function fetchKellyData(symbol) {
     const kelly = (b * p - q) / b;                      // fraction (can be negative)
     const enriched = {
       ...s,
-      kelly_fraction: kelly,
-      kelly_pct:      kelly * 100,
-      half_kelly_pct: (kelly / 2) * 100,
-      data_points:    d.data_points,
-      period:         d.period,
+      kelly_fraction:     kelly,
+      kelly_pct:          kelly * 100,
+      half_kelly_pct:     (kelly / 2)  * 100,   // K/2  — common pro standard
+      quarter_kelly_pct:  (kelly / 4)  * 100,   // K/4  — recommended for most retail
+      tenth_kelly_pct:    (kelly / 10) * 100,   // K/10 — ultra-conservative
+      data_points:        d.data_points,
+      period:             d.period,
     };
     window.__kellyCache[symbol] = enriched;
     return enriched;
@@ -2842,7 +2885,7 @@ async function fetchKellyData(symbol) {
 async function renderKellySuggestion(symbol, currentRiskPct, capital) {
   const el = document.getElementById('kelly-suggestion');
   if (!el) return;
-  el.innerHTML = `<div class="kelly-loading"><i class="fa fa-spinner fa-spin"></i> Computing Kelly Criterion from 2-year backtest…</div>`;
+  el.innerHTML = `<div class="kelly-loading"><i class="fa fa-spinner fa-spin"></i> Computing Kelly + volatility-scaled sizing from 2-year backtest…</div>`;
 
   const k = await fetchKellyData(symbol);
   if (!k) {
@@ -2852,7 +2895,7 @@ async function renderKellySuggestion(symbol, currentRiskPct, capital) {
 
   const exp = k.expectancy_pct;
   const wr  = k.win_rate;
-  // Sample-size guard: less than 5 signals is too few to trust
+  // Sample-size guard
   if ((k.total_signals || 0) < 5) {
     el.innerHTML = `
       <div class="kelly-panel kelly-warn">
@@ -2865,70 +2908,160 @@ async function renderKellySuggestion(symbol, currentRiskPct, capital) {
     return;
   }
 
-  // Bucket the verdict
-  let verdict, color, advice, kellyDisplay, halfKellyDisplay, applyBtn;
+  // ── Volatility scaling ──────────────────────────────────────────────
+  // Pull this stock's daily ATR% from the analyze response (already loaded).
+  // Annualized vol ≈ daily ATR × √252. NIFTY's long-run annualized vol ≈ 22%.
+  // Scalar = min(1, benchmark / stock_vol). High-vol stocks get smaller sizes.
+  const atrPct = (currentData && currentData.levels && currentData.levels.risk
+                   && currentData.levels.risk.atr_pct) || 2.5;
+  const annVolPct      = atrPct * Math.sqrt(252);   // e.g. 2.5% daily → 39.7% annualized
+  const benchmarkVol   = 22.0;                       // NIFTY 50 ~22% annualized
+  const volScalar      = Math.min(1.0, benchmarkVol / Math.max(annVolPct, 0.01));
+  const volTag         = annVolPct > 40 ? 'High' : annVolPct > 28 ? 'Elevated' : annVolPct > 18 ? 'Moderate' : 'Low';
+  const volColor       = annVolPct > 40 ? '#ff8080' : annVolPct > 28 ? '#ffd740' : '#69f0ae';
 
+  // ── Caps to keep things sane even after math ────────────────────────
+  // No single trade should ever risk more than 5% of capital, regardless of Kelly.
+  const cap = (n, max) => Math.max(0, Math.min(n, max));
+
+  // Negative expectancy → all sizes zero
   if (exp < 0 || k.kelly_pct <= 0) {
-    verdict = '🚫 NEGATIVE EXPECTANCY';
-    color = '#ff5252';
-    advice = `<strong>This strategy has historically lost money on this stock.</strong> Backtest shows ${k.wins}W / ${k.losses}L with expectancy of <strong style="color:${color};">${exp>=0?'+':''}${exp}%</strong> per trade after costs. Kelly says: <strong>skip this trade entirely</strong>.`;
-    kellyDisplay = '0%';
-    halfKellyDisplay = '0%';
-    applyBtn = '';
-  } else {
-    // Cap Kelly at a sane maximum (5%); Half-Kelly at 2.5%
-    const cappedKelly = Math.min(k.kelly_pct, 5);
-    const cappedHalfKelly = Math.min(k.half_kelly_pct, 2.5);
-    verdict = '✅ POSITIVE EXPECTANCY';
-    color = '#69f0ae';
-    advice = `Strategy made money historically (expectancy <strong style="color:${color};">+${exp}%</strong> per trade net of costs). Kelly says you can afford to size up to <strong>${cappedKelly.toFixed(2)}%</strong>, but most pros use <strong>Half-Kelly (${cappedHalfKelly.toFixed(2)}%)</strong> as a margin of safety.`;
-    kellyDisplay = `${cappedKelly.toFixed(2)}%${k.kelly_pct > 5 ? ' (capped from ' + k.kelly_pct.toFixed(1) + '%)' : ''}`;
-    halfKellyDisplay = `${cappedHalfKelly.toFixed(2)}%${k.half_kelly_pct > 2.5 ? ' (capped)' : ''}`;
-    applyBtn = `<button class="kelly-apply-btn" onclick="applyHalfKelly(${cappedHalfKelly.toFixed(3)})">Apply Half-Kelly (${cappedHalfKelly.toFixed(2)}%)</button>`;
+    el.innerHTML = `
+      <div class="kelly-panel kelly-v2" style="border-left:3px solid #ff5252;">
+        <div class="kelly-h">
+          <i class="fa fa-flask" style="color:#ff5252;"></i>
+          <strong>Kelly + Volatility Sizing</strong>
+          <span style="margin-left:auto;font-size:10px;color:var(--text-muted);">Backtest ${k.period.from} → ${k.period.to} · ${k.data_points} days</span>
+        </div>
+
+        <div class="kelly-stats kv-bt-stats">
+          <div class="ks-stat"><div class="ks-lbl">Signals</div><div class="ks-val">${k.total_signals}</div></div>
+          <div class="ks-stat"><div class="ks-lbl">Win Rate</div><div class="ks-val">${wr}%</div></div>
+          <div class="ks-stat"><div class="ks-lbl">Avg Win</div><div class="ks-val" style="color:#69f0ae;">+${k.avg_win_pct}%</div></div>
+          <div class="ks-stat"><div class="ks-lbl">Avg Loss</div><div class="ks-val" style="color:#ff8080;">${k.avg_loss_pct}%</div></div>
+          <div class="ks-stat"><div class="ks-lbl">Expectancy</div><div class="ks-val" style="color:#ff5252;">${exp}%</div></div>
+          <div class="ks-stat"><div class="ks-lbl">Vol (annual)</div><div class="ks-val" style="color:${volColor};">${annVolPct.toFixed(0)}% (${volTag})</div></div>
+        </div>
+
+        <div class="kv-recommend kv-rec-skip">
+          🚫 <strong>RECOMMENDED: 0% — skip this trade entirely</strong>
+          <div class="kv-rec-sub">Strategy lost money historically on this stock (${k.wins}W / ${k.losses}L, expectancy ${exp}% per trade after costs). No fraction of Kelly gives a positive edge.</div>
+        </div>
+      </div>`;
+    return;
   }
 
-  // Compare with user's current risk %
-  let comparison = '';
-  if (k.kelly_pct > 0) {
-    const cappedKelly = Math.min(k.kelly_pct, 5);
-    if (currentRiskPct > cappedKelly) {
-      comparison = `<div class="kelly-compare warn">⚠ Your current risk ${currentRiskPct}% is <strong>above</strong> Full Kelly (${cappedKelly.toFixed(2)}%) — over-leveraged for this strategy's edge.</div>`;
-    } else if (currentRiskPct > cappedKelly / 2) {
-      comparison = `<div class="kelly-compare ok">Your current risk ${currentRiskPct}% is between Half- and Full-Kelly — aggressive but justifiable.</div>`;
-    } else {
-      comparison = `<div class="kelly-compare safe">Your current risk ${currentRiskPct}% is at or below Half-Kelly — conservative.</div>`;
-    }
-  }
+  // ── Positive expectancy → compute all fractions + recommendation ─────
+  const fullK     = cap(k.kelly_pct,        5.0);   // hard cap 5%
+  const halfK     = cap(k.half_kelly_pct,   2.5);
+  const quarterK  = cap(k.quarter_kelly_pct,1.5);
+  const tenthK    = cap(k.tenth_kelly_pct,  0.75);
+
+  // The recommended sizing = Quarter Kelly × volatility scalar.
+  // Why Quarter not Half: research (MacLean/Thorp/Ziemba) shows Quarter Kelly
+  // captures ~70% of the growth rate of Full Kelly with ~25% of the drawdown.
+  // Sweet spot for retail. Half is the "aggressive but justifiable" choice.
+  const recommendedRaw = quarterK * volScalar;
+  const recommended    = cap(recommendedRaw, 1.5);  // hard cap 1.5%
+
+  // Drawdown expectations (well-known property of Kelly):
+  // Full ≈ √(2 × Kelly%) standard-dev drawdown
+  // Approximate drawdowns for context
+  const ddFull    = Math.round(fullK * 8);  // rough rule of thumb
+  const ddHalf    = Math.round(halfK * 5);
+  const ddQuarter = Math.round(quarterK * 3.5);
+  const ddTenth   = Math.round(tenthK * 2.5);
+
+  const compareNote = (() => {
+    if (currentRiskPct > fullK)             return ['warn', `⚠ Your current risk ${currentRiskPct}% is <strong>above Full Kelly (${fullK.toFixed(2)}%)</strong> — over-leveraged for this strategy's edge.`];
+    if (currentRiskPct > halfK)             return ['ok',   `Your current risk ${currentRiskPct}% is between Half- and Full-Kelly — aggressive but justifiable.`];
+    if (currentRiskPct > recommended * 1.1) return ['ok',   `Your current risk ${currentRiskPct}% is above the volatility-adjusted recommendation (${recommended.toFixed(2)}%). Acceptable if you have edge conviction.`];
+    return ['safe', `Your current risk ${currentRiskPct}% is at or below the volatility-adjusted recommendation — conservative.`];
+  })();
 
   el.innerHTML = `
-    <div class="kelly-panel" style="border-left:3px solid ${color};">
+    <div class="kelly-panel kelly-v2" style="border-left:3px solid #69f0ae;">
       <div class="kelly-h">
-        <i class="fa fa-flask" style="color:${color};"></i>
-        <strong>Kelly Sizing Suggestion</strong>
-        <span style="margin-left:auto;font-size:10px;color:var(--text-muted);">Backtest: ${k.period.from} → ${k.period.to} (${k.data_points} days)</span>
+        <i class="fa fa-flask" style="color:#69f0ae;"></i>
+        <strong>Kelly + Volatility Sizing</strong>
+        <span style="margin-left:auto;font-size:10px;color:var(--text-muted);">Backtest ${k.period.from} → ${k.period.to} · ${k.data_points} days</span>
       </div>
-      <div class="kelly-stats">
+
+      <!-- Backtest stats -->
+      <div class="kelly-stats kv-bt-stats">
         <div class="ks-stat"><div class="ks-lbl">Signals</div><div class="ks-val">${k.total_signals}</div></div>
         <div class="ks-stat"><div class="ks-lbl">Win Rate</div><div class="ks-val">${wr}%</div></div>
-        <div class="ks-stat"><div class="ks-lbl">Avg Win (net)</div><div class="ks-val" style="color:#69f0ae;">+${k.avg_win_pct}%</div></div>
-        <div class="ks-stat"><div class="ks-lbl">Avg Loss (net)</div><div class="ks-val" style="color:#ff8080;">${k.avg_loss_pct}%</div></div>
-        <div class="ks-stat"><div class="ks-lbl">Expectancy</div><div class="ks-val" style="color:${color};">${exp>=0?'+':''}${exp}%</div></div>
-        <div class="ks-stat"><div class="ks-lbl">Full Kelly</div><div class="ks-val" style="color:${color};">${kellyDisplay}</div></div>
-        <div class="ks-stat"><div class="ks-lbl">Half Kelly</div><div class="ks-val" style="color:${color};">${halfKellyDisplay}</div></div>
+        <div class="ks-stat"><div class="ks-lbl">Avg Win</div><div class="ks-val" style="color:#69f0ae;">+${k.avg_win_pct}%</div></div>
+        <div class="ks-stat"><div class="ks-lbl">Avg Loss</div><div class="ks-val" style="color:#ff8080;">${k.avg_loss_pct}%</div></div>
+        <div class="ks-stat"><div class="ks-lbl">Expectancy</div><div class="ks-val" style="color:#69f0ae;">+${exp}%</div></div>
+        <div class="ks-stat"><div class="ks-lbl">Vol (annual)</div><div class="ks-val" style="color:${volColor};">${annVolPct.toFixed(0)}% (${volTag})</div></div>
       </div>
-      <div class="kelly-verdict" style="color:${color};">${verdict}</div>
-      <div class="kelly-advice">${advice}</div>
-      ${comparison}
-      ${applyBtn ? `<div style="margin-top:10px;">${applyBtn}</div>` : ''}
+
+      <!-- Kelly fractions -->
+      <div class="kv-frac-grid">
+        <div class="kv-frac">
+          <div class="kv-frac-name">Full Kelly</div>
+          <div class="kv-frac-val">${fullK.toFixed(2)}%</div>
+          <div class="kv-frac-note">~${ddFull}% drawdown · DON'T use</div>
+        </div>
+        <div class="kv-frac">
+          <div class="kv-frac-name">Half Kelly</div>
+          <div class="kv-frac-val">${halfK.toFixed(2)}%</div>
+          <div class="kv-frac-note">~${ddHalf}% drawdown · aggressive</div>
+        </div>
+        <div class="kv-frac kv-frac-rec">
+          <div class="kv-frac-name">⭐ Quarter Kelly</div>
+          <div class="kv-frac-val">${quarterK.toFixed(2)}%</div>
+          <div class="kv-frac-note">~${ddQuarter}% drawdown · pro sweet spot</div>
+        </div>
+        <div class="kv-frac">
+          <div class="kv-frac-name">Tenth Kelly</div>
+          <div class="kv-frac-val">${tenthK.toFixed(2)}%</div>
+          <div class="kv-frac-note">~${ddTenth}% drawdown · ultra-safe</div>
+        </div>
+      </div>
+
+      <!-- Volatility scaling -->
+      <div class="kv-vol-box">
+        <div class="kv-vol-h">⚙ Volatility Adjustment</div>
+        <div class="kv-vol-row">
+          <span>This stock annual vol:</span>
+          <span style="color:${volColor};font-weight:700;">${annVolPct.toFixed(1)}% (${volTag})</span>
+        </div>
+        <div class="kv-vol-row">
+          <span>NIFTY benchmark vol:</span>
+          <span style="color:var(--text-muted);">${benchmarkVol.toFixed(1)}%</span>
+        </div>
+        <div class="kv-vol-row">
+          <span>Scalar (benchmark / stock):</span>
+          <span style="color:${volScalar < 1 ? '#ffd740' : '#69f0ae'};font-weight:700;">× ${volScalar.toFixed(2)}</span>
+        </div>
+      </div>
+
+      <!-- The recommendation -->
+      <div class="kv-recommend">
+        🎯 <strong>RECOMMENDED RISK: ${recommended.toFixed(2)}%</strong>
+        <div class="kv-rec-sub">
+          Quarter Kelly (${quarterK.toFixed(2)}%) × volatility scalar (${volScalar.toFixed(2)}) = ${recommendedRaw.toFixed(2)}%${recommended < recommendedRaw ? ` (capped at 1.5%)` : ''}
+        </div>
+        <button class="kelly-apply-btn" onclick="applyKellyRecommended(${recommended.toFixed(3)})">
+          Apply ${recommended.toFixed(2)}% to position sizer
+        </button>
+      </div>
+
+      <!-- Comparison with user's current -->
+      <div class="kelly-compare ${compareNote[0]}">${compareNote[1]}</div>
     </div>`;
 }
 
-function applyHalfKelly(riskPct) {
+function applyKellyRecommended(riskPct) {
   const input = document.getElementById('pos-risk');
   if (!input) return;
   input.value = riskPct;
   updatePositionSizing();
 }
+// Keep legacy function for backward compatibility
+function applyHalfKelly(riskPct) { applyKellyRecommended(riskPct); }
 
 // ── Charts ──
 const plotlyConfig = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ['lasso2d','select2d'] };
