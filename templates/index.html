@@ -1802,11 +1802,17 @@ let currentData = null;
 // ──────────────────────────────────────────────────────────────────────
 async function fetchJSON(url, opts = {}) {
   const maxRetries = opts.maxRetries ?? 2;
-  const backoffMs = opts.backoffMs ?? 4000;
+  const backoffMs  = opts.backoffMs ?? 4000;
+  const timeoutMs  = opts.timeoutMs ?? 30000;   // hard client-side timeout — prevents hang when server holds the connection (e.g. Fly proxy with no healthy machine)
   let lastErr;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
     try {
-      const res = await fetch(url, opts);
+      const fetchOpts = { ...opts };
+      if (ctrl) fetchOpts.signal = ctrl.signal;
+      const res = await fetch(url, fetchOpts);
+      if (timer) clearTimeout(timer);
       // Treat 5xx (server errors) as retryable
       if (res.status >= 500 && res.status < 600) {
         lastErr = new Error(`Server ${res.status} — retrying…`);
@@ -1833,14 +1839,21 @@ async function fetchJSON(url, opts = {}) {
         throw new Error('Unexpected response from server');
       }
     } catch (e) {
-      lastErr = e;
-      // Network errors (TypeError) are also retryable
-      if (attempt < maxRetries && (e.name === 'TypeError' || e.message.includes('retrying'))) {
+      if (timer) clearTimeout(timer);
+      // Normalize AbortError → "Request timed out"
+      if (e.name === 'AbortError') {
+        lastErr = new Error(`Request timed out after ${(timeoutMs / 1000).toFixed(0)}s`);
+      } else {
+        lastErr = e;
+      }
+      // Retry on network errors, aborts, or our own retry sentinel
+      const retryable = (e.name === 'TypeError' || e.name === 'AbortError' || (e.message && e.message.includes('retrying')));
+      if (attempt < maxRetries && retryable) {
         if (opts.onRetry) opts.onRetry(attempt + 1, maxRetries + 1);
         await new Promise(r => setTimeout(r, backoffMs * (attempt + 1)));
         continue;
       }
-      throw e;
+      throw lastErr;
     }
   }
   throw lastErr;
@@ -2300,14 +2313,21 @@ function snapshotSlug(idx) {
 const GITHUB_RAW_BASE =
   'https://raw.githubusercontent.com/saikb-deloitte/stock-analyzer/Centaur-prism/static/data';
 
-async function loadScreenerWithFallback(index) {
-  // 1) Try live API first (with built-in retry on 5xx)
+async function loadScreenerWithFallback(index, opts = {}) {
+  const slug = snapshotSlug(index);
+  const el   = document.getElementById('screener-content');
+  // On initial page load (cold) we prefer instant snapshot → live fetch
+  // updates in the background. forceLive = true skips the snapshot-first
+  // shortcut (used by the Refresh button).
+  const forceLive = !!opts.forceLive;
+
+  // 1) Live API (fast fail — fallback is right there)
   try {
     const data = await fetchJSON(`/api/screener?index=${encodeURIComponent(index)}`, {
-      maxRetries: 1,    // fail fast — fallback is right there
+      maxRetries: forceLive ? 1 : 0,    // initial load: zero retries → snapshot quickly
       backoffMs: 2500,
+      timeoutMs: forceLive ? 25000 : 12000,   // initial: 12s, refresh: 25s
       onRetry: (n, total) => {
-        const el = document.getElementById('screener-content');
         if (el) el.innerHTML = skeletonScreener(`Live fetch slow — retrying (${n}/${total})`);
       }
     });
@@ -2318,13 +2338,10 @@ async function loadScreenerWithFallback(index) {
     console.debug('[screener] live fetch failed:', e.message);
   }
 
-  const slug = snapshotSlug(index);
-  const el = document.getElementById('screener-content');
-
-  // 2) Same-origin static snapshot (Render-served)
+  // 2) Same-origin static snapshot (Render or Fly-served)
   if (el) el.innerHTML = skeletonScreener('Loading daily snapshot');
   try {
-    const snap = await fetchJSON(`/static/data/snapshot_${slug}.json`, { maxRetries: 0 });
+    const snap = await fetchJSON(`/static/data/snapshot_${slug}.json`, { maxRetries: 0, timeoutMs: 8000 });
     if (snap && Array.isArray(snap.stocks)) {
       return { stocks: snap.stocks, snapshotMode: true, snapshotDate: snap.generated_at_iso || snap.generated_at, source: 'render-static' };
     }
@@ -2332,10 +2349,10 @@ async function loadScreenerWithFallback(index) {
     console.debug('[screener] same-origin static failed:', e.message);
   }
 
-  // 3) Raw GitHub URL — bypasses Render entirely. Works even if hosting is down.
+  // 3) Raw GitHub URL — bypasses our hosts entirely. Works even if both are down.
   if (el) el.innerHTML = skeletonScreener('Loading snapshot from GitHub');
   try {
-    const snap = await fetchJSON(`${GITHUB_RAW_BASE}/snapshot_${slug}.json`, { maxRetries: 0 });
+    const snap = await fetchJSON(`${GITHUB_RAW_BASE}/snapshot_${slug}.json`, { maxRetries: 0, timeoutMs: 8000 });
     if (snap && Array.isArray(snap.stocks)) {
       return { stocks: snap.stocks, snapshotMode: true, snapshotDate: snap.generated_at_iso || snap.generated_at, source: 'github' };
     }
@@ -2377,7 +2394,7 @@ async function loadScreener(forceRefresh=false) {
 
   const t0 = Date.now();
   try {
-    const { stocks, snapshotMode, snapshotDate, source } = await loadScreenerWithFallback(index);
+    const { stocks, snapshotMode, snapshotDate, source } = await loadScreenerWithFallback(index, { forceLive: forceRefresh });
     screenerData = stocks;
     const elapsed = ((Date.now()-t0)/1000).toFixed(1);
 
@@ -5089,13 +5106,16 @@ let __alertLastEventIds = new Set();   // to detect new events between polls
 async function pollAlerts() {
   if (document.hidden) return;  // skip when tab not visible
   try {
-    // 1. Run a fresh check (cheap if no alerts)
-    const cr = await fetch('/api/alerts/check', { method: 'POST' });
+    // Hard 10s timeout so a dead server doesn't queue up retries
+    const ctrl1 = new AbortController(); const t1 = setTimeout(() => ctrl1.abort(), 10000);
+    const cr = await fetch('/api/alerts/check', { method: 'POST', signal: ctrl1.signal });
+    clearTimeout(t1);
     const cd = await cr.json();
     const newEvts = cd.new_events || [];
 
-    // 2. Refresh unread count + render list (also picks up cross-tab updates)
-    const r = await fetch('/api/alerts/events');
+    const ctrl2 = new AbortController(); const t2 = setTimeout(() => ctrl2.abort(), 10000);
+    const r = await fetch('/api/alerts/events', { signal: ctrl2.signal });
+    clearTimeout(t2);
     const d = await r.json();
     updateBellBadge(d.unread_count || 0);
 

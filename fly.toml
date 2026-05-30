@@ -27,10 +27,17 @@ kill_timeout = '30s'
     hard_limit = 50
     soft_limit = 25
 
+  # Health check tuned for gevent + curl_cffi blocking under screener load.
+  # yfinance via curl_cffi doesn't yield to gevent, so when the single
+  # worker is mid-screener (~30-60s), even /api/freshness can't respond.
+  # If the check is too aggressive Fly kills the machine mid-fetch and
+  # rotates traffic to a sibling that's *also* in the same state,
+  # creating a flap loop. Long grace + tolerant timeout + slower
+  # interval lets the worker recover.
   [[http_service.checks]]
-    interval = '1m0s'
-    timeout = '10s'
-    grace_period = '30s'
+    interval = '2m'
+    timeout = '30s'
+    grace_period = '90s'
     method = 'GET'
     path = '/api/freshness'
 
