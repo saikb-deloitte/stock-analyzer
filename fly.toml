@@ -1,44 +1,42 @@
-# Centaur Prism — Fly.io config
-# Mumbai region for best latency to Indian audience (~25ms vs 270ms on US hosts)
-# Auto-stops when idle, auto-starts on first request → effectively free for low traffic
+# fly.toml app configuration file generated for centaur-prism on 2026-05-28T19:53:51-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "centaur-prism"
-primary_region = "bom"          # Mumbai
-kill_signal = "SIGTERM"
-kill_timeout = "30s"
+app = 'centaur-prism'
+primary_region = 'bom'
+kill_signal = 'SIGTERM'
+kill_timeout = '30s'
 
 [build]
-  # Use the Dockerfile in repo root
 
 [env]
-  PORT = "8080"
-  PUBLIC_MODE = "true"
-  # FLASK_SECRET is set via `flyctl secrets set` (see DEPLOY_FLY.md)
+  PORT = '8080'
+  PUBLIC_MODE = 'true'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"   # idle → stop machine, $0 cost
-  auto_start_machines = true    # request → boot machine (~3s cold start)
-  min_machines_running = 0      # zero machines when idle
-  processes = ["app"]
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
   [http_service.concurrency]
-    type = "requests"
-    soft_limit = 25             # start new machine above this
-    hard_limit = 50             # reject above this (protects against runaway)
+    type = 'requests'
+    hard_limit = 50
+    soft_limit = 25
 
-  # Health check — Fly pings this to know if the machine is healthy
   [[http_service.checks]]
-    grace_period  = "30s"       # wait 30s after boot before first check
-    interval      = "60s"       # check every minute
-    method        = "GET"
-    timeout       = "10s"
-    path          = "/api/freshness"
+    interval = '1m0s'
+    timeout = '10s'
+    grace_period = '30s'
+    method = 'GET'
+    path = '/api/freshness'
 
-# VM size — shared-cpu-1x, 512MB (cheapest option that fits pandas+numpy)
 [[vm]]
-  size      = "shared-cpu-1x"
-  memory    = "512mb"
-  cpu_kind  = "shared"
-  cpus      = 1
+  size = 'shared-cpu-1x'
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 512

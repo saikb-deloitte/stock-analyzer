@@ -277,6 +277,228 @@ def get_nse_universe(min_turnover_cr=5.0, max_stocks=500, force_refresh=False):
     return tickers, meta
 
 
+# ────────────────────────────────────────────────────────────────────────────
+# INDIAN FINANCIAL NEWS RSS + SCREENER.IN FUNDAMENTALS
+# Replaces yfinance.news (US-biased, sparse) and yfinance.info (often empty on
+# cloud IPs) with India-native sources.
+# ────────────────────────────────────────────────────────────────────────────
+
+_NEWS_FEEDS = [
+    # MoneyControl — business + market reports
+    ('MoneyControl Business',  'https://www.moneycontrol.com/rss/business.xml'),
+    ('MoneyControl Markets',   'https://www.moneycontrol.com/rss/marketreports.xml'),
+    # LiveMint
+    ('LiveMint Markets',       'https://www.livemint.com/rss/markets'),
+    # Economic Times
+    ('ET Markets',             'https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms'),
+    ('ET Business',            'https://economictimes.indiatimes.com/rssfeedsdefault.cms'),
+]
+
+_NEWS_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+    'Accept': 'application/rss+xml, application/xml, text/xml',
+}
+
+def _fetch_indian_news(symbol, company_name=None, sector=None, max_items=12):
+    """
+    Pull recent articles from Indian financial RSS feeds, filter to those
+    mentioning the stock by symbol / company name / first 2 words.
+    Cached for 30 min per ticker.
+    """
+    cache_key = f'news_in:{symbol}'
+    cached = get_cached(cache_key, ttl=1800)
+    if cached is not None:
+        return cached
+
+    # Build match terms — be specific to avoid over-matching common words
+    terms = set()
+    sym_clean = symbol.upper().replace('.NS', '').replace('.BO', '')
+    # Ticker symbol (lowercased so it works in headlines like "TCS, Infosys ...")
+    if len(sym_clean) >= 3:
+        terms.add(sym_clean.lower())
+    if company_name:
+        nm = company_name.strip()
+        # Strip very common suffixes for cleaner matching
+        nm_short = nm
+        for suf in [' Limited', ' Ltd.', ' Ltd', ' Inc.', ' Inc', ' Corporation', ' Corp.', ' Corp']:
+            if nm_short.endswith(suf):
+                nm_short = nm_short[:-len(suf)].strip()
+        if len(nm_short) >= 4:
+            terms.add(nm_short.lower())
+        # First two words ("Tata Consultancy" from "Tata Consultancy Services Ltd")
+        words = nm_short.split()
+        if len(words) >= 2:
+            two = ' '.join(words[:2]).lower()
+            if len(two) >= 6:
+                terms.add(two)
+        # Distinctive single word (longest word ≥6 chars) for partial matches
+        long_words = [w for w in words if len(w) >= 6 and w.lower() not in
+                      {'india', 'limited', 'private', 'company', 'corporation', 'industries', 'services'}]
+        if long_words:
+            terms.add(max(long_words, key=len).lower())
+
+    try:
+        import feedparser
+    except ImportError:
+        print('  [news] feedparser not installed — returning empty')
+        return []
+
+    matches = []
+    for feed_name, feed_url in _NEWS_FEEDS:
+        try:
+            # feedparser respects HTTP headers via request_headers kwarg
+            feed = feedparser.parse(feed_url, request_headers=_NEWS_HEADERS)
+            for entry in feed.entries[:80]:   # cap per feed
+                title = (entry.get('title') or '').strip()
+                if not title:
+                    continue
+                summary = (entry.get('summary') or entry.get('description') or '').strip()
+                hay = (title + ' ' + summary).lower()
+                # Match if any of our terms appear (need at least 1)
+                if not any(t in hay for t in terms):
+                    continue
+                matches.append({
+                    'title':     title,
+                    'publisher': feed_name,
+                    'url':       entry.get('link', ''),
+                    'published': entry.get('published', ''),
+                    '_ts':       entry.get('published_parsed') or (1970, 1, 1, 0, 0, 0, 0, 0, 0),
+                })
+        except Exception as e:
+            print(f'  [news] {feed_name} failed: {e}')
+            continue
+
+    # Sort newest-first
+    matches.sort(key=lambda x: x.get('_ts'), reverse=True)
+
+    # Dedupe by first 60 chars of title (same story, different feeds)
+    seen, unique = set(), []
+    for m in matches:
+        key = m['title'][:60].lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        m.pop('_ts', None)
+        unique.append(m)
+        if len(unique) >= max_items:
+            break
+
+    set_cached(cache_key, unique, ttl=1800)
+    return unique
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Screener.in fundamentals scraper — fallback for empty yfinance.info
+# ──────────────────────────────────────────────────────────────────────────
+_SCREENER_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9',
+    'Accept-Language': 'en-US,en;q=0.9',
+}
+
+def _parse_screener_number(s):
+    """Strip commas/units/percent and convert to float. None if unparseable."""
+    if not s:
+        return None
+    s = str(s).replace(',', '').replace('₹', '').replace('Rs.', '').strip()
+    s = s.split()[0] if s else s
+    # Handle Cr suffix (rupee crores)
+    if s.endswith('Cr'):
+        s = s[:-2].strip()
+    try:
+        return float(s)
+    except (ValueError, TypeError):
+        return None
+
+def _fetch_screener_fundamentals(symbol):
+    """
+    Scrape Screener.in for a stock's fundamentals (P/E, P/B, ROE, market cap
+    etc.). Returns a dict shaped like yfinance.info so callers can substitute.
+    Cached for 6 hours per ticker.
+    """
+    sym = symbol.upper().replace('.NS', '').replace('.BO', '')
+    cache_key = f'screener_fund:{sym}'
+    cached = get_cached(cache_key, ttl=21600)   # 6 hours
+    if cached is not None:
+        return cached
+
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError:
+        print('  [screener] beautifulsoup4 not installed — returning empty')
+        return {}
+
+    # Try consolidated first (preferred for multi-segment companies), then standalone
+    urls = [
+        f'https://www.screener.in/company/{sym}/consolidated/',
+        f'https://www.screener.in/company/{sym}/',
+    ]
+
+    info = {}
+    for url in urls:
+        try:
+            r = _requests.get(url, headers=_SCREENER_HEADERS, timeout=5)
+            if r.status_code != 200:
+                continue
+            soup = BeautifulSoup(r.content, 'html.parser')
+
+            # Company name
+            title_el = soup.select_one('h1')
+            if title_el:
+                name = title_el.get_text(strip=True)
+                if name and len(name) > 2:
+                    info['longName'] = name
+
+            # Top ratios block — Market Cap, P/E, P/B, ROE, etc.
+            for li in soup.select('#top-ratios li'):
+                name_el = li.select_one('.name')
+                num_el  = li.select_one('.number')
+                if not name_el or not num_el:
+                    continue
+                name = name_el.get_text(strip=True)
+                num  = _parse_screener_number(num_el.get_text(strip=True))
+                if num is None:
+                    continue
+
+                # Map to yfinance.info-style fields
+                low_name = name.lower()
+                if 'market cap' in low_name:
+                    info['marketCap'] = num * 1e7              # ₹ Cr → ₹
+                elif low_name == 'current price':
+                    info['currentPrice'] = num
+                elif low_name in ('stock p/e', 'p/e'):
+                    info['trailingPE'] = num
+                elif low_name == 'book value':
+                    info['bookValue'] = num
+                elif low_name in ('price to book value', 'pb ratio'):
+                    info['priceToBook'] = num
+                elif 'dividend yield' in low_name:
+                    info['dividendYield'] = num / 100.0        # % → decimal
+                elif low_name == 'roe':
+                    info['returnOnEquity'] = num / 100.0
+                elif low_name == 'roce':
+                    info['returnOnCapital'] = num / 100.0
+                elif low_name == 'face value':
+                    info['faceValue'] = num
+                elif low_name in ('eps', 'earnings per share'):
+                    info['trailingEps'] = num
+                elif low_name == 'high / low':
+                    info['fiftyTwoWeekHigh'] = num   # first number is high
+
+            # If we got something useful, stop here
+            if info.get('marketCap') or info.get('trailingPE'):
+                break
+        except Exception as e:
+            print(f'  [screener] {sym} {url} failed: {e}')
+            continue
+
+    if info:
+        set_cached(cache_key, info, ttl=21600)
+    return info
+
+
 def _cache_key(ticker, period):
     safe = ticker.replace('/', '_').replace('\\', '_')
     return os.path.join(CACHE_DIR, f'hist_{safe}_{period}.pkl')
@@ -390,16 +612,27 @@ def fetch_history(ticker, period='1y'):
     return None, None
 
 
-def get_cached(key):
+def get_cached(key, ttl=None):
+    """Get cached value if present and not expired.
+    Optional per-call ttl override (useful for slow-changing data like news/fundamentals).
+    """
     if key in _cache:
-        data, ts = _cache[key]
-        if time.time() - ts < CACHE_TTL:
+        entry = _cache[key]
+        # Support both old 2-tuple and new 3-tuple cache entries
+        if len(entry) >= 3:
+            data, ts, entry_ttl = entry
+            limit = ttl if ttl is not None else (entry_ttl if entry_ttl is not None else CACHE_TTL)
+        else:
+            data, ts = entry
+            limit = ttl if ttl is not None else CACHE_TTL
+        if time.time() - ts < limit:
             return data
     return None
 
 
-def set_cached(key, data):
-    _cache[key] = (data, time.time())
+def set_cached(key, data, ttl=None):
+    """Store value in cache. Optional ttl overrides the global CACHE_TTL for this entry."""
+    _cache[key] = (data, time.time(), ttl)
 
 
 # Track when we last got *fresh* (non-cached) data from upstream sources.
@@ -2296,9 +2529,14 @@ def analyze(ticker):
             except Exception:
                 pass
 
-        # Name + sector + industry fallback: hardcoded dict for top NSE names.
-        # Solves the "TCS.NS" heading + "Unknown" sector issues on Render.
+        # ── Fundamentals fallback chain ────────────────────────────────────
+        # 1) yfinance.info (above — fast, sometimes works)
+        # 2) Static NSE_COMPANY_INFO dict (instant, 99 top stocks)
+        # 3) Screener.in scrape (slower but covers all NSE stocks)
+        # 4) Generic defaults
         clean_sym = ticker.replace('.NS', '').replace('.BO', '')
+
+        # Tier 2: static dict
         static_info = NSE_COMPANY_INFO.get(clean_sym)
         if static_info:
             static_name, static_sector, static_industry = static_info
@@ -2308,7 +2546,27 @@ def analyze(ticker):
                 info['sector'] = static_sector
             if not info.get('industry'):
                 info['industry'] = static_industry
-        # Final fallback — generic labels (and clean symbol, never ticker.NS)
+
+        # Tier 3: Screener.in scrape — fires only if we still don't have core fundamentals
+        # (this is the expensive call so we gate it carefully)
+        needs_screener = (
+            not info.get('marketCap')
+            or not info.get('trailingPE')
+            or not info.get('returnOnEquity')
+            or not info.get('longName')
+            or not info.get('sector')
+        )
+        if needs_screener:
+            try:
+                screener_info = _fetch_screener_fundamentals(clean_sym)
+                # Merge: don't overwrite anything yfinance already gave us
+                for k, v in (screener_info or {}).items():
+                    if not info.get(k) and v is not None:
+                        info[k] = v
+            except Exception as e:
+                print(f'  [analyze {clean_sym}] screener fetch failed: {e}')
+
+        # Tier 4: final defaults
         if not info.get('longName') and not info.get('shortName'):
             info['longName'] = clean_sym
         if not info.get('sector'):
@@ -2406,22 +2664,35 @@ def analyze(ticker):
         # Levels and risk (uses info + earnings → factors in everything)
         levels = calculate_levels(df, info=info, earnings=earnings)
 
-        # News (yfinance only — NSE doesn't provide structured news)
+        # News — Indian RSS feeds first (MoneyControl + LiveMint + ET), then
+        # yfinance.news as backup. Indian feeds are richer for NSE stocks.
         news = []
+        company_name_for_filter = info.get('longName') or info.get('shortName') or clean_sym
         try:
-            for n in ((stock.news if stock is not None else []) or [])[:10]:
-                content = n.get('content', {})
-                title = content.get('title') or n.get('title', '')
-                pub = content.get('provider', {}).get('displayName') or n.get('publisher', '')
-                url = content.get('canonicalUrl', {}).get('url') or n.get('link', '')
-                ts = content.get('pubDate') or ''
-                if not ts:
-                    raw_ts = n.get('providerPublishTime', 0)
-                    ts = datetime.fromtimestamp(raw_ts).strftime('%d %b %Y %H:%M') if raw_ts else ''
-                if title:
-                    news.append({'title': title, 'publisher': pub, 'url': url, 'published': ts})
-        except Exception:
-            pass
+            indian_news = _fetch_indian_news(clean_sym, company_name=company_name_for_filter, sector=info.get('sector'))
+            news.extend(indian_news)
+        except Exception as e:
+            print(f'  [analyze {clean_sym}] indian news failed: {e}')
+
+        # Top up with yfinance.news only if we got too few Indian articles
+        if len(news) < 5:
+            try:
+                for n in ((stock.news if stock is not None else []) or [])[:10]:
+                    content = n.get('content', {})
+                    title = content.get('title') or n.get('title', '')
+                    pub = content.get('provider', {}).get('displayName') or n.get('publisher', '')
+                    url = content.get('canonicalUrl', {}).get('url') or n.get('link', '')
+                    ts = content.get('pubDate') or ''
+                    if not ts:
+                        raw_ts = n.get('providerPublishTime', 0)
+                        ts = datetime.fromtimestamp(raw_ts).strftime('%d %b %Y %H:%M') if raw_ts else ''
+                    if title:
+                        # Avoid duplicates with Indian RSS results
+                        if not any(title[:60].lower() == (x['title'][:60].lower()) for x in news):
+                            news.append({'title': title, 'publisher': pub, 'url': url, 'published': ts})
+            except Exception:
+                pass
+        news = news[:12]   # cap total
 
         # News sentiment scoring
         news_scored, news_agg = score_news_sentiment(news)
