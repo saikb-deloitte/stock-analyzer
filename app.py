@@ -3886,5 +3886,372 @@ def daily_prism(ticker=None):
 # (30-min TTL), all subsequent users get instant responses.
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# ALERTS — server-side alert engine + in-app notifications (tasks #10 + #11)
+# ════════════════════════════════════════════════════════════════════════════
+# Architecture:
+#   - SQLite stores alerts (per session) + fired events
+#   - Alert types: price_above, price_below, score_long_term, risk_below,
+#                  day_change_above, day_change_below
+#   - Lazy check: frontend polls /api/alerts/check every 60s while visible.
+#     Cheaper than a background scheduler that wastes cycles on idle Fly
+#     machines (which auto-stop anyway).
+#   - Cooldown: same alert won't re-fire within 1 hour even if still true.
+#   - All endpoints are session-scoped via the existing cp_sid cookie.
+
+_ALERTS_DB_PATH = os.path.join(CACHE_DIR, 'alerts.db')
+
+# Supported alert types — used for validation + UI labels
+ALERT_TYPES = {
+    'price_above':       {'label': 'Price rises above',  'unit': '₹',  'dir': 'up'},
+    'price_below':       {'label': 'Price falls below',  'unit': '₹',  'dir': 'down'},
+    'score_long_term':   {'label': 'Long-term score ≥',  'unit': '',   'dir': 'up'},
+    'risk_below':        {'label': 'Risk score falls to ≤', 'unit': '', 'dir': 'down'},
+    'day_change_above':  {'label': 'Daily change above', 'unit': '%',  'dir': 'up'},
+    'day_change_below':  {'label': 'Daily change below', 'unit': '%',  'dir': 'down'},
+}
+
+_ALERT_COOLDOWN_SEC = 3600   # don't re-fire same alert within an hour
+
+def _alerts_db():
+    conn = sqlite3.connect(_ALERTS_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def _alerts_init_db():
+    conn = _alerts_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL DEFAULT 'local',
+            ts_created INTEGER NOT NULL,
+            symbol TEXT NOT NULL,
+            name TEXT,
+            type TEXT NOT NULL,
+            threshold REAL NOT NULL,
+            note TEXT,
+            active INTEGER NOT NULL DEFAULT 1,
+            ts_last_check INTEGER DEFAULT 0,
+            ts_last_fired INTEGER DEFAULT 0,
+            fire_count INTEGER DEFAULT 0
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS alert_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            alert_id INTEGER NOT NULL,
+            session_id TEXT NOT NULL DEFAULT 'local',
+            ts_fired INTEGER NOT NULL,
+            symbol TEXT NOT NULL,
+            type TEXT NOT NULL,
+            threshold REAL,
+            fired_value REAL,
+            message TEXT,
+            dismissed INTEGER DEFAULT 0
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_alerts_session ON alerts(session_id, active)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_alerts_symbol  ON alerts(symbol)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_events_session ON alert_events(session_id, dismissed, ts_fired DESC)")
+    conn.commit()
+    conn.close()
+
+_alerts_init_db()
+
+
+def _fetch_quick_quote(symbol):
+    """
+    Lightweight price + day-change + score lookup for alert checking.
+    Reuses the screener cache when possible (zero network cost), falls back
+    to a cheap fast_info call otherwise.
+    Returns: dict with price, prev_close, day_change_pct, long_term, risk_score
+             — or None if we can't get a price.
+    """
+    sym = symbol.replace('.NS', '').replace('.BO', '').upper()
+
+    # 1. Try every cached screener result first — most common path, free.
+    # Cache layout from get_cached/set_cached is (data, ts, ttl).
+    for cache_key in list(_cache.keys()):
+        if not cache_key.startswith('screener:'):
+            continue
+        rows = get_cached(cache_key)   # honors TTL, returns None if expired
+        if not isinstance(rows, list):
+            continue
+        for r in rows:
+            if r.get('ticker', '').upper() == sym:
+                return {
+                    'price':          r.get('price'),
+                    'day_change_pct': r.get('chg_1d'),
+                    'long_term':      r.get('long_term'),
+                    'risk_score':     r.get('risk_score'),
+                    'source':         'screener_cache',
+                }
+
+    # 2. Fallback: cheap yfinance fast_info
+    try:
+        tk = yf.Ticker(sym + '.NS')
+        fi = tk.fast_info
+        price = fi.get('last_price') or fi.get('regular_market_price')
+        prev  = fi.get('previous_close')
+        dchg  = ((price - prev) / prev * 100) if (price and prev) else None
+        return {
+            'price':          price,
+            'day_change_pct': dchg,
+            'long_term':      None,
+            'risk_score':     None,
+            'source':         'fast_info',
+        }
+    except Exception:
+        return None
+
+
+def _check_alerts_for_session(session_id):
+    """
+    Walk all active alerts for this session, evaluate, and insert events
+    for newly-triggered ones (respecting the 1-hour cooldown).
+    Returns: list of new event dicts (for immediate frontend display).
+    """
+    conn = _alerts_db()
+    now = int(time.time())
+    cooldown_cutoff = now - _ALERT_COOLDOWN_SEC
+
+    active = conn.execute(
+        "SELECT * FROM alerts WHERE session_id = ? AND active = 1",
+        (session_id,)
+    ).fetchall()
+
+    # Group by symbol so each ticker is only fetched once
+    by_symbol = {}
+    for a in active:
+        by_symbol.setdefault(a['symbol'], []).append(a)
+
+    new_events = []
+    for sym, alerts_for_sym in by_symbol.items():
+        quote = _fetch_quick_quote(sym)
+        if not quote:
+            continue
+        for a in alerts_for_sym:
+            try:
+                triggered, fired_value = _evaluate_alert(a, quote)
+            except Exception as e:
+                print(f'  [alerts] eval failed for {sym} #{a["id"]}: {e}')
+                continue
+
+            # Always update last_check
+            conn.execute("UPDATE alerts SET ts_last_check = ? WHERE id = ?", (now, a['id']))
+
+            if not triggered:
+                continue
+            # Cooldown: skip if fired recently
+            if (a['ts_last_fired'] or 0) > cooldown_cutoff:
+                continue
+
+            msg = _format_alert_message(a, fired_value)
+            cur = conn.execute("""
+                INSERT INTO alert_events (alert_id, session_id, ts_fired, symbol, type,
+                                          threshold, fired_value, message)
+                VALUES (?,?,?,?,?,?,?,?)
+            """, (a['id'], session_id, now, sym, a['type'],
+                  a['threshold'], fired_value, msg))
+            conn.execute(
+                "UPDATE alerts SET ts_last_fired = ?, fire_count = fire_count + 1 WHERE id = ?",
+                (now, a['id'])
+            )
+            new_events.append({
+                'id':          cur.lastrowid,
+                'alert_id':    a['id'],
+                'ts_fired':    now,
+                'symbol':      sym,
+                'name':        a['name'],
+                'type':        a['type'],
+                'threshold':   a['threshold'],
+                'fired_value': fired_value,
+                'message':     msg,
+            })
+    conn.commit()
+    conn.close()
+    return new_events
+
+
+def _evaluate_alert(alert, quote):
+    """Returns (triggered: bool, fired_value: float|None)."""
+    t = alert['type']
+    threshold = alert['threshold']
+    if t == 'price_above':
+        v = quote.get('price')
+        return (v is not None and v >= threshold, v)
+    if t == 'price_below':
+        v = quote.get('price')
+        return (v is not None and v <= threshold, v)
+    if t == 'day_change_above':
+        v = quote.get('day_change_pct')
+        return (v is not None and v >= threshold, v)
+    if t == 'day_change_below':
+        v = quote.get('day_change_pct')
+        return (v is not None and v <= threshold, v)
+    if t == 'score_long_term':
+        v = quote.get('long_term')
+        return (v is not None and v >= threshold, v)
+    if t == 'risk_below':
+        v = quote.get('risk_score')
+        return (v is not None and v <= threshold, v)
+    return (False, None)
+
+
+def _format_alert_message(alert, fired_value):
+    sym = alert['symbol']
+    name = alert['name'] or sym
+    t = alert['type']
+    th = alert['threshold']
+    if t in ('price_above', 'price_below'):
+        return f"{name} hit ₹{fired_value:.2f} (threshold ₹{th:.2f})"
+    if t == 'day_change_above':
+        return f"{name} up {fired_value:+.2f}% today (threshold +{th:.1f}%)"
+    if t == 'day_change_below':
+        return f"{name} down {fired_value:+.2f}% today (threshold {th:+.1f}%)"
+    if t == 'score_long_term':
+        return f"{name} long-term score reached {int(fired_value)} (threshold {int(th)})"
+    if t == 'risk_below':
+        return f"{name} risk dropped to {int(fired_value)} (threshold {int(th)})"
+    return f"{name} alert triggered"
+
+
+# ────── REST endpoints ──────
+
+@app.route('/api/alerts', methods=['GET'])
+def alerts_list():
+    sid = _get_session_id()
+    conn = _alerts_db()
+    rows = conn.execute("""
+        SELECT id, ts_created, symbol, name, type, threshold, note, active,
+               ts_last_check, ts_last_fired, fire_count
+        FROM alerts WHERE session_id = ? ORDER BY ts_created DESC
+    """, (sid,)).fetchall()
+    conn.close()
+    return jsonify({'alerts': [dict(r) for r in rows], 'types': ALERT_TYPES})
+
+
+@app.route('/api/alerts', methods=['POST'])
+def alerts_create():
+    sid = _get_session_id()
+    data = request.get_json(force=True) or {}
+    sym = (data.get('symbol') or '').strip().upper().replace('.NS', '').replace('.BO', '')
+    name = (data.get('name') or sym).strip()
+    typ = data.get('type')
+    note = (data.get('note') or '').strip()
+    try:
+        threshold = float(data.get('threshold'))
+    except Exception:
+        return jsonify({'error': 'Invalid threshold'}), 400
+    if not sym or typ not in ALERT_TYPES:
+        return jsonify({'error': 'Missing symbol or invalid type'}), 400
+
+    # De-dupe: don't allow two identical active alerts for the same symbol+type+threshold
+    conn = _alerts_db()
+    existing = conn.execute("""
+        SELECT id FROM alerts
+        WHERE session_id = ? AND symbol = ? AND type = ?
+              AND ABS(threshold - ?) < 0.0001 AND active = 1
+    """, (sid, sym, typ, threshold)).fetchone()
+    if existing:
+        conn.close()
+        return jsonify({'error': 'An identical alert already exists', 'existing_id': existing['id']}), 409
+
+    cur = conn.execute("""
+        INSERT INTO alerts (session_id, ts_created, symbol, name, type, threshold, note, active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    """, (sid, int(time.time()), sym, name[:80], typ, threshold, note[:200]))
+    new_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return jsonify({'id': new_id, 'symbol': sym, 'type': typ, 'threshold': threshold}), 201
+
+
+@app.route('/api/alerts/<int:alert_id>', methods=['DELETE'])
+def alerts_delete(alert_id):
+    sid = _get_session_id()
+    conn = _alerts_db()
+    cur = conn.execute("DELETE FROM alerts WHERE id = ? AND session_id = ?", (alert_id, sid))
+    conn.execute("DELETE FROM alert_events WHERE alert_id = ? AND session_id = ?", (alert_id, sid))
+    conn.commit()
+    conn.close()
+    return jsonify({'deleted': cur.rowcount > 0})
+
+
+@app.route('/api/alerts/<int:alert_id>/toggle', methods=['POST'])
+def alerts_toggle(alert_id):
+    sid = _get_session_id()
+    conn = _alerts_db()
+    row = conn.execute("SELECT active FROM alerts WHERE id = ? AND session_id = ?",
+                       (alert_id, sid)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({'error': 'Not found'}), 404
+    new_val = 0 if row['active'] else 1
+    conn.execute("UPDATE alerts SET active = ? WHERE id = ?", (new_val, alert_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'active': bool(new_val)})
+
+
+@app.route('/api/alerts/check', methods=['GET', 'POST'])
+def alerts_check():
+    """Called by frontend poller. Runs checks for this session + returns any new events."""
+    sid = _get_session_id()
+    new_events = _check_alerts_for_session(sid)
+    return jsonify({'new_events': new_events})
+
+
+@app.route('/api/alerts/events')
+def alerts_events():
+    """Returns recent events for this session. Default: undismissed only, last 50."""
+    sid = _get_session_id()
+    include_dismissed = request.args.get('all', '').lower() in ('1', 'true', 'yes')
+    limit = min(int(request.args.get('limit', 50)), 200)
+    conn = _alerts_db()
+    if include_dismissed:
+        rows = conn.execute("""
+            SELECT id, alert_id, ts_fired, symbol, type, threshold, fired_value, message, dismissed
+            FROM alert_events WHERE session_id = ? ORDER BY ts_fired DESC LIMIT ?
+        """, (sid, limit)).fetchall()
+    else:
+        rows = conn.execute("""
+            SELECT id, alert_id, ts_fired, symbol, type, threshold, fired_value, message, dismissed
+            FROM alert_events
+            WHERE session_id = ? AND dismissed = 0
+            ORDER BY ts_fired DESC LIMIT ?
+        """, (sid, limit)).fetchall()
+    unread = conn.execute(
+        "SELECT COUNT(*) FROM alert_events WHERE session_id = ? AND dismissed = 0", (sid,)
+    ).fetchone()[0]
+    conn.close()
+    return jsonify({'events': [dict(r) for r in rows], 'unread_count': unread})
+
+
+@app.route('/api/alerts/events/<int:event_id>/dismiss', methods=['POST'])
+def alerts_event_dismiss(event_id):
+    sid = _get_session_id()
+    conn = _alerts_db()
+    conn.execute(
+        "UPDATE alert_events SET dismissed = 1 WHERE id = ? AND session_id = ?",
+        (event_id, sid)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'dismissed': True})
+
+
+@app.route('/api/alerts/events/dismiss_all', methods=['POST'])
+def alerts_events_dismiss_all():
+    sid = _get_session_id()
+    conn = _alerts_db()
+    cur = conn.execute(
+        "UPDATE alert_events SET dismissed = 1 WHERE session_id = ? AND dismissed = 0", (sid,)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'dismissed_count': cur.rowcount})
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='0.0.0.0')

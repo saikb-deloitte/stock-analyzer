@@ -87,6 +87,74 @@
     font-size: 11px; color: var(--text-secondary); font-weight: 600;
     margin: 0 12px;
   }
+  /* Alert bell */
+  .bell-wrap { position: relative; margin-right: 12px; }
+  .bell-btn { background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-secondary); width: 36px; height: 36px; border-radius: 8px; cursor: pointer; position: relative; transition: all 0.12s; }
+  .bell-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .bell-btn.has-unread { color: #ffd740; border-color: #ffd740; animation: bellRing 0.6s ease 1; }
+  @keyframes bellRing { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } }
+  .bell-badge { position: absolute; top: -4px; right: -4px; background: #f85149; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 10px; min-width: 16px; line-height: 14px; text-align: center; box-shadow: 0 0 0 2px var(--bg-primary); }
+  .bell-drop { position: absolute; top: calc(100% + 8px); right: 0; width: 340px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 200; overflow: hidden; }
+  .bd-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .bd-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-right: auto; }
+  .bd-link { background: none; border: none; color: var(--accent); font-size: 11px; font-weight: 600; cursor: pointer; padding: 0; }
+  .bd-link:hover { text-decoration: underline; }
+  .bd-list { max-height: 380px; overflow-y: auto; }
+  .bd-empty { padding: 28px 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .bd-item { padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; display: flex; gap: 10px; align-items: flex-start; }
+  .bd-item:hover { background: var(--bg-elevated); }
+  .bd-item:last-child { border-bottom: none; }
+  .bd-icon { color: var(--accent); font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .bd-text { flex: 1; min-width: 0; }
+  .bd-msg { font-size: 12px; color: var(--text-primary); line-height: 1.35; }
+  .bd-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+  .bd-dismiss { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 12px; opacity: 0; transition: opacity 0.12s; }
+  .bd-item:hover .bd-dismiss { opacity: 1; }
+  .bd-dismiss:hover { color: #f85149; }
+  .bd-foot { padding: 10px 14px; border-top: 1px solid var(--border); background: var(--bg-elevated); }
+  .bd-perm { width: 100%; background: transparent; border: 1px dashed var(--accent); color: var(--accent); padding: 7px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600; }
+  .bd-perm:hover { background: rgba(0,212,170,0.1); }
+
+  /* "+ Alert" button next to watchlist star */
+  .alert-add-btn { background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.12s; }
+  .alert-add-btn:hover { color: #ffd740; border-color: #ffd740; }
+
+  /* Alert / Manage modals */
+  .al-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+  .al-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; }
+  .al-head { display: flex; align-items: flex-start; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+  .al-title { font-size: 17px; font-weight: 800; color: var(--text-primary); }
+  .al-title i { color: #ffd740; margin-right: 6px; }
+  .al-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .al-close { background: none; border: none; color: var(--text-muted); font-size: 26px; cursor: pointer; line-height: 1; padding: 0 4px; }
+  .al-close:hover { color: var(--text-primary); }
+  .al-body { padding: 16px 20px; }
+  .al-lbl { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; margin-bottom: 6px; }
+  .al-sel, .al-input { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-primary); padding: 9px 12px; border-radius: 7px; font-size: 13px; }
+  .al-sel:focus, .al-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,170,0.15); }
+  .al-thr-row { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--bg-elevated); }
+  .al-thr-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,170,0.15); }
+  .al-prefix, .al-suffix { background: var(--bg-primary); color: var(--text-muted); padding: 9px 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; }
+  .al-prefix { border-right: 1px solid var(--border); }
+  .al-suffix { border-left: 1px solid var(--border); }
+  .al-thr-row .al-input { border: none; border-radius: 0; background: transparent; }
+  .al-thr-row .al-input:focus { box-shadow: none; }
+  .al-hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+  .al-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg-primary); }
+  .al-btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .al-btn-ghost:hover { color: var(--text-primary); border-color: var(--text-muted); }
+  .al-btn-primary { background: var(--accent); color: #000; border: none; padding: 8px 18px; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .al-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,212,170,0.35); }
+  /* Manage alerts rows */
+  .mn-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .mn-row:last-child { border-bottom: none; }
+  .mn-sym { font-weight: 700; color: var(--text-primary); font-size: 13px; min-width: 90px; }
+  .mn-desc { flex: 1; color: var(--text-secondary); font-size: 12px; }
+  .mn-stat { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 700; }
+  .mn-stat.on { background: rgba(105,240,174,0.18); color: #69f0ae; }
+  .mn-stat.off { background: rgba(248,81,73,0.18); color: #f85149; }
+  .mn-del { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; }
+  .mn-del:hover { color: #f85149; }
   .freshness-badge .fb-dot {
     width: 8px; height: 8px; border-radius: 50%; background: #5b6571;
     box-shadow: 0 0 0 0 currentColor;
@@ -1004,6 +1072,64 @@
 </head>
 <body>
 
+<!-- ═══════════ CREATE ALERT MODAL ═══════════ -->
+<div id="alert-modal" class="al-modal" style="display:none;" onclick="if(event.target===this)closeAlertModal()">
+  <div class="al-card">
+    <div class="al-head">
+      <div>
+        <div class="al-title"><i class="fa fa-bell"></i> Create Alert</div>
+        <div class="al-sub" id="al-stock-sub">—</div>
+      </div>
+      <button class="al-close" onclick="closeAlertModal()">×</button>
+    </div>
+    <div class="al-body">
+      <label class="al-lbl">Alert when</label>
+      <select id="al-type" class="al-sel" onchange="updateAlertThresholdHint()">
+        <option value="price_above">Price rises above</option>
+        <option value="price_below">Price falls below</option>
+        <option value="day_change_above">Daily change rises above (%)</option>
+        <option value="day_change_below">Daily change falls below (%)</option>
+        <option value="score_long_term">Long-term score reaches ≥</option>
+        <option value="risk_below">Risk score drops to ≤</option>
+      </select>
+
+      <label class="al-lbl" style="margin-top:14px;">Threshold</label>
+      <div class="al-thr-row">
+        <span class="al-prefix" id="al-prefix">₹</span>
+        <input type="number" id="al-threshold" class="al-input" step="any" placeholder="0">
+        <span class="al-suffix" id="al-suffix"></span>
+      </div>
+      <div class="al-hint" id="al-hint">Currently trading at ₹—.</div>
+
+      <label class="al-lbl" style="margin-top:14px;">Note (optional)</label>
+      <input type="text" id="al-note" class="al-input" maxlength="120" placeholder="e.g., breakout watch">
+    </div>
+    <div class="al-foot">
+      <button class="al-btn-ghost" onclick="closeAlertModal()">Cancel</button>
+      <button class="al-btn-primary" onclick="submitNewAlert()"><i class="fa fa-plus"></i> Create Alert</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MANAGE ALERTS MODAL ═══════════ -->
+<div id="manage-modal" class="al-modal" style="display:none;" onclick="if(event.target===this)closeManageAlerts()">
+  <div class="al-card" style="max-width:560px;">
+    <div class="al-head">
+      <div>
+        <div class="al-title"><i class="fa fa-list-check"></i> Your Alerts</div>
+        <div class="al-sub" id="mn-count">—</div>
+      </div>
+      <button class="al-close" onclick="closeManageAlerts()">×</button>
+    </div>
+    <div class="al-body" id="mn-list" style="max-height:60vh;overflow-y:auto;">
+      <div class="bd-empty">Loading…</div>
+    </div>
+    <div class="al-foot">
+      <button class="al-btn-ghost" onclick="closeManageAlerts()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════ WELCOME MODAL (shown once per browser) ═══════════ -->
 <div id="welcome-overlay" class="welcome-overlay" style="display:none;">
   <div class="welcome-card">
@@ -1101,6 +1227,28 @@
   <div class="freshness-badge" id="freshness-badge" title="Time since last upstream data fetch">
     <span class="fb-dot"></span>
     <span class="fb-text">checking…</span>
+  </div>
+  <!-- ALERT BELL -->
+  <div class="bell-wrap" id="bell-wrap">
+    <button class="bell-btn" id="bell-btn" onclick="toggleAlertDropdown()" title="Alerts">
+      <i class="fa fa-bell"></i>
+      <span class="bell-badge" id="bell-badge" style="display:none;">0</span>
+    </button>
+    <div class="bell-drop" id="bell-drop" style="display:none;">
+      <div class="bd-head">
+        <span class="bd-title">Alerts</span>
+        <button class="bd-link" onclick="openManageAlerts()" title="Manage all alerts">Manage</button>
+        <button class="bd-link" onclick="dismissAllAlertEvents()" title="Dismiss all">Dismiss all</button>
+      </div>
+      <div class="bd-list" id="bd-list">
+        <div class="bd-empty">No alerts triggered yet.</div>
+      </div>
+      <div class="bd-foot">
+        <button class="bd-perm" id="bd-perm-btn" onclick="requestNotifPermission()" style="display:none;">
+          <i class="fa fa-bell"></i> Enable desktop alerts
+        </button>
+      </div>
+    </div>
   </div>
   <div class="header-nav">
     <button class="nav-btn active" onclick="showView('screener')"><i class="fa fa-table-list"></i> Screener</button>
@@ -2647,6 +2795,9 @@ function renderAnalysis(d) {
         <div class="stock-ticker" style="margin-bottom:0;">${d.symbol} · ${d.exchange}</div>
         <button class="watch-star ${starred?'starred':''}" id="watch-star-btn" onclick="toggleWatchlist('${d.symbol}', '${(d.name||'').replace(/'/g,'').slice(0,40)}'); document.getElementById('watch-star-btn').classList.toggle('starred', isInWatchlist('${d.symbol}'));" title="${starred?'Remove from watchlist':'Add to watchlist'}">
           <i class="fa ${starred?'fa-star':'fa-star'}"></i>
+        </button>
+        <button class="alert-add-btn" onclick="openAlertModal('${d.symbol}', '${(d.name||'').replace(/'/g,'').slice(0,40)}', ${d.price || 0})" title="Create price/score alert for this stock">
+          <i class="fa fa-bell"></i><span style="margin-left:4px;">+ Alert</span>
         </button>
       </div>
       <div class="stock-name">${d.name}</div>
@@ -4708,6 +4859,298 @@ function dismissEduBar() {
   } catch (e) {}
 })();
 
+// ══════════════════════════════════════════════════════════════════════
+// ALERTS — server-side engine + bell dropdown + browser notifications
+// ══════════════════════════════════════════════════════════════════════
+
+let __alertModalCtx = { symbol: '', name: '', currentPrice: 0 };
+
+function openAlertModal(symbol, name, currentPrice) {
+  __alertModalCtx = { symbol, name, currentPrice: Number(currentPrice) || 0 };
+  document.getElementById('al-stock-sub').textContent =
+    `${symbol} · ${name}` + (currentPrice ? ` · trading at ₹${Number(currentPrice).toLocaleString('en-IN')}` : '');
+  // Reasonable default: price_above at +5% from current
+  document.getElementById('al-type').value = 'price_above';
+  document.getElementById('al-threshold').value = currentPrice ? (Math.round(currentPrice * 1.05 * 100) / 100) : '';
+  document.getElementById('al-note').value = '';
+  updateAlertThresholdHint();
+  document.getElementById('alert-modal').style.display = 'flex';
+}
+
+function closeAlertModal() {
+  document.getElementById('alert-modal').style.display = 'none';
+}
+
+function updateAlertThresholdHint() {
+  const type = document.getElementById('al-type').value;
+  const prefix = document.getElementById('al-prefix');
+  const suffix = document.getElementById('al-suffix');
+  const hint   = document.getElementById('al-hint');
+  const cp     = __alertModalCtx.currentPrice;
+  const cpStr  = cp ? '₹' + cp.toLocaleString('en-IN') : '—';
+
+  prefix.textContent = ''; suffix.textContent = '';
+  if (type === 'price_above' || type === 'price_below') {
+    prefix.textContent = '₹';
+    hint.textContent = `Currently trading at ${cpStr}. ` +
+                       (type === 'price_above' ? 'Suggest +5% above current.' : 'Suggest -5% below current.');
+  } else if (type === 'day_change_above' || type === 'day_change_below') {
+    suffix.textContent = '%';
+    hint.textContent = type === 'day_change_above'
+      ? 'Fires when intraday change exceeds this %. Try 3–5%.'
+      : 'Fires when intraday change drops below this %. Try -3 to -5%.';
+  } else if (type === 'score_long_term') {
+    suffix.textContent = '/100';
+    hint.textContent = 'Long-term score scale 0–100. Strong Buy ≥ 70.';
+  } else if (type === 'risk_below') {
+    suffix.textContent = '/100';
+    hint.textContent = 'Risk score scale 0–100. Low risk ≤ 40, Medium ≤ 60.';
+  }
+}
+
+async function submitNewAlert() {
+  const ctx  = __alertModalCtx;
+  const type = document.getElementById('al-type').value;
+  const thr  = document.getElementById('al-threshold').value;
+  const note = document.getElementById('al-note').value.trim();
+  if (!ctx.symbol || !type || thr === '') {
+    toast('Pick a type and enter a threshold', 'warn');
+    return;
+  }
+  try {
+    const r = await fetch('/api/alerts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        symbol: ctx.symbol, name: ctx.name, type, threshold: parseFloat(thr), note,
+      }),
+    });
+    const d = await r.json();
+    if (r.status === 409) {
+      toast('Identical alert already exists', 'info');
+      return;
+    }
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    toast(`Alert created for ${ctx.symbol}`, 'success');
+    closeAlertModal();
+    // Run a check immediately so the user sees something if it's already true
+    setTimeout(pollAlerts, 800);
+  } catch (e) {
+    toast('Could not create alert: ' + e.message, 'error');
+  }
+}
+
+// ── Bell dropdown ──
+function toggleAlertDropdown() {
+  const dd = document.getElementById('bell-drop');
+  const isOpen = dd.style.display !== 'none';
+  dd.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    renderAlertEvents();
+    // Show "Enable desktop alerts" only if permission is default (not denied/granted)
+    const permBtn = document.getElementById('bd-perm-btn');
+    if (permBtn && 'Notification' in window) {
+      permBtn.style.display = (Notification.permission === 'default') ? 'block' : 'none';
+    }
+  }
+}
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('bell-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('bell-drop').style.display = 'none';
+  }
+});
+
+async function renderAlertEvents() {
+  const list = document.getElementById('bd-list');
+  try {
+    const r = await fetch('/api/alerts/events');
+    const d = await r.json();
+    const events = d.events || [];
+    updateBellBadge(d.unread_count || 0);
+    if (!events.length) {
+      list.innerHTML = '<div class="bd-empty">No alerts triggered yet.<br><span style="font-size:11px;">Create alerts from any stock\'s Analyze page.</span></div>';
+      return;
+    }
+    list.innerHTML = events.map(ev => {
+      const ago = relTime(ev.ts_fired * 1000);
+      return `
+        <div class="bd-item" onclick="event.stopPropagation(); analyzeStock('${ev.symbol}'); document.getElementById('bell-drop').style.display='none'; dismissAlertEvent(${ev.id});">
+          <i class="fa fa-bell bd-icon"></i>
+          <div class="bd-text">
+            <div class="bd-msg">${ev.message}</div>
+            <div class="bd-time">${ago}</div>
+          </div>
+          <button class="bd-dismiss" onclick="event.stopPropagation(); dismissAlertEvent(${ev.id});" title="Dismiss">×</button>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="bd-empty">Could not load alerts: ' + e.message + '</div>';
+  }
+}
+
+function updateBellBadge(unreadCount) {
+  const badge = document.getElementById('bell-badge');
+  const btn = document.getElementById('bell-btn');
+  if (unreadCount > 0) {
+    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+    badge.style.display = 'inline-block';
+    btn.classList.add('has-unread');
+  } else {
+    badge.style.display = 'none';
+    btn.classList.remove('has-unread');
+  }
+}
+
+async function dismissAlertEvent(eventId) {
+  try {
+    await fetch(`/api/alerts/events/${eventId}/dismiss`, { method: 'POST' });
+    renderAlertEvents();
+  } catch (e) { /* silent */ }
+}
+
+async function dismissAllAlertEvents() {
+  try {
+    await fetch('/api/alerts/events/dismiss_all', { method: 'POST' });
+    renderAlertEvents();
+    toast('Alerts cleared', 'info');
+  } catch (e) { /* silent */ }
+}
+
+function relTime(ts) {
+  const diff = (Date.now() - ts) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return new Date(ts).toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
+}
+
+// ── Manage alerts modal ──
+async function openManageAlerts() {
+  document.getElementById('bell-drop').style.display = 'none';
+  document.getElementById('manage-modal').style.display = 'flex';
+  const list = document.getElementById('mn-list');
+  list.innerHTML = '<div class="bd-empty">Loading…</div>';
+  try {
+    const r = await fetch('/api/alerts');
+    const d = await r.json();
+    const alerts = d.alerts || [];
+    document.getElementById('mn-count').textContent =
+      alerts.length ? `${alerts.length} alert${alerts.length===1?'':'s'} configured` : 'No alerts yet';
+    if (!alerts.length) {
+      list.innerHTML = '<div class="bd-empty">No alerts yet. Open any stock and click "+ Alert".</div>';
+      return;
+    }
+    const typeLbl = d.types || {};
+    list.innerHTML = alerts.map(a => {
+      const meta = typeLbl[a.type] || {};
+      const descPrefix = (meta.label || a.type);
+      const valDisplay = (a.type.startsWith('price'))
+        ? '₹' + Number(a.threshold).toLocaleString('en-IN')
+        : (a.type.startsWith('day_change') ? a.threshold + '%' : a.threshold);
+      return `
+        <div class="mn-row">
+          <div class="mn-sym">${a.symbol}</div>
+          <div class="mn-desc">${descPrefix} <strong>${valDisplay}</strong>
+            ${a.fire_count > 0 ? `<span style="color:var(--text-muted);font-size:10px;">· fired ${a.fire_count}×</span>` : ''}
+          </div>
+          <span class="mn-stat ${a.active ? 'on' : 'off'}">${a.active ? 'Active' : 'Paused'}</span>
+          <button class="mn-del" onclick="toggleAlert(${a.id})" title="${a.active ? 'Pause' : 'Resume'}">
+            <i class="fa fa-${a.active ? 'pause' : 'play'}"></i>
+          </button>
+          <button class="mn-del" onclick="deleteAlert(${a.id})" title="Delete"><i class="fa fa-trash"></i></button>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="bd-empty">Could not load alerts: ' + e.message + '</div>';
+  }
+}
+
+function closeManageAlerts() {
+  document.getElementById('manage-modal').style.display = 'none';
+}
+
+async function deleteAlert(id) {
+  if (!confirm('Delete this alert? Past fires will also be removed.')) return;
+  await fetch(`/api/alerts/${id}`, { method: 'DELETE' });
+  openManageAlerts();
+  toast('Alert deleted', 'info');
+}
+
+async function toggleAlert(id) {
+  await fetch(`/api/alerts/${id}/toggle`, { method: 'POST' });
+  openManageAlerts();
+}
+
+// ── Background poller (lazy alert check) ──
+let __alertPollerHandle = null;
+let __alertLastEventIds = new Set();   // to detect new events between polls
+
+async function pollAlerts() {
+  if (document.hidden) return;  // skip when tab not visible
+  try {
+    // 1. Run a fresh check (cheap if no alerts)
+    const cr = await fetch('/api/alerts/check', { method: 'POST' });
+    const cd = await cr.json();
+    const newEvts = cd.new_events || [];
+
+    // 2. Refresh unread count + render list (also picks up cross-tab updates)
+    const r = await fetch('/api/alerts/events');
+    const d = await r.json();
+    updateBellBadge(d.unread_count || 0);
+
+    // 3. Toast + browser notification for genuinely new events
+    if (newEvts.length) {
+      newEvts.forEach(ev => {
+        if (__alertLastEventIds.has(ev.id)) return;
+        __alertLastEventIds.add(ev.id);
+        toast('🔔 ' + ev.message, 'success');
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('Centaur Prism · ' + ev.symbol, {
+              body: ev.message,
+              icon: '/static/icon-192.png',
+              tag:  'cp-alert-' + ev.id,
+            });
+          } catch (e) {}
+        }
+      });
+      // If dropdown is open, refresh the list
+      if (document.getElementById('bell-drop').style.display !== 'none') {
+        renderAlertEvents();
+      }
+    }
+  } catch (e) {
+    // Silent — alert poller failures shouldn't spam the user
+  }
+}
+
+function startAlertPoller() {
+  if (__alertPollerHandle) return;
+  pollAlerts();   // immediate first run
+  __alertPollerHandle = setInterval(pollAlerts, 60000);   // every 60s
+  // Also pause when tab is hidden, resume when visible
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) pollAlerts();
+  });
+}
+
+function requestNotifPermission() {
+  if (!('Notification' in window)) {
+    toast('This browser does not support desktop notifications', 'warn');
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    document.getElementById('bd-perm-btn').style.display = (perm === 'default') ? 'block' : 'none';
+    if (perm === 'granted') {
+      toast('Desktop notifications enabled', 'success');
+      try { new Notification('Centaur Prism', { body: 'You\'ll get pop-ups when alerts fire.', icon: '/static/icon-192.png' }); } catch (e) {}
+    } else if (perm === 'denied') {
+      toast('Notifications blocked — enable from browser settings', 'warn');
+    }
+  });
+}
+
 // ── Init ──
 loadTicker();
 loadScreener();
@@ -4715,6 +5158,7 @@ refreshFreshness();
 updateWatchlistBadge();
 showWelcomeIfFirstVisit();          // ← first-visit modal
 setPageTitle(VIEW_TITLE.screener);  // ← initial tab title
+startAlertPoller();                 // ← alert engine poller (60s while visible)
 setInterval(loadTicker, 120000); // refresh indices every 2 min
 setInterval(refreshFreshness, 60000); // freshness badge every 60s
 
