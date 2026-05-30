@@ -7,13 +7,35 @@ import pandas as pd
 import numpy as np
 import pytz
 import time
+import random
 from datetime import datetime, time as dtime
 
 from concurrent.futures import ThreadPoolExecutor
 
 
+# ── curl_cffi browser-impersonating session ──────────────────────────────────
+# Yahoo Finance rate-limits Render's shared IPs aggressively when standard
+# `requests` is used. curl_cffi sends a real Chrome TLS fingerprint, which
+# Yahoo treats as a normal browser visit and rarely blocks.
+_yf_session = None
+def _get_yf_session():
+    global _yf_session
+    if _yf_session is not None:
+        return _yf_session
+    try:
+        from curl_cffi import requests as curl_requests
+        # impersonate latest Chrome — accepted by Yahoo as a normal browser
+        _yf_session = curl_requests.Session(impersonate="chrome131")
+    except Exception:
+        _yf_session = None  # fall back to yfinance default
+    return _yf_session
+
+
 def _yf_download_with_retry(ticker, **kwargs):
-    """yfinance download with exponential backoff on rate-limit (429) errors."""
+    """yfinance download with browser-impersonating session + exponential backoff."""
+    session = _get_yf_session()
+    if session is not None:
+        kwargs.setdefault('session', session)
     last_err = None
     for attempt in range(3):
         try:
@@ -24,14 +46,20 @@ def _yf_download_with_retry(ticker, **kwargs):
             last_err = e
             err_str = str(e).lower()
             if 'rate limit' in err_str or 'too many' in err_str or '429' in err_str:
-                time.sleep(2 ** attempt * 3)   # 3s, 6s, 12s
+                time.sleep(2 ** attempt * 3 + random.uniform(0, 1))   # 3-4s, 6-7s, 12-13s
             else:
                 raise
         if attempt < 2:
-            time.sleep(2 ** attempt * 3)
+            time.sleep(2 ** attempt * 3 + random.uniform(0, 1))
     if last_err:
         raise last_err
     raise ValueError(f'No data returned for {ticker} after retries')
+
+
+def _yf_ticker(symbol):
+    """Build a yf.Ticker with the browser-impersonating session attached."""
+    session = _get_yf_session()
+    return yf.Ticker(symbol, session=session) if session else yf.Ticker(symbol)
 
 from technical import (compute_indicators, detect_patterns, compute_signals,
                        score_technical, find_support_resistance, compute_atr_percentile)
@@ -122,7 +150,7 @@ class StockAnalyzer:
         implied_vol = None
         quarterly_trend = None
         try:
-            stock = yf.Ticker(self.ticker)
+            stock = _yf_ticker(self.ticker)
             raw_news = stock.news[:15] if stock.news else []
 
             def _fetch_iv():
@@ -228,7 +256,7 @@ class StockAnalyzer:
 
         sr_levels = find_support_resistance(df)
 
-        stock_obj = yf.Ticker(self.ticker)
+        stock_obj = _yf_ticker(self.ticker)
         info = stock_obj.info
         company_name = info.get('longName', self.ticker)
         sector = info.get('sector', fa_metrics.get('sector', 'Unknown'))
