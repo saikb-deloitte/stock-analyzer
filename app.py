@@ -1976,6 +1976,125 @@ def recommendation_label(score):
         return {'label': 'Strong Sell','color': '#d50000', 'badge': 'danger'}
 
 
+# ── Static fallback for company name + sector + industry ────────────────────
+# On Render's cloud IPs, yfinance.Ticker(sym).info often returns empty {} due
+# to Yahoo's bot-detection. Without this, names appear as "TCS.NS" and sector
+# shows "Unknown". This dict covers all NIFTY 50 + NIFTY Bank + IT + Pharma
+# + Auto + Midcap stocks so the most-analyzed names always render properly.
+NSE_COMPANY_INFO = {
+    # ── NIFTY 50 ──
+    'ADANIENT':    ('Adani Enterprises',                 'Industrials',           'Conglomerate'),
+    'ADANIPORTS':  ('Adani Ports & SEZ',                 'Industrials',           'Ports & Logistics'),
+    'APOLLOHOSP':  ('Apollo Hospitals Enterprise',       'Healthcare',            'Hospitals'),
+    'ASIANPAINT':  ('Asian Paints',                      'Consumer Defensive',    'Paints'),
+    'AXISBANK':    ('Axis Bank',                         'Financial Services',    'Bank'),
+    'BAJAJ-AUTO':  ('Bajaj Auto',                        'Consumer Cyclical',     'Auto Manufacturers'),
+    'BAJFINANCE':  ('Bajaj Finance',                     'Financial Services',    'NBFC'),
+    'BAJAJFINSV':  ('Bajaj Finserv',                     'Financial Services',    'Diversified Financial'),
+    'BPCL':        ('Bharat Petroleum',                  'Energy',                'Oil & Gas Refining'),
+    'BHARTIARTL':  ('Bharti Airtel',                     'Communication Services','Telecom'),
+    'BRITANNIA':   ('Britannia Industries',              'Consumer Defensive',    'Packaged Foods'),
+    'CIPLA':       ('Cipla',                             'Healthcare',            'Pharma'),
+    'COALINDIA':   ('Coal India',                        'Energy',                'Coal'),
+    'DIVISLAB':    ('Divis Laboratories',                'Healthcare',            'Pharma'),
+    'DRREDDY':     ('Dr. Reddys Laboratories',           'Healthcare',            'Pharma'),
+    'EICHERMOT':   ('Eicher Motors',                     'Consumer Cyclical',     'Auto Manufacturers'),
+    'GRASIM':      ('Grasim Industries',                 'Basic Materials',       'Cement & Textiles'),
+    'HCLTECH':     ('HCL Technologies',                  'Technology',            'IT Services'),
+    'HDFCBANK':    ('HDFC Bank',                         'Financial Services',    'Bank'),
+    'HDFCLIFE':    ('HDFC Life Insurance',               'Financial Services',    'Insurance'),
+    'HEROMOTOCO':  ('Hero MotoCorp',                     'Consumer Cyclical',     'Auto Manufacturers'),
+    'HINDALCO':    ('Hindalco Industries',               'Basic Materials',       'Aluminium'),
+    'HINDUNILVR':  ('Hindustan Unilever',                'Consumer Defensive',    'FMCG'),
+    'ICICIBANK':   ('ICICI Bank',                        'Financial Services',    'Bank'),
+    'INDUSINDBK':  ('IndusInd Bank',                     'Financial Services',    'Bank'),
+    'INFY':        ('Infosys',                           'Technology',            'IT Services'),
+    'ITC':         ('ITC',                               'Consumer Defensive',    'FMCG & Tobacco'),
+    'JSWSTEEL':    ('JSW Steel',                         'Basic Materials',       'Steel'),
+    'KOTAKBANK':   ('Kotak Mahindra Bank',               'Financial Services',    'Bank'),
+    'LT':          ('Larsen & Toubro',                   'Industrials',           'Engineering & Construction'),
+    'LTIM':        ('LTIMindtree',                       'Technology',            'IT Services'),
+    'M&M':         ('Mahindra & Mahindra',               'Consumer Cyclical',     'Auto Manufacturers'),
+    'MARUTI':      ('Maruti Suzuki India',               'Consumer Cyclical',     'Auto Manufacturers'),
+    'NESTLEIND':   ('Nestle India',                      'Consumer Defensive',    'Packaged Foods'),
+    'NTPC':        ('NTPC',                              'Utilities',             'Power Generation'),
+    'ONGC':        ('Oil & Natural Gas Corp',            'Energy',                'Oil & Gas Exploration'),
+    'POWERGRID':   ('Power Grid Corporation',            'Utilities',             'Power Transmission'),
+    'RELIANCE':    ('Reliance Industries',               'Energy',                'Oil & Gas Conglomerate'),
+    'SBILIFE':     ('SBI Life Insurance',                'Financial Services',    'Insurance'),
+    'SBIN':        ('State Bank of India',               'Financial Services',    'PSU Bank'),
+    'SHRIRAMFIN':  ('Shriram Finance',                   'Financial Services',    'NBFC'),
+    'SUNPHARMA':   ('Sun Pharmaceutical',                'Healthcare',            'Pharma'),
+    'TATACONSUM':  ('Tata Consumer Products',            'Consumer Defensive',    'FMCG'),
+    'TATAMOTORS':  ('Tata Motors',                       'Consumer Cyclical',     'Auto Manufacturers'),
+    'TATASTEEL':   ('Tata Steel',                        'Basic Materials',       'Steel'),
+    'TCS':         ('Tata Consultancy Services',         'Technology',            'IT Services'),
+    'TECHM':       ('Tech Mahindra',                     'Technology',            'IT Services'),
+    'TITAN':       ('Titan Company',                     'Consumer Cyclical',     'Jewellery & Watches'),
+    'ULTRACEMCO':  ('UltraTech Cement',                  'Basic Materials',       'Cement'),
+    'UPL':         ('UPL',                               'Basic Materials',       'Agrochemicals'),
+    'WIPRO':       ('Wipro',                             'Technology',            'IT Services'),
+
+    # ── NIFTY Bank (extras beyond NIFTY 50) ──
+    'BANDHANBNK':  ('Bandhan Bank',                      'Financial Services',    'Bank'),
+    'FEDERALBNK':  ('Federal Bank',                      'Financial Services',    'Bank'),
+    'IDFCFIRSTB':  ('IDFC First Bank',                   'Financial Services',    'Bank'),
+    'PNB':         ('Punjab National Bank',              'Financial Services',    'PSU Bank'),
+    'BANKBARODA':  ('Bank of Baroda',                    'Financial Services',    'PSU Bank'),
+    'AUBANK':      ('AU Small Finance Bank',             'Financial Services',    'Bank'),
+
+    # ── NIFTY IT (extras) ──
+    'COFORGE':     ('Coforge',                           'Technology',            'IT Services'),
+    'MPHASIS':     ('Mphasis',                           'Technology',            'IT Services'),
+    'PERSISTENT':  ('Persistent Systems',                'Technology',            'IT Services'),
+    'OFSS':        ('Oracle Financial Services',         'Technology',            'IT Services'),
+
+    # ── NIFTY Pharma (extras) ──
+    'AUROPHARMA':  ('Aurobindo Pharma',                  'Healthcare',            'Pharma'),
+    'LUPIN':       ('Lupin',                             'Healthcare',            'Pharma'),
+    'BIOCON':      ('Biocon',                            'Healthcare',            'Biotech & Pharma'),
+    'TORNTPHARM':  ('Torrent Pharmaceuticals',           'Healthcare',            'Pharma'),
+    'ZYDUSLIFE':   ('Zydus Lifesciences',                'Healthcare',            'Pharma'),
+    'ALKEM':       ('Alkem Laboratories',                'Healthcare',            'Pharma'),
+    'GLAND':       ('Gland Pharma',                      'Healthcare',            'Pharma'),
+
+    # ── NIFTY Auto (extras) ──
+    'TVSMOTOR':    ('TVS Motor Company',                 'Consumer Cyclical',     'Auto Manufacturers'),
+    'ASHOKLEY':    ('Ashok Leyland',                     'Consumer Cyclical',     'Commercial Vehicles'),
+    'BOSCHLTD':    ('Bosch',                             'Consumer Cyclical',     'Auto Components'),
+    'MOTHERSON':   ('Samvardhana Motherson Intl',        'Consumer Cyclical',     'Auto Components'),
+    'BAJAJHLDNG':  ('Bajaj Holdings & Investment',       'Financial Services',    'Holdings'),
+    'BALKRISIND':  ('Balkrishna Industries',             'Consumer Cyclical',     'Tires'),
+    'MRF':         ('MRF',                               'Consumer Cyclical',     'Tires'),
+
+    # ── Popular mid/large extras commonly searched ──
+    'TRENT':       ('Trent',                             'Consumer Cyclical',     'Retail'),
+    'DMART':       ('Avenue Supermarts',                 'Consumer Defensive',    'Retail Supermarket'),
+    'PIDILITIND':  ('Pidilite Industries',               'Basic Materials',       'Adhesives & Chemicals'),
+    'BERGEPAINT':  ('Berger Paints',                     'Consumer Defensive',    'Paints'),
+    'HAVELLS':     ('Havells India',                     'Industrials',           'Electrical Equipment'),
+    'SIEMENS':     ('Siemens',                           'Industrials',           'Electrical Equipment'),
+    'DLF':         ('DLF',                               'Real Estate',           'Realty'),
+    'GODREJPROP':  ('Godrej Properties',                 'Real Estate',           'Realty'),
+    'JINDALSTEL':  ('Jindal Steel & Power',              'Basic Materials',       'Steel'),
+    'VEDL':        ('Vedanta',                           'Basic Materials',       'Mining & Metals'),
+    'IOC':         ('Indian Oil Corporation',            'Energy',                'Oil & Gas'),
+    'GAIL':        ('GAIL (India)',                      'Utilities',             'Gas Distribution'),
+    'IGL':         ('Indraprastha Gas',                  'Utilities',             'Gas Distribution'),
+    'HAL':         ('Hindustan Aeronautics',             'Industrials',           'Defence & Aerospace'),
+    'BEL':         ('Bharat Electronics',                'Industrials',           'Defence Electronics'),
+    'IRCTC':       ('Indian Railway Catering & Tourism', 'Consumer Cyclical',     'Travel & Tourism'),
+    'POLYCAB':     ('Polycab India',                     'Industrials',           'Cables & Wires'),
+    'NAUKRI':      ('Info Edge (India)',                 'Communication Services','Internet & Media'),
+    'PAYTM':       ('One 97 Communications (Paytm)',     'Financial Services',    'Fintech'),
+    'ZOMATO':      ('Zomato',                            'Consumer Cyclical',     'Food Delivery'),
+    'NYKAA':       ('FSN E-Commerce (Nykaa)',            'Consumer Cyclical',     'E-Commerce'),
+    'POLICYBZR':   ('PB Fintech (Policybazaar)',         'Financial Services',    'Insurance Tech'),
+    'TATAPOWER':   ('Tata Power',                        'Utilities',             'Power'),
+    'JIOFIN':      ('Jio Financial Services',            'Financial Services',    'Financial Holdings'),
+}
+
+
 # ── Sector standardization (Yahoo GICS labels → NSE-style names) ─────────────
 # Yahoo uses generic GICS categories that don't match how Indian investors think.
 # We remap to names that line up with NSE sector indices and Indian market parlance.
@@ -2176,12 +2295,26 @@ def analyze(ticker):
                 info['currentPrice'] = float(df['Close'].iloc[-1])
             except Exception:
                 pass
-        # If sector/industry are missing, at least set a generic label so the
-        # screener heat-map doesn't break on grouping
+
+        # Name + sector + industry fallback: hardcoded dict for top NSE names.
+        # Solves the "TCS.NS" heading + "Unknown" sector issues on Render.
+        clean_sym = ticker.replace('.NS', '').replace('.BO', '')
+        static_info = NSE_COMPANY_INFO.get(clean_sym)
+        if static_info:
+            static_name, static_sector, static_industry = static_info
+            if not info.get('longName')  and not info.get('shortName'):
+                info['longName'] = static_name
+            if not info.get('sector'):
+                info['sector'] = static_sector
+            if not info.get('industry'):
+                info['industry'] = static_industry
+        # Final fallback — generic labels (and clean symbol, never ticker.NS)
+        if not info.get('longName') and not info.get('shortName'):
+            info['longName'] = clean_sym
         if not info.get('sector'):
-            info['sector'] = info.get('sector') or 'Unknown'
+            info['sector'] = 'Other'
         if not info.get('industry'):
-            info['industry'] = info.get('industry') or 'Unknown'
+            info['industry'] = 'Other'
 
         # All-time high / low. Use auto_adjust=False to get RAW prices (avoids
         # split/bonus-adjusted highs showing up lower than the un-adjusted 52W
@@ -2346,7 +2479,7 @@ def analyze(ticker):
         result = {
             'ticker':   ticker,
             'symbol':   ticker.replace('.NS', '').replace('.BO', ''),
-            'name':     info.get('longName') or info.get('shortName') or ticker,
+            'name':     info.get('longName') or info.get('shortName') or ticker.replace('.NS', '').replace('.BO', ''),
             'sector':   info.get('sector', 'N/A'),
             'industry': info.get('industry', 'N/A'),
             'exchange': info.get('exchange', 'NSE'),
@@ -2556,9 +2689,16 @@ def _screener_impl():
             except Exception:
                 pass
             risk_sc = max(0, min(100, risk_sc))
+            # Static fallback for name/sector/industry when yfinance.info is empty
+            clean_sym = ticker.replace('.NS', '').replace('.BO', '')
+            static_info = NSE_COMPANY_INFO.get(clean_sym)
+            display_name = (info.get('shortName') or info.get('longName')
+                            or (static_info[0] if static_info else clean_sym))
+            sector_val   = info.get('sector') or (static_info[1] if static_info else 'Other')
+            industry_val = info.get('industry') or (static_info[2] if static_info else 'Other')
             return {
-                'ticker':    ticker.replace('.NS', '').replace('.BO', ''),
-                'name':      info.get('shortName') or info.get('longName') or ticker,
+                'ticker':    clean_sym,
+                'name':      display_name,
                 'price':     safe_round(close.iloc[-1]),
                 'chg_1d':    p1d,
                 'chg_1w':    p1w,
@@ -2575,9 +2715,9 @@ def _screener_impl():
                 'mid_term':   mt_sc,
                 'pe':        safe_round(info.get('trailingPE')),
                 'mktcap':    info.get('marketCap'),
-                'sector':    info.get('sector', 'N/A'),
-                'sector_grouped': standardize_sector(info.get('sector'), info.get('industry')),
-                'industry':  info.get('industry'),
+                'sector':    sector_val,
+                'sector_grouped': standardize_sector(sector_val, industry_val),
+                'industry':  industry_val,
                 'rec_st':    recommendation_label(st_sc)['label'],
                 'rec_mt':    recommendation_label(mt_sc)['label'],
             }

@@ -1674,8 +1674,14 @@ function snapshotSlug(idx) {
   return idx.toLowerCase().replace(/\s+/g, '_').replace(/\//g, '_');
 }
 
-// Try the live screener; on failure, fall back to the daily static snapshot.
-// Returns {stocks, snapshotMode, snapshotDate} for the UI to render.
+// 3-tier fallback chain:
+//   1) Live API (/api/screener) — current-second data
+//   2) Same-origin static (/static/data/...) — daily snapshot via Render
+//   3) Raw GitHub URL — daily snapshot direct from GitHub CDN (bypasses Render)
+// Returns {stocks, snapshotMode, snapshotDate, source}
+const GITHUB_RAW_BASE =
+  'https://raw.githubusercontent.com/saikb-deloitte/stock-analyzer/Centaur-prism/static/data';
+
 async function loadScreenerWithFallback(index) {
   // 1) Try live API first (with built-in retry on 5xx)
   try {
@@ -1688,25 +1694,38 @@ async function loadScreenerWithFallback(index) {
       }
     });
     if (Array.isArray(data) && data.length > 0) {
-      return { stocks: data, snapshotMode: false, snapshotDate: null };
+      return { stocks: data, snapshotMode: false, snapshotDate: null, source: 'live' };
     }
   } catch (e) {
-    console.debug('[screener] live fetch failed, trying static snapshot:', e.message);
+    console.debug('[screener] live fetch failed:', e.message);
   }
 
-  // 2) Fall back to the daily static snapshot
+  const slug = snapshotSlug(index);
   const el = document.getElementById('screener-content');
+
+  // 2) Same-origin static snapshot (Render-served)
   if (el) el.innerHTML = skeletonScreener('Loading daily snapshot');
-  const url = `/static/data/snapshot_${snapshotSlug(index)}.json`;
-  const snap = await fetchJSON(url, { maxRetries: 0 });
-  if (!snap || !Array.isArray(snap.stocks)) {
-    throw new Error('Snapshot unavailable for ' + index);
+  try {
+    const snap = await fetchJSON(`/static/data/snapshot_${slug}.json`, { maxRetries: 0 });
+    if (snap && Array.isArray(snap.stocks)) {
+      return { stocks: snap.stocks, snapshotMode: true, snapshotDate: snap.generated_at_iso || snap.generated_at, source: 'render-static' };
+    }
+  } catch (e) {
+    console.debug('[screener] same-origin static failed:', e.message);
   }
-  return {
-    stocks:        snap.stocks,
-    snapshotMode:  true,
-    snapshotDate:  snap.generated_at_iso || snap.generated_at,
-  };
+
+  // 3) Raw GitHub URL — bypasses Render entirely. Works even if hosting is down.
+  if (el) el.innerHTML = skeletonScreener('Loading snapshot from GitHub');
+  try {
+    const snap = await fetchJSON(`${GITHUB_RAW_BASE}/snapshot_${slug}.json`, { maxRetries: 0 });
+    if (snap && Array.isArray(snap.stocks)) {
+      return { stocks: snap.stocks, snapshotMode: true, snapshotDate: snap.generated_at_iso || snap.generated_at, source: 'github' };
+    }
+  } catch (e) {
+    console.debug('[screener] GitHub raw failed:', e.message);
+  }
+
+  throw new Error(`Snapshot unavailable for ${index}. Try a different index or refresh in a few minutes.`);
 }
 
 function skeletonScreener(label) {
@@ -1740,19 +1759,19 @@ async function loadScreener(forceRefresh=false) {
 
   const t0 = Date.now();
   try {
-    const { stocks, snapshotMode, snapshotDate } = await loadScreenerWithFallback(index);
+    const { stocks, snapshotMode, snapshotDate, source } = await loadScreenerWithFallback(index);
     screenerData = stocks;
     const elapsed = ((Date.now()-t0)/1000).toFixed(1);
 
     if (snapshotMode) {
-      // Friendly badge — user knows this is a snapshot, not live
       let ageStr = '';
       try {
         const d = typeof snapshotDate === 'string' ? new Date(snapshotDate) : new Date(snapshotDate * 1000);
         const hoursAgo = Math.round((Date.now() - d.getTime()) / 3600000);
         ageStr = hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.round(hoursAgo/24)}d ago`;
       } catch {}
-      statusEl.innerHTML = `<span style="color:#ffd740;">📅 Snapshot mode</span> · ${stocks.length} stocks · updated ${ageStr}`;
+      const srcLabel = source === 'github' ? '📅 Snapshot (via GitHub)' : '📅 Snapshot mode';
+      statusEl.innerHTML = `<span style="color:#ffd740;">${srcLabel}</span> · ${stocks.length} stocks · updated ${ageStr}`;
     } else {
       statusEl.textContent = `${stocks.length} stocks · ${elapsed}s`;
     }
