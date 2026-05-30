@@ -1,0 +1,41 @@
+{
+  "generated_at": 1780123680,
+  "generated_at_iso": "2026-05-30T06:48:00.167815+00:00",
+  "snapshots": [
+    {
+      "kind": "screener",
+      "index": "NIFTY 50",
+      "file": "snapshot_nifty_50.json"
+    },
+    {
+      "kind": "screener",
+      "index": "NIFTY Bank",
+      "file": "snapshot_nifty_bank.json"
+    },
+    {
+      "kind": "screener",
+      "index": "NIFTY IT",
+      "file": "snapshot_nifty_it.json"
+    },
+    {
+      "kind": "screener",
+      "index": "NIFTY Pharma",
+      "file": "snapshot_nifty_pharma.json"
+    },
+    {
+      "kind": "screener",
+      "index": "NIFTY Auto",
+      "file": "snapshot_nifty_auto.json"
+    },
+    {
+      "kind": "screener",
+      "index": "NIFTY Midcap",
+      "file": "snapshot_nifty_midcap.json"
+    },
+    {
+      "kind": "picks",
+      "index": "all",
+      "file": "snapshot_picks_all.json"
+    }
+  ]
+}
