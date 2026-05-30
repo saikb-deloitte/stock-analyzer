@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Professional stock analysis — technical indicators, fundamentals, chart patterns, and trade setups">
 <title>SK's Stock Analyzer</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d1117'/%3E%3Cpath d='M4 22 L11 14 L17 19 L28 8' stroke='%2358a6ff' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='28' cy='8' r='2.5' fill='%2310b981'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
@@ -31,9 +34,43 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 .search-input:focus{border-color:var(--accent)}
 .btn-primary{background:var(--accent);color:#000;border:none;border-radius:8px;padding:7px 16px;font-weight:600;cursor:pointer;font-size:.87rem;transition:opacity .2s;white-space:nowrap}
 .btn-primary:hover{opacity:.85}
-.quick-picks{display:flex;gap:5px;flex-wrap:wrap}
-.qbtn{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:.78rem;cursor:pointer;transition:all .15s}
+.quick-picks{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.qbtn{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:.78rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .qbtn:hover{border-color:var(--accent);color:var(--accent)}
+.qbtn.recent{border-color:rgba(88,166,255,.35);color:var(--accent);background:rgba(88,166,255,.06)}
+.qpick-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+
+/* Mobile: collapse header tightly */
+@media(max-width:720px){
+  header{padding:10px 14px}
+  .header-inner{gap:8px}
+  .logo{font-size:1rem;flex:1}
+  .tab-bar{order:3;width:100%;justify-content:center}
+  .tab-btn{padding:6px 10px;font-size:.78rem}
+  .search-wrap{order:2;max-width:none}
+  .quick-picks{order:4;width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px;-webkit-overflow-scrolling:touch}
+  .quick-picks::-webkit-scrollbar{height:3px}
+  .quick-picks::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  main{padding:14px 12px}
+  .section{padding:14px;border-radius:10px}
+  .verdict-banner{padding:14px}
+  .verdict-label{font-size:1.5rem}
+  .ticker-sym{font-size:1.5rem}
+  .current-price{font-size:1.6rem}
+}
+
+/* Scroll-to-top */
+#to-top{position:fixed;bottom:18px;right:18px;width:42px;height:42px;border-radius:50%;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:1.1rem;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:all .2s;z-index:90}
+#to-top:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+#to-top.visible{display:flex;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Animated loading status */
+.loading-status{color:var(--muted);margin-top:6px;font-size:.88rem;min-height:1.2em;transition:opacity .3s}
+
+/* Error retry button */
+.err-retry{margin-top:10px;background:var(--accent);color:#000;border:none;border-radius:7px;padding:6px 16px;font-weight:600;cursor:pointer;font-size:.82rem;transition:opacity .2s}
+.err-retry:hover{opacity:.85}
 
 /* ── Layout ── */
 main{max-width:1400px;margin:0 auto;padding:20px}
@@ -382,19 +419,10 @@ main{max-width:1400px;margin:0 auto;padding:20px}
     <!-- Search bar only shown on analyzer tab -->
     <div id="analyzer-controls" style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap">
       <div class="search-wrap">
-        <input id="search-input" class="search-input" type="text" placeholder="Ticker (e.g. AAPL)" maxlength="10">
+        <input id="search-input" class="search-input" type="text" placeholder="Ticker (e.g. AAPL) — press Enter" maxlength="10" autocomplete="off" autocapitalize="characters">
         <button class="btn-primary" onclick="doSearch()">Analyze</button>
       </div>
-      <div class="quick-picks">
-        <button class="qbtn" onclick="quickPick('AAPL')">AAPL</button>
-        <button class="qbtn" onclick="quickPick('NVDA')">NVDA</button>
-        <button class="qbtn" onclick="quickPick('TSLA')">TSLA</button>
-        <button class="qbtn" onclick="quickPick('MSFT')">MSFT</button>
-        <button class="qbtn" onclick="quickPick('META')">META</button>
-        <button class="qbtn" onclick="quickPick('AMZN')">AMZN</button>
-        <button class="qbtn" onclick="quickPick('SPY')">SPY</button>
-        <button class="qbtn" onclick="quickPick('GOOGL')">GOOGL</button>
-      </div>
+      <div class="quick-picks" id="quick-picks"></div>
     </div>
   </div>
 </header>
@@ -416,9 +444,9 @@ main{max-width:1400px;margin:0 auto;padding:20px}
     <div id="loading">
       <div class="spinner"></div>
       <p id="loading-ticker" style="font-size:1.05rem;font-weight:600"></p>
-      <p class="loading-status">Fetching price history, indicators, fundamentals &amp; news…</p>
+      <p class="loading-status" id="loading-status">Starting analysis…</p>
     </div>
-    <div id="error-box"><p id="error-msg"></p></div>
+    <div id="error-box"><p id="error-msg"></p><button class="err-retry" id="err-retry-btn" onclick="retryLast()" style="display:none">Retry</button></div>
     <div id="results">
       <div class="section" id="sec-price">
         <div class="price-header">
@@ -905,12 +933,14 @@ main{max-width:1400px;margin:0 auto;padding:20px}
   </div><!-- /about-screen -->
 </main>
 
+<button id="to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top" title="Back to top">↑</button>
+
 <script>
 // ── API endpoint — auto-selects local vs cloud ───────────────────────────────
 // After deploying to Render, replace YOUR-APP-NAME with your actual Render URL.
 const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:8001'
-  : 'https://YOUR-APP-NAME.onrender.com';
+  : 'https://stock-analyzer-wzbd.onrender.com';
 let tvChart = null, rsiChart = null, macdChart = null;
 let scanResults = [];
 let scanES = null;
@@ -960,27 +990,82 @@ function scoreColor(s) {
 function scoreBarPct(s) { return ((s + 100) / 200 * 100).toFixed(1) + '%'; }
 
 // ── Analyzer UI state ─────────────────────────────────────────
+const LOADING_STAGES = [
+  '📊 Fetching 1-year price history…',
+  '📈 Computing indicators (RSI, MACD, ATR)…',
+  '🔍 Scanning for candlestick patterns…',
+  '🏢 Pulling fundamentals & earnings…',
+  '📰 Analyzing news sentiment with FinBERT…',
+  '💬 Reading social sentiment from Reddit…',
+  '🎯 Building trade setups with targets…',
+];
+let _loadingTimer = null;
+function _cycleLoadingText() {
+  const el = document.getElementById('loading-status');
+  if (!el) return;
+  let i = 0;
+  el.textContent = LOADING_STAGES[0];
+  clearInterval(_loadingTimer);
+  _loadingTimer = setInterval(() => {
+    i = (i + 1) % LOADING_STAGES.length;
+    el.style.opacity = '0';
+    setTimeout(() => { el.textContent = LOADING_STAGES[i]; el.style.opacity = '1'; }, 200);
+  }, 1800);
+}
+function _stopLoadingText() { clearInterval(_loadingTimer); _loadingTimer = null; }
+
 function showLanding() {
   ['landing','loading','results'].forEach(id => document.getElementById(id).style.display = id === 'landing' ? 'block' : 'none');
   document.getElementById('error-box').style.display = 'none';
+  _stopLoadingText();
 }
 function showLoading(t) {
   ['landing','results'].forEach(id => document.getElementById(id).style.display = 'none');
   document.getElementById('loading').style.display = 'block';
   document.getElementById('error-box').style.display = 'none';
   document.getElementById('loading-ticker').textContent = 'Analyzing ' + t + '…';
+  _cycleLoadingText();
 }
 function showError(msg) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('error-box').style.display = 'block';
   document.getElementById('error-msg').textContent = 'Error: ' + msg;
+  document.getElementById('err-retry-btn').style.display = _lastTicker ? 'inline-block' : 'none';
+  _stopLoadingText();
 }
 function showResults() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('results').style.display = 'block';
+  _stopLoadingText();
+}
+
+// ── Recent searches (localStorage) ────────────────────────────
+const DEFAULT_PICKS = ['AAPL','NVDA','TSLA','MSFT','META','AMZN','SPY','GOOGL'];
+function getRecent() {
+  try { return JSON.parse(localStorage.getItem('sk_recent') || '[]'); } catch { return []; }
+}
+function addRecent(t) {
+  const r = getRecent().filter(x => x !== t);
+  r.unshift(t);
+  localStorage.setItem('sk_recent', JSON.stringify(r.slice(0, 5)));
+  renderQuickPicks();
+}
+function renderQuickPicks() {
+  const recent = getRecent();
+  const wrap = document.getElementById('quick-picks');
+  let html = '';
+  if (recent.length) {
+    html += '<span class="qpick-label">Recent</span>';
+    html += recent.map(t => `<button class="qbtn recent" onclick="quickPick('${t}')">${t}</button>`).join('');
+    html += '<span class="qpick-label" style="margin-left:6px">Popular</span>';
+  }
+  const remaining = DEFAULT_PICKS.filter(t => !recent.includes(t)).slice(0, recent.length ? 4 : 8);
+  html += remaining.map(t => `<button class="qbtn" onclick="quickPick('${t}')">${t}</button>`).join('');
+  wrap.innerHTML = html;
 }
 
 // ── Search ───────────────────────────────────────────────────
+let _lastTicker = null;
 function doSearch() {
   const v = document.getElementById('search-input').value.trim().toUpperCase();
   if (v) analyzeStock(v);
@@ -989,9 +1074,11 @@ function quickPick(t) {
   document.getElementById('search-input').value = t;
   analyzeStock(t);
 }
+function retryLast() { if (_lastTicker) analyzeStock(_lastTicker, true); }
 document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 
 async function analyzeStock(ticker, refresh=false) {
+  _lastTicker = ticker;
   showLoading(ticker);
   try {
     const url = `${API}/analyze/${ticker}${refresh ? '?refresh=true' : ''}`;
@@ -1000,8 +1087,17 @@ async function analyzeStock(ticker, refresh=false) {
     const data = await res.json();
     renderAll(data);
     showResults();
+    addRecent(ticker);
   } catch(e) { showError(e.message); }
 }
+
+// ── Scroll-to-top button ──────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('to-top').classList.toggle('visible', window.scrollY > 400);
+}, {passive: true});
+
+// Initialize quick-picks on load
+renderQuickPicks();
 
 // ── Analyzer render ──────────────────────────────────────────
 function renderAll(d) {
