@@ -472,15 +472,52 @@
 
   /* Long-Term Picks */
   .picks-header { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-  /* GEMS (value) view */
+  /* GEMS view */
   .sb-gem { display: block; margin: 0 auto 4px; filter: drop-shadow(0 0 4px rgba(125,211,252,0.45)); transition: transform 0.18s, filter 0.18s; }
   .sb-btn:hover .sb-gem { transform: scale(1.12) rotate(-4deg); filter: drop-shadow(0 0 8px rgba(0,212,170,0.6)); }
   .sb-btn.active .sb-gem { filter: drop-shadow(0 0 10px rgba(183,148,246,0.75)); }
-  .val-filters { display: flex; gap: 10px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-  .vf-item { display: flex; flex-direction: column; gap: 4px; min-width: 110px; }
-  .vf-item label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
-  .vf-item select { background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-primary); padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
-  .vf-item select:hover { border-color: var(--accent); }
+
+  /* Two-column layout: filter panel + results */
+  .gems-layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .gems-layout { grid-template-columns: 1fr; } }
+
+  /* Filter panel */
+  .gems-filters { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 16px 18px; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; }
+  .gf-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .gf-h-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+  .gf-reset { background: none; border: none; color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; }
+  .gf-reset:hover { text-decoration: underline; }
+
+  .gf-group { margin-bottom: 16px; }
+  .gf-label-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .gf-label-row label { font-size: 12px; color: var(--text-primary); font-weight: 600; }
+  .gf-val { font-size: 12px; color: var(--accent); font-weight: 700; min-width: 60px; text-align: right; }
+  .gf-select { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-primary); padding: 7px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+  .gf-select:hover { border-color: var(--accent); }
+
+  /* Sliders — themed teal */
+  .gf-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: var(--bg-elevated); border-radius: 2px; outline: none; cursor: pointer; }
+  .gf-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: var(--accent); border-radius: 50%; cursor: pointer; box-shadow: 0 0 0 3px rgba(0,212,170,0.18); transition: transform 0.12s; }
+  .gf-slider::-webkit-slider-thumb:hover { transform: scale(1.18); box-shadow: 0 0 0 5px rgba(0,212,170,0.25); }
+  .gf-slider::-moz-range-thumb { width: 16px; height: 16px; background: var(--accent); border-radius: 50%; cursor: pointer; border: none; box-shadow: 0 0 0 3px rgba(0,212,170,0.18); }
+
+  .gf-divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* Chips */
+  .gf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .gf-chip { background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 11px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.12s; }
+  .gf-chip:hover { border-color: var(--accent); color: var(--text-primary); }
+  .gf-chip.active { background: rgba(0,212,170,0.14); border-color: var(--accent); color: var(--accent); }
+
+  /* Find Gems CTA */
+  .gf-find-btn { width: 100%; background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 12px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 14px; transition: transform 0.12s, box-shadow 0.12s; letter-spacing: 0.3px; }
+  .gf-find-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,212,170,0.35); }
+  .gf-find-btn:active { transform: translateY(0); }
+
+  /* Results panel */
+  .gems-results { min-height: 60vh; }
+  .gems-result-head { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; }
+
   .val-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
   .val-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; text-align: center; }
   .val-stat .vs-num { font-size: 22px; font-weight: 800; color: #7dd3fc; }
@@ -498,6 +535,8 @@
   .vc-cell { text-align: center; }
   .vc-cell .vcv { font-size: 13px; font-weight: 700; color: var(--text-primary); }
   .vc-cell .vcl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+  .vc-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .vc-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; border: 1px solid; background: transparent; font-weight: 600; letter-spacing: 0.3px; }
   .vc-fv-bar { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--text-secondary); }
   .vc-fv-bar .vfvc { color: #f85149; font-weight: 700; }
   .vc-fv-bar .vfvf { color: #69f0ae; font-weight: 700; }
@@ -1396,94 +1435,158 @@
 
     <!-- ═══════════════════ GEMS VIEW (undervalued + strong fundamentals) ═══════════════════ -->
     <div id="view-value" style="display:none;">
-      <div class="picks-header">
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <h2 style="margin:0;font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px;">
-            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="flex-shrink:0;">
-              <defs>
-                <linearGradient id="gems-h-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%"  stop-color="#7dd3fc"/>
-                  <stop offset="55%" stop-color="#00d4aa"/>
-                  <stop offset="100%" stop-color="#b794f6"/>
-                </linearGradient>
-              </defs>
-              <polygon points="12,2 22,9 12,22 2,9" fill="url(#gems-h-grad)" stroke="#0f1419" stroke-width="0.6" stroke-linejoin="round"/>
-              <line x1="2"  y1="9" x2="22" y2="9"  stroke="#0f1419" stroke-width="0.6"/>
-              <line x1="12" y1="2" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
-              <line x1="2"  y1="9" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
-              <line x1="22" y1="9" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
-              <polygon points="6,8 9,9 6,10 5,9" fill="#ffffff" opacity="0.85"/>
-            </svg>
-            Gems · Undervalued Stocks
-          </h2>
-          <span style="color:var(--text-muted);font-size:12px;">
-            Hidden gems: price &lt; fair value · strong fundamentals (ROE filter) · risk-capped
-          </span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;">
-          <select id="val-index" class="index-select" onchange="loadValuePicks()">
-            <option value="all">All Indices</option>
-            <option value="NIFTY 50">NIFTY 50</option>
-            <option value="NIFTY Next 50">NIFTY Next 50</option>
-            <option value="NIFTY Midcap 100">NIFTY Midcap</option>
-            <option value="NIFTY Bank">NIFTY Bank</option>
-            <option value="NIFTY IT">NIFTY IT</option>
-            <option value="NIFTY Pharma">NIFTY Pharma</option>
-            <option value="NIFTY Auto">NIFTY Auto</option>
-          </select>
-          <button class="refresh-btn" onclick="loadValuePicks(true)"><i class="fa fa-rotate-right"></i> Refresh</button>
-        </div>
-      </div>
+      <div class="gems-layout">
+        <!-- ─── LEFT: FILTER PANEL ─── -->
+        <aside class="gems-filters">
+          <div class="gf-head">
+            <span class="gf-h-title">Filters</span>
+            <button class="gf-reset" onclick="resetGemsFilters()">Reset all</button>
+          </div>
 
-      <!-- Filter bar -->
-      <div class="val-filters">
-        <div class="vf-item">
-          <label>Max Price</label>
-          <select id="vf-price" onchange="loadValuePicks()">
-            <option value="">Any</option>
-            <option value="500">≤ ₹500</option>
-            <option value="1000">≤ ₹1,000</option>
-            <option value="5000">≤ ₹5,000</option>
-            <option value="10000">≤ ₹10,000</option>
-          </select>
-        </div>
-        <div class="vf-item">
-          <label>Max Risk</label>
-          <select id="vf-risk" onchange="loadValuePicks()">
-            <option value="40">Low only</option>
-            <option value="60" selected>Low–Medium</option>
-            <option value="100">Any</option>
-          </select>
-        </div>
-        <div class="vf-item">
-          <label>Min ROE</label>
-          <select id="vf-roe" onchange="loadValuePicks()">
-            <option value="0.05">≥ 5%</option>
-            <option value="0.10" selected>≥ 10%</option>
-            <option value="0.15">≥ 15%</option>
-            <option value="0.20">≥ 20%</option>
-          </select>
-        </div>
-        <div class="vf-item">
-          <label>Min Upside vs FV</label>
-          <select id="vf-upside" onchange="loadValuePicks()">
-            <option value="0">Any</option>
-            <option value="5" selected>≥ 5%</option>
-            <option value="15">≥ 15%</option>
-            <option value="25">≥ 25% (deep value)</option>
-          </select>
-        </div>
-        <div class="vf-item">
-          <label>Sector</label>
-          <select id="vf-sector" onchange="loadValuePicks()">
-            <option value="">All sectors</option>
-          </select>
-        </div>
-      </div>
+          <!-- Index (compact) -->
+          <div class="gf-group">
+            <div class="gf-label-row"><label>Universe</label></div>
+            <select id="val-index" class="gf-select" onchange="renderGemsValues()">
+              <option value="all">All Common Indices</option>
+              <option value="NIFTY 50" selected>NIFTY 50</option>
+              <option value="NIFTY Next 50">NIFTY Next 50</option>
+              <option value="NIFTY Midcap 100">NIFTY Midcap</option>
+              <option value="NIFTY Bank">NIFTY Bank</option>
+              <option value="NIFTY IT">NIFTY IT</option>
+              <option value="NIFTY Pharma">NIFTY Pharma</option>
+              <option value="NIFTY Auto">NIFTY Auto</option>
+            </select>
+          </div>
 
-      <div id="val-summary" style="display:none;"></div>
-      <div id="val-content">
-        <div class="loading"><div class="spinner"></div> Scanning for undervalued, fundamentally strong stocks…</div>
+          <!-- Max Price -->
+          <div class="gf-group">
+            <div class="gf-label-row">
+              <label>Max Price</label>
+              <span class="gf-val" id="gf-price-disp">Any</span>
+            </div>
+            <input type="range" id="gf-price" class="gf-slider" min="0" max="10000" step="100" value="0" oninput="renderGemsValues()">
+          </div>
+
+          <!-- Max P/E Ratio -->
+          <div class="gf-group">
+            <div class="gf-label-row">
+              <label>Max P/E Ratio</label>
+              <span class="gf-val" id="gf-pe-disp">Any</span>
+            </div>
+            <input type="range" id="gf-pe" class="gf-slider" min="0" max="60" step="1" value="0" oninput="renderGemsValues()">
+          </div>
+
+          <!-- Min Revenue Growth -->
+          <div class="gf-group">
+            <div class="gf-label-row">
+              <label>Min Revenue Growth</label>
+              <span class="gf-val" id="gf-revg-disp">Any</span>
+            </div>
+            <input type="range" id="gf-revg" class="gf-slider" min="-10" max="50" step="1" value="-10" oninput="renderGemsValues()">
+          </div>
+
+          <!-- Min Profit Margin -->
+          <div class="gf-group">
+            <div class="gf-label-row">
+              <label>Min Profit Margin</label>
+              <span class="gf-val" id="gf-pm-disp">Any</span>
+            </div>
+            <input type="range" id="gf-pm" class="gf-slider" min="-10" max="40" step="1" value="-10" oninput="renderGemsValues()">
+          </div>
+
+          <div class="gf-divider"></div>
+
+          <!-- Risk Tier (chips) -->
+          <div class="gf-group">
+            <div class="gf-label-row"><label>Risk Tier</label></div>
+            <div class="gf-chips" id="gf-risk-chips">
+              <button class="gf-chip active" data-value="40">Low</button>
+              <button class="gf-chip active" data-value="60">Medium</button>
+              <button class="gf-chip"        data-value="75">High</button>
+              <button class="gf-chip"        data-value="100">Very High</button>
+            </div>
+          </div>
+
+          <!-- Sector (chips) -->
+          <div class="gf-group">
+            <div class="gf-label-row"><label>Sector</label></div>
+            <div class="gf-chips" id="gf-sector-chips">
+              <button class="gf-chip active" data-value="">All</button>
+              <!-- Populated dynamically + a curated default set below -->
+              <button class="gf-chip" data-value="Technology">Tech</button>
+              <button class="gf-chip" data-value="Financial">Finance</button>
+              <button class="gf-chip" data-value="Healthcare">Healthcare</button>
+              <button class="gf-chip" data-value="Energy">Energy</button>
+              <button class="gf-chip" data-value="Industrials">Industrials</button>
+              <button class="gf-chip" data-value="Consumer Cyclical">Cons. Disc.</button>
+              <button class="gf-chip" data-value="Basic Materials">Materials</button>
+              <button class="gf-chip" data-value="Consumer Defensive">Cons. Staples</button>
+              <button class="gf-chip" data-value="Utilities">Utilities</button>
+              <button class="gf-chip" data-value="Communication Services">Comms</button>
+              <button class="gf-chip" data-value="Real Estate">Real Estate</button>
+            </div>
+          </div>
+
+          <!-- Quality Tags (multi-select chips) -->
+          <div class="gf-group">
+            <div class="gf-label-row"><label>Quality Tags</label></div>
+            <div class="gf-chips" id="gf-tag-chips">
+              <button class="gf-chip active" data-value="undervalued">Undervalued</button>
+              <button class="gf-chip"        data-value="quality">Quality</button>
+              <button class="gf-chip"        data-value="dividend">Dividend</button>
+              <button class="gf-chip"        data-value="growth">Growth</button>
+            </div>
+          </div>
+
+          <!-- Min Market Cap -->
+          <div class="gf-group">
+            <div class="gf-label-row">
+              <label>Min Market Cap</label>
+              <span class="gf-val" id="gf-mcap-disp">Any</span>
+            </div>
+            <!-- Slider uses log-like buckets: 0..7 maps to Any, 100Cr, 500Cr, 1k, 5k, 10k, 50k, 1L Cr -->
+            <input type="range" id="gf-mcap" class="gf-slider" min="0" max="7" step="1" value="0" oninput="renderGemsValues()">
+          </div>
+
+          <button class="gf-find-btn" onclick="loadValuePicks(true)">
+            Find Gems
+            <i class="fa fa-arrow-right" style="margin-left:6px;"></i>
+          </button>
+        </aside>
+
+        <!-- ─── RIGHT: RESULTS ─── -->
+        <section class="gems-results">
+          <div class="gems-result-head">
+            <h2 style="margin:0;font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px;">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="flex-shrink:0;">
+                <defs>
+                  <linearGradient id="gems-h-grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%"  stop-color="#7dd3fc"/>
+                    <stop offset="55%" stop-color="#00d4aa"/>
+                    <stop offset="100%" stop-color="#b794f6"/>
+                  </linearGradient>
+                </defs>
+                <polygon points="12,2 22,9 12,22 2,9" fill="url(#gems-h-grad)" stroke="#0f1419" stroke-width="0.6" stroke-linejoin="round"/>
+                <line x1="2"  y1="9" x2="22" y2="9"  stroke="#0f1419" stroke-width="0.6"/>
+                <line x1="12" y1="2" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+                <line x1="2"  y1="9" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+                <line x1="22" y1="9" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+                <polygon points="6,8 9,9 6,10 5,9" fill="#ffffff" opacity="0.85"/>
+              </svg>
+              Gems · Hidden Value Picks
+            </h2>
+            <span style="color:var(--text-muted);font-size:12px;">Apply filters → tap <b>Find Gems</b> to scan</span>
+          </div>
+
+          <div id="val-summary" style="display:none;"></div>
+          <div id="val-content">
+            <div class="vc-empty">
+              <i class="fa fa-magnifying-glass"></i>
+              <h3 style="margin:6px 0;color:var(--text-secondary);">Set your filters on the left</h3>
+              <div style="font-size:13px;">Defaults find undervalued, low-risk NSE 50 names with ROE ≥ 10%.</div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 
@@ -1625,7 +1728,12 @@ function showView(view) {
     setPageTitle(VIEW_TITLE.picks);
   } else if (view === 'value') {
     document.getElementById('sb-value').classList.add('active');
-    if (!window.__valueLoaded) { loadValuePicks(); window.__valueLoaded = true; }
+    if (!window.__valueBound) {
+      bindGemsChips();
+      renderGemsValues();
+      window.__valueBound = true;
+      loadValuePicks(true);
+    }
     setPageTitle(VIEW_TITLE.value);
   } else if (view === 'watchlist') {
     document.getElementById('sb-watchlist').classList.add('active');
@@ -1652,54 +1760,148 @@ function setPicksGroup(mode) {
   if (picksData) renderPicks(picksData);
 }
 
-// ── Value Picks (undervalued + strong fundamentals) ──
+// ── Gems / Value Picks (undervalued + strong fundamentals) ──
 let valueData = null;
 
+// Market-cap slider buckets — ₹ raw values for backend, label for UI
+const GEMS_MCAP_BUCKETS = [
+  { val: null,        label: 'Any' },
+  { val: 1_00_00_00_000,    label: '≥ ₹100 Cr' },     // 100 Cr
+  { val: 5_00_00_00_000,    label: '≥ ₹500 Cr' },
+  { val: 10_00_00_00_000,   label: '≥ ₹1k Cr' },
+  { val: 50_00_00_00_000,   label: '≥ ₹5k Cr' },
+  { val: 1_00_00_00_00_000, label: '≥ ₹10k Cr' },
+  { val: 5_00_00_00_00_000, label: '≥ ₹50k Cr' },
+  { val: 10_00_00_00_00_000,label: '≥ ₹1 Lakh Cr' },
+];
+
+// Update slider value labels live (no API call — only fires backend on Find Gems)
+function renderGemsValues() {
+  const p  = parseInt(document.getElementById('gf-price').value, 10);
+  const pe = parseInt(document.getElementById('gf-pe').value, 10);
+  const rg = parseInt(document.getElementById('gf-revg').value, 10);
+  const pm = parseInt(document.getElementById('gf-pm').value, 10);
+  const mc = parseInt(document.getElementById('gf-mcap').value, 10);
+
+  document.getElementById('gf-price-disp').textContent = p === 0      ? 'Any' : '≤ ₹' + p.toLocaleString('en-IN');
+  document.getElementById('gf-pe-disp').textContent    = pe === 0     ? 'Any' : '≤ ' + pe;
+  document.getElementById('gf-revg-disp').textContent  = rg <= -10    ? 'Any' : (rg >= 0 ? '≥ ' : '≥ ') + rg + '%';
+  document.getElementById('gf-pm-disp').textContent    = pm <= -10    ? 'Any' : (pm >= 0 ? '≥ ' : '≥ ') + pm + '%';
+  document.getElementById('gf-mcap-disp').textContent  = GEMS_MCAP_BUCKETS[mc].label;
+}
+
+// Chip-group helpers (single-select for risk, multi-select for sector/tags)
+function bindGemsChips() {
+  // Risk chips — multi-select (cap = highest selected value)
+  document.querySelectorAll('#gf-risk-chips .gf-chip').forEach(c => {
+    c.onclick = () => { c.classList.toggle('active'); };
+  });
+  // Sector chips — "All" is exclusive; selecting any other deselects All; selecting nothing → All
+  document.querySelectorAll('#gf-sector-chips .gf-chip').forEach(c => {
+    c.onclick = () => {
+      const isAll = c.dataset.value === '';
+      if (isAll) {
+        document.querySelectorAll('#gf-sector-chips .gf-chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+      } else {
+        document.querySelector('#gf-sector-chips .gf-chip[data-value=""]').classList.remove('active');
+        c.classList.toggle('active');
+        // If nothing active, re-activate All
+        const anyOn = Array.from(document.querySelectorAll('#gf-sector-chips .gf-chip.active')).length;
+        if (!anyOn) document.querySelector('#gf-sector-chips .gf-chip[data-value=""]').classList.add('active');
+      }
+    };
+  });
+  // Quality tag chips — multi-select (empty = all match)
+  document.querySelectorAll('#gf-tag-chips .gf-chip').forEach(c => {
+    c.onclick = () => { c.classList.toggle('active'); };
+  });
+}
+
+function resetGemsFilters() {
+  document.getElementById('val-index').value = 'NIFTY 50';
+  document.getElementById('gf-price').value = 0;
+  document.getElementById('gf-pe').value = 0;
+  document.getElementById('gf-revg').value = -10;
+  document.getElementById('gf-pm').value = -10;
+  document.getElementById('gf-mcap').value = 0;
+  // Risk: Low + Medium on
+  document.querySelectorAll('#gf-risk-chips .gf-chip').forEach(c => {
+    c.classList.toggle('active', ['40','60'].includes(c.dataset.value));
+  });
+  // Sector: All
+  document.querySelectorAll('#gf-sector-chips .gf-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.value === '');
+  });
+  // Tags: Undervalued only
+  document.querySelectorAll('#gf-tag-chips .gf-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.value === 'undervalued');
+  });
+  renderGemsValues();
+}
+
 async function loadValuePicks(force) {
-  const idx     = document.getElementById('val-index').value;
-  const price   = document.getElementById('vf-price').value;
-  const risk    = document.getElementById('vf-risk').value;
-  const roe     = document.getElementById('vf-roe').value;
-  const upside  = document.getElementById('vf-upside').value;
-  const sector  = document.getElementById('vf-sector').value;
+  // Slider values
+  const idx   = document.getElementById('val-index').value;
+  const price = parseInt(document.getElementById('gf-price').value, 10);
+  const pe    = parseInt(document.getElementById('gf-pe').value, 10);
+  const revg  = parseInt(document.getElementById('gf-revg').value, 10);
+  const pm    = parseInt(document.getElementById('gf-pm').value, 10);
+  const mcIdx = parseInt(document.getElementById('gf-mcap').value, 10);
+  const mcVal = GEMS_MCAP_BUCKETS[mcIdx].val;
+
+  // Risk: pick the highest selected tier value as the cap (any chip on)
+  const riskCaps = Array.from(document.querySelectorAll('#gf-risk-chips .gf-chip.active'))
+    .map(c => parseInt(c.dataset.value, 10));
+  const maxRisk = riskCaps.length ? Math.max(...riskCaps) : 100;
+
+  // Sectors (multi → backend currently does single substring; use first non-All for now)
+  const selSectors = Array.from(document.querySelectorAll('#gf-sector-chips .gf-chip.active'))
+    .map(c => c.dataset.value).filter(v => v);
+  // If multiple sectors selected, we'll filter client-side after fetch
+
+  // Quality tags
+  const selTags = Array.from(document.querySelectorAll('#gf-tag-chips .gf-chip.active'))
+    .map(c => c.dataset.value);
 
   const el = document.getElementById('val-content');
-  el.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning ' + (idx === 'all' ? 'all indices' : idx) + ' for undervalued, fundamentally strong stocks…</div>';
+  el.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning ' + (idx === 'all' ? 'all indices' : idx) + ' for hidden gems…</div>';
   document.getElementById('val-summary').style.display = 'none';
 
   const params = new URLSearchParams();
   params.set('index', idx);
-  if (price)  params.set('max_price', price);
-  if (risk)   params.set('max_risk',  risk);
-  if (roe)    params.set('min_roe',   roe);
-  if (upside !== '') params.set('min_upside', upside);
-  if (sector) params.set('sector',    sector);
-  if (force)  params.set('_t', Date.now());
+  if (price > 0)        params.set('max_price', price);
+  if (pe > 0)           params.set('max_pe', pe);
+  if (revg > -10)       params.set('min_rev_growth', (revg / 100).toFixed(3));
+  if (pm > -10)         params.set('min_profit_margin', (pm / 100).toFixed(3));
+  if (mcVal != null)    params.set('min_mcap', mcVal);
+  params.set('max_risk', maxRisk);
+  // ROE defaults to 10% on backend — leave it. (Could add ROE slider later.)
+  params.set('min_upside', 0);   // Use Undervalued tag instead of hard upside floor
+  if (selSectors.length === 1) params.set('sector', selSectors[0]);
+  if (selTags.length)          params.set('quality_tags', selTags.join(','));
+  if (force) params.set('_t', Date.now());
 
   try {
     const r = await fetch('/api/value_picks?' + params.toString());
     const d = await r.json();
     if (d.error) throw new Error(d.error);
+
+    // Client-side multi-sector filter (only when 2+ sector chips selected)
+    if (selSectors.length > 1 && d.picks) {
+      d.picks = d.picks.filter(p => selSectors.some(s => (p.sector || '').toLowerCase().includes(s.toLowerCase())));
+      d.total_picks = d.picks.length;
+    }
+
     valueData = d;
     renderValuePicks(d);
+    if (typeof toast === 'function') toast(`Found ${d.total_picks} gems out of ${d.total_scanned} scanned`, d.total_picks ? 'success' : 'info');
   } catch (e) {
-    el.innerHTML = '<div class="alert-custom"><i class="fa fa-triangle-exclamation"></i> Could not load value picks: ' + e.message + '</div>';
+    el.innerHTML = '<div class="alert-custom"><i class="fa fa-triangle-exclamation"></i> Could not load gems: ' + e.message + '</div>';
   }
 }
 
 function renderValuePicks(d) {
-  // Populate sector dropdown (first time only — preserve user's choice)
-  const secSel = document.getElementById('vf-sector');
-  const current = secSel.value;
-  if (d.sectors && d.sectors.length && secSel.options.length <= 1) {
-    d.sectors.forEach(s => {
-      const o = document.createElement('option');
-      o.value = s; o.textContent = s;
-      secSel.appendChild(o);
-    });
-    if (current) secSel.value = current;
-  }
-
   // Summary stats
   const sum = document.getElementById('val-summary');
   sum.style.display = 'block';
@@ -1707,8 +1909,8 @@ function renderValuePicks(d) {
     <div class="val-stats">
       <div class="val-stat"><div class="vs-num">${d.total_picks}</div><div class="vs-lbl">Matches</div></div>
       <div class="val-stat"><div class="vs-num">${d.total_scanned}</div><div class="vs-lbl">Scanned</div></div>
-      <div class="val-stat"><div class="vs-num">${d.avg_upside_pct}%</div><div class="vs-lbl">Avg Upside</div></div>
-      <div class="val-stat"><div class="vs-num">${d.avg_roe_pct}%</div><div class="vs-lbl">Avg ROE</div></div>
+      <div class="val-stat"><div class="vs-num">${d.avg_upside_pct ?? 0}%</div><div class="vs-lbl">Avg Upside</div></div>
+      <div class="val-stat"><div class="vs-num">${d.avg_roe_pct ?? 0}%</div><div class="vs-lbl">Avg ROE</div></div>
     </div>
   `;
 
@@ -1717,22 +1919,28 @@ function renderValuePicks(d) {
     el.innerHTML = `
       <div class="vc-empty">
         <i class="fa fa-magnifying-glass"></i>
-        <h3 style="margin:6px 0;color:var(--text-secondary);">No matches with current filters</h3>
-        <div style="font-size:13px;">Try loosening Min ROE, increasing Max Price, or lowering Min Upside.</div>
+        <h3 style="margin:6px 0;color:var(--text-secondary);">No gems match these filters</h3>
+        <div style="font-size:13px;">Try loosening Max P/E, lowering Min Revenue Growth, or removing a Quality Tag.</div>
       </div>`;
     return;
   }
 
+  const tagColor = { undervalued:'#69f0ae', quality:'#7dd3fc', dividend:'#ffd740', growth:'#b794f6' };
+  const tagLabel = { undervalued:'Undervalued', quality:'Quality', dividend:'Dividend', growth:'Growth' };
+
   const cards = d.picks.map(p => {
-    const upClass = (p.upside_pct >= 25) ? '#69f0ae' : (p.upside_pct >= 10 ? '#7dd3fc' : '#ffd740');
-    const upIcon  = (p.upside_pct >= 25) ? '🚀' : (p.upside_pct >= 10 ? '📈' : '↗');
+    const upside  = p.upside_pct;
+    const upClass = (upside >= 25) ? '#69f0ae' : (upside >= 10 ? '#7dd3fc' : (upside >= 0 ? '#ffd740' : '#f85149'));
+    const upIcon  = (upside >= 25) ? '🚀' : (upside >= 10 ? '📈' : '↗');
     const priceStr = p.price != null ? '₹' + Number(p.price).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
     const fvStr    = p.fair_value != null ? '₹' + Number(p.fair_value).toLocaleString('en-IN', {maximumFractionDigits: 0}) : '—';
     const roeStr   = p.roe != null ? (p.roe * 100).toFixed(1) + '%' : '—';
     const peStr    = p.pe != null ? p.pe.toFixed(1) : '—';
     const riskStr  = p.risk_score != null ? p.risk_score : '—';
-    const riskBadge = p.risk_score <= 40 ? '🟢 Low' : (p.risk_score <= 60 ? '🟡 Med' : '🔴 High');
+    const riskBadge = p.risk_score <= 40 ? '🟢 Low' : (p.risk_score <= 60 ? '🟡 Med' : (p.risk_score <= 75 ? '🟠 High' : '🔴 Very High'));
     const safeTkr  = (p.ticker || '').replace(/'/g, "\\'");
+    const tags = (p.tags || []).map(t => `<span class="vc-tag" style="border-color:${tagColor[t]||'#888'};color:${tagColor[t]||'#888'};">${tagLabel[t]||t}</span>`).join('');
+
     return `
       <div class="val-card" onclick="analyzeStock('${safeTkr}')">
         <div class="vc-top">
@@ -1742,10 +1950,11 @@ function renderValuePicks(d) {
             <div class="vc-sector">${p.sector || ''}</div>
           </div>
           <div>
-            <div class="vc-upside" style="color:${upClass};">${upIcon} +${p.upside_pct}%</div>
+            <div class="vc-upside" style="color:${upClass};">${upIcon} ${upside >= 0 ? '+' : ''}${upside}%</div>
             <div class="vc-upside-lbl">Upside to FV</div>
           </div>
         </div>
+        ${tags ? `<div class="vc-tags">${tags}</div>` : ''}
         <div class="vc-fv-bar">
           <span class="vfvc">${priceStr}</span>
           <span style="color:var(--text-muted);">→</span>

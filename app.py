@@ -3004,6 +3004,9 @@ def _screener_impl():
                 'roe':       safe_round(info.get('returnOnEquity'), 4),
                 'debt_eq':   safe_round(info.get('debtToEquity')),
                 'div_yield': safe_round(info.get('dividendYield'), 4),
+                'rev_growth':    safe_round(info.get('revenueGrowth'), 4),
+                'profit_margin': safe_round(info.get('profitMargins'), 4),
+                'earnings_growth': safe_round(info.get('earningsGrowth'), 4),
                 'fair_value':  fv_val,
                 'fv_verdict':  fv_verdict,
                 'upside_pct':  upside_pct,
@@ -3259,12 +3262,19 @@ def _value_picks_impl():
         except Exception:
             return default
 
-    max_price   = _f('max_price', None)         # None = unlimited
-    max_risk    = _f('max_risk', 60)            # 60 = Low + Medium
-    min_roe     = _f('min_roe', 0.10)           # 10%
-    min_upside  = _f('min_upside', 5.0)         # ≥5% below fair value
-    sector_q    = (request.args.get('sector') or '').strip().lower()
-    index_q     = request.args.get('index', 'NIFTY 500')
+    max_price        = _f('max_price', None)         # None = unlimited
+    max_risk         = _f('max_risk', 60)            # 60 = Low + Medium
+    max_pe           = _f('max_pe', None)            # None = unlimited
+    min_roe          = _f('min_roe', 0.10)           # 10% (kept for back-compat)
+    min_upside       = _f('min_upside', 0)           # % below FV
+    min_rev_growth   = _f('min_rev_growth', None)    # decimal, e.g. 0.10 = 10%
+    min_profit_margin = _f('min_profit_margin', None) # decimal
+    min_mcap         = _f('min_mcap', None)          # ₹ (raw — frontend passes ₹2B = 2e9, etc.)
+    sector_q         = (request.args.get('sector') or '').strip().lower()
+    index_q          = request.args.get('index', 'NIFTY 500')
+    # Multi-select quality tags: csv string e.g. "undervalued,quality,dividend"
+    quality_tags_q   = (request.args.get('quality_tags') or '').strip().lower()
+    quality_tags     = {t.strip() for t in quality_tags_q.split(',') if t.strip()} if quality_tags_q else set()
 
     # Default universe = NIFTY 500 if present, else fall back to broader scan
     if index_q == 'all':
@@ -3278,7 +3288,9 @@ def _value_picks_impl():
         indices_to_scan = [index_q] if index_q in NSE_INDICES else ['NIFTY 50']
 
     cache_key = (f'value_picks:{":".join(indices_to_scan)}'
-                 f':p{max_price}:r{max_risk}:e{min_roe}:u{min_upside}:s{sector_q}')
+                 f':p{max_price}:r{max_risk}:pe{max_pe}:e{min_roe}'
+                 f':u{min_upside}:rg{min_rev_growth}:pm{min_profit_margin}'
+                 f':mc{min_mcap}:s{sector_q}:q{",".join(sorted(quality_tags))}')
     cached = get_cached(cache_key)
     if cached:
         return jsonify(cached)
@@ -3302,6 +3314,23 @@ def _value_picks_impl():
             if t not in all_rows:
                 all_rows[t] = r
 
+    # Helper: derive quality tags for a row
+    def _tags_for(r):
+        tags = []
+        if (r.get('upside_pct') or 0) > 5:
+            tags.append('undervalued')
+        roe = r.get('roe') or 0
+        de  = r.get('debt_eq')
+        if roe > 0.15 and (de is None or de < 100):
+            tags.append('quality')
+        if (r.get('div_yield') or 0) > 0.02:   # >2% yield
+            tags.append('dividend')
+        rg = r.get('rev_growth') or 0
+        eg = r.get('earnings_growth') or 0
+        if rg > 0.15 or eg > 0.15:
+            tags.append('growth')
+        return tags
+
     # Filter
     picks = []
     for t, r in all_rows.items():
@@ -3311,18 +3340,40 @@ def _value_picks_impl():
         upside  = r.get('upside_pct')
         fv      = r.get('fair_value')
         sector  = (r.get('sector') or '').lower()
+        pe      = r.get('pe')
+        rev_g   = r.get('rev_growth')
+        pm      = r.get('profit_margin')
+        mcap    = r.get('mktcap')
 
         if price is None or risk is None: continue
         if max_price is not None and price > max_price: continue
         if risk > max_risk: continue
+        if max_pe is not None and (pe is None or pe <= 0 or pe > max_pe): continue
+        # ROE — kept as a default quality floor (10% unless overridden)
         if roe is None or roe < min_roe: continue
+        # Revenue growth filter (None = unknown → skip if filter is set)
+        if min_rev_growth is not None and (rev_g is None or rev_g < min_rev_growth): continue
+        # Profit margin filter
+        if min_profit_margin is not None and (pm is None or pm < min_profit_margin): continue
+        # Market cap filter (in raw ₹)
+        if min_mcap is not None and (mcap is None or mcap < min_mcap): continue
         # Must be undervalued by at least min_upside %
-        if fv is None or upside is None or upside < min_upside: continue
+        if min_upside is not None and min_upside > 0:
+            if fv is None or upside is None or upside < min_upside: continue
         if sector_q and sector_q not in sector: continue
         # Quality gate: long-term score floor so we don't surface broken names
         if (r.get('long_term') or 0) < 50: continue
 
-        picks.append(r)
+        # Quality tag filter — must have at least one of the selected tags
+        row_tags = _tags_for(r)
+        if quality_tags:
+            if not (quality_tags & set(row_tags)):
+                continue
+
+        # Attach tags to the row so frontend can show badges
+        enriched = dict(r)
+        enriched['tags'] = row_tags
+        picks.append(enriched)
 
     # Sort by upside desc, then by ROE desc
     picks.sort(key=lambda x: ((x.get('upside_pct') or 0), (x.get('roe') or 0)), reverse=True)
@@ -3336,12 +3387,17 @@ def _value_picks_impl():
 
     result = {
         'filter': {
-            'max_price':  max_price,
-            'max_risk':   max_risk,
-            'min_roe':    min_roe,
-            'min_upside': min_upside,
-            'sector':     request.args.get('sector') or '',
-            'indices':    indices_to_scan,
+            'max_price':         max_price,
+            'max_risk':          max_risk,
+            'max_pe':            max_pe,
+            'min_roe':           min_roe,
+            'min_upside':        min_upside,
+            'min_rev_growth':    min_rev_growth,
+            'min_profit_margin': min_profit_margin,
+            'min_mcap':          min_mcap,
+            'sector':            request.args.get('sector') or '',
+            'quality_tags':      sorted(quality_tags),
+            'indices':           indices_to_scan,
         },
         'total_scanned': len(all_rows),
         'total_picks':   len(picks),
