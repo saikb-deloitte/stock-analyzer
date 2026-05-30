@@ -166,6 +166,83 @@ header{display:none}
 .gem-score{font-size:1.35rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums;line-height:1}
 .gem-score-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 
+/* ══════ NEW SCREENER (Centaur-style) ══════ */
+.screener-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.screener-title{font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+.screener-title .accent{color:var(--accent)}
+.screener-sub{font-size:.85rem;color:var(--muted);margin-top:3px;margin-bottom:14px}
+.screener-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.scr-select{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:9px 14px;color:var(--text);font-size:.88rem;outline:none;cursor:pointer;min-width:200px;font-family:inherit}
+.scr-select:focus{border-color:var(--accent)}
+.scr-btn{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:9px 14px;color:var(--text);font-size:.85rem;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;font-family:inherit;transition:all .15s}
+.scr-btn:hover{border-color:var(--accent);color:var(--accent)}
+.scr-btn:disabled{opacity:.45;cursor:not-allowed}
+.scr-btn.primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.scr-btn.primary:hover{opacity:.88;color:#000}
+.scr-stats{color:var(--muted);font-size:.85rem;margin-left:auto}
+.scr-input{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:9px 14px;color:var(--text);font-size:.85rem;outline:none;min-width:200px;font-family:inherit}
+.scr-input:focus{border-color:var(--accent)}
+
+/* Progress (Centaur-style — slim and inline) */
+.scr-progress{display:none;margin-bottom:18px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.scr-progress-bar{background:rgba(255,255,255,.08);border-radius:3px;height:5px;overflow:hidden;margin-bottom:8px}
+.scr-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#10b981);border-radius:3px;transition:width .3s;width:0}
+.scr-progress-row{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted)}
+.scr-progress-row strong{color:var(--text);font-weight:700}
+
+/* Dual-column picks */
+.picks-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}
+@media(max-width:900px){.picks-row{grid-template-columns:1fr}}
+.picks-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;position:relative;overflow:hidden}
+.picks-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.picks-card.short::before{background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+.picks-card.mid::before{background:linear-gradient(180deg,#10b981,#059669)}
+.picks-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:9px}
+.picks-title .icon-y{color:var(--yellow);font-size:.95rem}
+.picks-title .icon-g{color:var(--green);font-size:.95rem}
+.pick-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:padding .15s}
+.pick-row:last-child{border-bottom:none}
+.pick-row:hover{margin:0 -22px;padding:11px 22px;background:rgba(255,255,255,.03);border-radius:8px}
+.pick-left{display:flex;flex-direction:column;gap:3px}
+.pick-ticker{font-size:1.08rem;font-weight:800;color:var(--accent);letter-spacing:.01em}
+.pick-company{font-size:.72rem;color:var(--muted);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.pick-score{font-size:1.4rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums;line-height:1}
+.pick-verdict{font-size:.7rem;color:var(--green);font-weight:700;letter-spacing:.04em}
+.picks-empty{padding:20px 0;color:var(--muted);font-size:.85rem;text-align:center}
+
+/* Detailed sortable table */
+.scr-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow-x:auto;margin-bottom:20px}
+.scr-table{width:100%;border-collapse:collapse;min-width:900px}
+.scr-table th{text-align:left;padding:14px 12px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--card2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0}
+.scr-table th:hover{color:var(--text)}
+.scr-table th .arr{opacity:.4;margin-left:3px;font-size:.7rem}
+.scr-table th.active .arr{opacity:1;color:var(--accent)}
+.scr-table td{padding:14px 12px;font-size:.85rem;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;white-space:nowrap}
+.scr-table tr.row{cursor:pointer;transition:background .15s}
+.scr-table tr.row:hover{background:rgba(0,217,165,.04)}
+.scr-table tr:last-child td{border-bottom:none}
+.scr-table .col-symbol{color:var(--accent);font-weight:700;font-size:.95rem}
+.scr-table .col-company{color:var(--muted);font-size:.78rem;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.scr-table .col-price{font-weight:700}
+.scr-table .pos{color:var(--green)}
+.scr-table .neg{color:var(--red)}
+.score-chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:24px;border-radius:14px;font-weight:800;font-size:.78rem;font-variant-numeric:tabular-nums;padding:0 8px}
+.score-chip.sc-strong{background:rgba(16,185,129,.18);color:var(--green);border:1px solid rgba(16,185,129,.35)}
+.score-chip.sc-good{background:rgba(0,217,165,.15);color:var(--accent);border:1px solid rgba(0,217,165,.3)}
+.score-chip.sc-neutral{background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
+.score-chip.sc-weak{background:rgba(125,133,144,.12);color:var(--muted);border:1px solid var(--border)}
+.score-chip.sc-bad{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.verdict-pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.66rem;font-weight:700;letter-spacing:.04em;margin-left:6px;vertical-align:middle}
+.v-strong-buy{background:rgba(16,185,129,.15);color:var(--green)}
+.v-buy{background:rgba(0,217,165,.12);color:var(--accent)}
+.v-neutral{background:rgba(245,158,11,.12);color:var(--yellow)}
+.v-avoid{background:rgba(239,68,68,.12);color:var(--red)}
+
+.scr-empty{text-align:center;padding:60px 20px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:12px}
+.scr-empty-icon{font-size:2.5rem;margin-bottom:14px;opacity:.6}
+.scr-empty h3{color:var(--text);font-size:1.1rem;font-weight:700;margin-bottom:6px}
+
 /* Placeholder screens (Watch/Compare/Picks) */
 .coming-soon{text-align:center;padding:80px 20px;color:var(--muted)}
 .coming-soon-icon{font-size:3rem;margin-bottom:16px;opacity:.5}
@@ -768,73 +845,95 @@ main{max-width:1400px;margin:0 auto;padding:20px}
 
   <!-- ══════════ SCANNER TAB ══════════ -->
   <div id="scanner-screen">
-    <!-- Controls -->
-    <div class="scanner-header">
-      <div class="scanner-title">🔍 Mid-Term Strong Buy Scanner — Stocks Under $5</div>
-      <div class="scanner-sub">Screens ~70 commonly traded low-priced stocks for mid-term STRONG BUY signals using technical analysis, fundamentals, and news sentiment.</div>
-      <div class="scanner-controls">
-        <div class="ctrl-group">
-          <div class="ctrl-label">Max Price ($)</div>
-          <input id="scan-max-price" class="ctrl-input" type="number" value="5" min="0.5" max="20" step="0.5">
-        </div>
-        <div class="ctrl-group">
-          <div class="ctrl-label">Min Mid-Term Score</div>
-          <select id="scan-min-score" class="ctrl-select">
-            <option value="40">≥ 40 (Strong Buy)</option>
-            <option value="35" selected>≥ 35 (Near Strong Buy)</option>
-            <option value="25">≥ 25 (Buy)</option>
-            <option value="15">≥ 15 (Any Bullish)</option>
-          </select>
-        </div>
-        <button class="btn-scan" id="btn-scan" onclick="startScan()">▶ Scan Now</button>
-        <button class="btn-stop" id="btn-stop" onclick="stopScan()">■ Stop</button>
-      </div>
-      <div class="extra-tickers-row">
-        <div class="ctrl-label">Add custom tickers to scan (comma-separated, optional)</div>
-        <input id="extra-tickers" class="extra-input" type="text" placeholder="e.g. SOUN, BBAI, MVIS">
+    <div class="screener-toolbar">
+      <div>
+        <div class="screener-title">📊 Market <span class="accent">Screener</span></div>
+        <div class="screener-sub" id="screener-sub">Refract a universe through technical + fundamental + news filters</div>
       </div>
     </div>
 
-    <!-- Progress -->
-    <div class="scan-progress" id="scan-progress">
-      <div class="progress-header">
-        <span class="progress-title" id="prog-title">Initializing…</span>
-        <span class="progress-stats" id="prog-stats"></span>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
-      <div class="progress-ticker" id="prog-ticker"></div>
+    <!-- Controls bar -->
+    <div class="screener-controls">
+      <select id="scan-universe" class="scr-select">
+        <option value="penny:5">Mid-Term &lt;$5 · 70 stocks</option>
+        <option value="penny:10">Mid-Term &lt;$10 · 70 stocks</option>
+        <option value="penny:20">Mid-Term &lt;$20 · 70 stocks</option>
+      </select>
+      <select id="scan-min-score" class="scr-select" style="min-width:170px">
+        <option value="40">Min Score: 40 (Strong Buy)</option>
+        <option value="35" selected>Min Score: 35</option>
+        <option value="25">Min Score: 25 (Buy)</option>
+        <option value="15">Min Score: 15</option>
+      </select>
+      <input id="extra-tickers" class="scr-input" type="text" placeholder="Add tickers (e.g. SOUN, BBAI)" style="min-width:240px">
+      <button class="scr-btn primary" id="btn-scan" onclick="startScan()">↻ Scan Now</button>
+      <button class="scr-btn" id="btn-stop" onclick="stopScan()" style="display:none">■ Stop</button>
+      <button class="scr-btn" id="btn-export" onclick="exportScreenerCSV()" disabled>📥 Export CSV</button>
+      <span class="scr-stats" id="scr-stats"></span>
     </div>
 
-    <!-- Done banner -->
-    <div class="scan-done-banner" id="scan-done-banner">
-      <div class="sdb-inner">
-        <span class="sdb-icon">✅</span>
-        <div>
-          <div class="sdb-text" id="done-text"></div>
-          <div class="sdb-sub">Results sorted by mid-term score (highest first)</div>
-        </div>
+    <!-- Filter row (separate row for filter + sort) -->
+    <div class="screener-controls" style="margin-bottom:24px">
+      <input id="scr-filter" class="scr-input" type="text" placeholder="Filter by name/ticker…" oninput="renderScreener()" style="flex:1;min-width:240px;max-width:340px">
+      <select id="scr-sort" class="scr-select" onchange="renderScreener()" style="margin-left:auto">
+        <option value="mid_term">Sort: Mid-Term Score ↓</option>
+        <option value="composite">Sort: Composite Score ↓</option>
+        <option value="technical">Sort: Technical ↓</option>
+        <option value="fundamental">Sort: Fundamental ↓</option>
+        <option value="price">Sort: Price ↑</option>
+        <option value="change">Sort: 1D Change ↓</option>
+        <option value="upside">Sort: Upside % ↓</option>
+      </select>
+    </div>
+
+    <!-- Progress bar (slim) -->
+    <div class="scr-progress" id="scan-progress">
+      <div class="scr-progress-bar"><div class="scr-progress-fill" id="prog-fill"></div></div>
+      <div class="scr-progress-row">
+        <span id="prog-title">Initializing…</span>
+        <span id="prog-stats"></span>
+      </div>
+      <div class="scr-progress-row" style="margin-top:4px"><span id="prog-ticker" style="font-size:.72rem"></span><span></span></div>
+    </div>
+
+    <!-- Dual-column picks (top of results) -->
+    <div class="picks-row" id="picks-row" style="display:none">
+      <div class="picks-card short">
+        <div class="picks-title"><span class="icon-y">⚡</span> Top Short-Term Picks</div>
+        <div id="picks-short"></div>
+      </div>
+      <div class="picks-card mid">
+        <div class="picks-title"><span class="icon-g">🌱</span> Top Mid-Term Picks</div>
+        <div id="picks-mid"></div>
       </div>
     </div>
 
-    <!-- Results -->
-    <div id="scanner-results-wrap" style="display:none">
-      <div class="scanner-results-header">
-        <span class="sr-results-title" id="results-count-label"></span>
-        <div class="sort-pills">
-          <button class="sort-pill active" onclick="sortResults('mid_term')">Mid-Term Score</button>
-          <button class="sort-pill" onclick="sortResults('price')">Price ↑</button>
-          <button class="sort-pill" onclick="sortResults('rr')">R:R Ratio</button>
-          <button class="sort-pill" onclick="sortResults('upside')">Upside %</button>
-        </div>
-      </div>
-      <div class="scanner-grid" id="scanner-grid"></div>
+    <!-- Detailed sortable table -->
+    <div class="scr-table-wrap" id="scr-table-wrap" style="display:none">
+      <table class="scr-table">
+        <thead>
+          <tr>
+            <th onclick="setSortKey('ticker')">SYMBOL <span class="arr">↕</span></th>
+            <th onclick="setSortKey('company')">COMPANY <span class="arr">↕</span></th>
+            <th onclick="setSortKey('price')">PRICE <span class="arr">↕</span></th>
+            <th onclick="setSortKey('change')">1D % <span class="arr">↕</span></th>
+            <th onclick="setSortKey('technical')">TECHNICAL <span class="arr">↕</span></th>
+            <th onclick="setSortKey('fundamental')">FUND. <span class="arr">↕</span></th>
+            <th onclick="setSortKey('news')">NEWS <span class="arr">↕</span></th>
+            <th onclick="setSortKey('composite')">COMPOSITE <span class="arr">↕</span></th>
+            <th onclick="setSortKey('mid_term')" class="active">MID-TERM <span class="arr">↓</span></th>
+            <th onclick="setSortKey('pe')">P/E <span class="arr">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="scr-tbody"></tbody>
+      </table>
     </div>
 
-    <!-- Empty state (before scan) -->
-    <div class="scan-empty" id="scan-empty">
-      <div class="icon">🔭</div>
-      <div style="font-size:1rem;font-weight:600;margin-bottom:6px">No scan running yet</div>
-      <div>Click <strong>Scan Now</strong> to screen for mid-term strong buy opportunities under $5</div>
+    <!-- Empty state -->
+    <div class="scr-empty" id="scan-empty">
+      <div class="scr-empty-icon">🔭</div>
+      <h3>Ready to screen</h3>
+      <p>Pick a universe and click <strong>Scan Now</strong> — results stream in as each stock is analyzed.</p>
     </div>
   </div><!-- /scanner-screen -->
 
@@ -2281,37 +2380,41 @@ function redrawTVChart(cd) {
 // ═══════════════════════════════════════════════════
 // SCANNER LOGIC
 // ═══════════════════════════════════════════════════
+let _scanStart = 0;
 function startScan() {
   if (scanES) { scanES.close(); scanES = null; }
   scanResults = [];
-  const maxPrice = parseFloat(document.getElementById('scan-max-price').value) || 5;
+  _scanStart = Date.now();
+  const universe = document.getElementById('scan-universe').value; // "penny:5"
+  const [uType, uPrice] = universe.split(':');
+  const maxPrice = parseFloat(uPrice) || 5;
   const minScore = parseInt(document.getElementById('scan-min-score').value) || 35;
   const extra = document.getElementById('extra-tickers').value.trim();
 
   document.getElementById('scan-empty').style.display = 'none';
-  document.getElementById('scan-done-banner').style.display = 'none';
-  document.getElementById('scanner-results-wrap').style.display = 'none';
-  document.getElementById('scanner-grid').innerHTML = '';
+  document.getElementById('picks-row').style.display = 'none';
+  document.getElementById('scr-table-wrap').style.display = 'none';
+  document.getElementById('scr-tbody').innerHTML = '';
   document.getElementById('scan-progress').style.display = 'block';
   document.getElementById('prog-fill').style.width = '0%';
   document.getElementById('prog-title').textContent = 'Starting scan…';
   document.getElementById('prog-stats').textContent = '';
   document.getElementById('prog-ticker').textContent = '';
+  document.getElementById('scr-stats').textContent = '';
   document.getElementById('btn-scan').disabled = true;
-  document.getElementById('btn-stop').style.display = 'inline-block';
+  document.getElementById('btn-stop').style.display = 'inline-flex';
+  document.getElementById('btn-export').disabled = true;
 
   let url = `${API}/screen/stream?max_price=${maxPrice}&min_score=${minScore}`;
   if (extra) url += `&extra=${encodeURIComponent(extra)}`;
-
   scanES = new EventSource(url);
 
   scanES.onmessage = (e) => {
     const msg = JSON.parse(e.data);
-
     if (msg.type === 'status') {
       document.getElementById('prog-title').textContent = msg.message;
       if (msg.candidates !== undefined) {
-        document.getElementById('prog-stats').textContent = `${msg.candidates} candidates to analyze`;
+        document.getElementById('prog-stats').textContent = `${msg.candidates} candidates`;
       }
     } else if (msg.type === 'progress') {
       const pct = (msg.done / msg.total * 100).toFixed(0);
@@ -2323,10 +2426,7 @@ function startScan() {
         `Scanning${found ? ` · ${found} match${found>1?'es':''} found` : ''}…`;
     } else if (msg.type === 'result') {
       scanResults.push(msg.data);
-      document.getElementById('scanner-results-wrap').style.display = 'block';
-      renderScanCard(msg.data, true);
-      document.getElementById('results-count-label').textContent =
-        `${scanResults.length} Strong Buy Opportunit${scanResults.length===1?'y':'ies'} Found`;
+      renderScreener();   // re-render entire table+picks on each new result
     } else if (msg.type === 'done') {
       scanComplete();
     }
@@ -2348,7 +2448,7 @@ function stopScan() {
   if (scanES) { scanES.close(); scanES = null; }
   document.getElementById('btn-scan').disabled = false;
   document.getElementById('btn-stop').style.display = 'none';
-  document.getElementById('prog-title').textContent = 'Scan stopped by user';
+  document.getElementById('prog-title').textContent = 'Scan stopped';
 }
 
 function scanComplete() {
@@ -2356,24 +2456,138 @@ function scanComplete() {
   document.getElementById('btn-scan').disabled = false;
   document.getElementById('btn-stop').style.display = 'none';
   document.getElementById('prog-fill').style.width = '100%';
-  document.getElementById('prog-title').textContent = 'Scan complete!';
+  document.getElementById('prog-title').textContent = '✅ Scan complete';
 
   const n = scanResults.length;
-  const banner = document.getElementById('scan-done-banner');
-  banner.style.display = 'block';
-  document.getElementById('done-text').textContent =
-    n > 0 ? `Found ${n} mid-term Strong Buy opportunit${n===1?'y':'ies'} under $${document.getElementById('scan-max-price').value}`
-           : 'No stocks matched the criteria. Try lowering the minimum score.';
+  const dur = ((Date.now() - _scanStart) / 1000).toFixed(1);
+  document.getElementById('scr-stats').textContent = `${n} match${n!==1?'es':''} · ${dur}s`;
 
   if (n === 0) {
-    document.getElementById('scanner-results-wrap').style.display = 'none';
     document.getElementById('scan-empty').style.display = 'block';
-    document.querySelector('.scan-empty .icon').textContent = '📭';
-    document.querySelector('.scan-empty div:nth-child(2)').textContent = 'No matches found';
-    document.querySelector('.scan-empty div:nth-child(3)').textContent = 'Try lowering the minimum score threshold.';
+    document.querySelector('#scan-empty .scr-empty-icon').textContent = '📭';
+    document.querySelector('#scan-empty h3').textContent = 'No matches';
+    document.querySelector('#scan-empty p').textContent = 'Try lowering the minimum score or expanding the universe.';
   } else {
-    sortResults(currentSortKey, false);
+    document.getElementById('btn-export').disabled = false;
+    renderScreener();
   }
+}
+
+// ── Render new Centaur-style screener (picks + table) ──
+function renderScreener() {
+  const filter = (document.getElementById('scr-filter')?.value || '').toLowerCase().trim();
+  const sortKey = document.getElementById('scr-sort')?.value || 'mid_term';
+
+  let rows = [...scanResults];
+  if (filter) {
+    rows = rows.filter(r => r.ticker.toLowerCase().includes(filter)
+                          || (r.company || '').toLowerCase().includes(filter));
+  }
+  rows.sort((a, b) => {
+    const score = (r, k) => {
+      if (k === 'mid_term')     return r.scores?.mid_term ?? -999;
+      if (k === 'composite')    return r.scores?.composite ?? -999;
+      if (k === 'technical')    return r.scores?.technical ?? -999;
+      if (k === 'fundamental')  return r.scores?.fundamental ?? -999;
+      if (k === 'news')         return r.scores?.news ?? -999;
+      if (k === 'price')        return -(r.current_price ?? 999);   // ascending
+      if (k === 'change')       return r.change_pct ?? -999;
+      if (k === 'upside')       return r.trade?.target_1_pct ?? -999;
+      if (k === 'pe')           return -(r.fundamentals?.pe_ratio ?? 999);  // ascending
+      if (k === 'ticker')       return -r.ticker.localeCompare(b?.ticker || '');
+      if (k === 'company')      return -((r.company || '').localeCompare(b?.company || ''));
+      return r.scores?.mid_term ?? -999;
+    };
+    return score(b, sortKey) - score(a, sortKey);
+  });
+
+  if (rows.length === 0) {
+    document.getElementById('picks-row').style.display = 'none';
+    document.getElementById('scr-table-wrap').style.display = 'none';
+    if (scanResults.length === 0) document.getElementById('scan-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('scan-empty').style.display = 'none';
+
+  // Top picks (short = highest composite, mid = highest mid_term)
+  const byST = [...rows].sort((a, b) => (b.scores?.composite ?? -999) - (a.scores?.composite ?? -999)).slice(0, 5);
+  const byMT = [...rows].sort((a, b) => (b.scores?.mid_term ?? -999) - (a.scores?.mid_term ?? -999)).slice(0, 5);
+
+  document.getElementById('picks-row').style.display = 'grid';
+  document.getElementById('picks-short').innerHTML = byST.map(r => pickRowHTML(r, r.scores?.composite, 'composite')).join('');
+  document.getElementById('picks-mid').innerHTML   = byMT.map(r => pickRowHTML(r, r.scores?.mid_term, 'mid_term')).join('');
+
+  // Table
+  document.getElementById('scr-table-wrap').style.display = 'block';
+  document.getElementById('scr-tbody').innerHTML = rows.map(tableRowHTML).join('');
+}
+
+function pickRowHTML(r, score, type) {
+  const v = score >= 40 ? 'STRONG BUY' : score >= 20 ? 'BUY' : 'NEUTRAL';
+  const vCls = score >= 40 ? 'var(--green)' : score >= 20 ? 'var(--accent)' : 'var(--yellow)';
+  return `<div class="pick-row" onclick="quickPick('${r.ticker}')">
+    <div class="pick-left"><div class="pick-ticker">${r.ticker}</div><div class="pick-company">${r.company || ''}</div></div>
+    <div class="pick-right"><div class="pick-score" style="color:${vCls}">${score ?? '—'}</div><div class="pick-verdict" style="color:${vCls}">${v}</div></div>
+  </div>`;
+}
+
+function scoreChipHTML(s) {
+  if (s === null || s === undefined) return '<span class="score-chip sc-weak">—</span>';
+  const cls = s >= 40 ? 'sc-strong' : s >= 20 ? 'sc-good' : s >= -20 ? 'sc-neutral' : s >= -40 ? 'sc-weak' : 'sc-bad';
+  return `<span class="score-chip ${cls}">${s}</span>`;
+}
+
+function tableRowHTML(r) {
+  const s = r.scores || {};
+  const mt = s.mid_term ?? 0;
+  const verdict = mt >= 40 ? 'Strong Buy' : mt >= 20 ? 'Buy' : mt >= -20 ? 'Neutral' : 'Avoid';
+  const vCls = mt >= 40 ? 'v-strong-buy' : mt >= 20 ? 'v-buy' : mt >= -20 ? 'v-neutral' : 'v-avoid';
+  const ch = r.change_pct ?? 0;
+  const pe = r.fundamentals?.pe_ratio;
+  return `<tr class="row" onclick="quickPick('${r.ticker}')">
+    <td class="col-symbol">${r.ticker}</td>
+    <td class="col-company">${r.company || ''}</td>
+    <td class="col-price">$${(r.current_price ?? 0).toFixed(2)}</td>
+    <td class="${ch >= 0 ? 'pos' : 'neg'}">${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%</td>
+    <td>${scoreChipHTML(s.technical)}</td>
+    <td>${scoreChipHTML(s.fundamental)}</td>
+    <td>${scoreChipHTML(s.news)}</td>
+    <td>${scoreChipHTML(s.composite)}</td>
+    <td>${scoreChipHTML(mt)} <span class="verdict-pill ${vCls}">${verdict}</span></td>
+    <td>${pe ? pe.toFixed(1) : '—'}</td>
+  </tr>`;
+}
+
+function setSortKey(key) {
+  const sel = document.getElementById('scr-sort');
+  if ([...sel.options].some(o => o.value === key)) {
+    sel.value = key;
+    renderScreener();
+  }
+  // Update arrow indicators
+  document.querySelectorAll('.scr-table th').forEach(th => th.classList.remove('active'));
+  const headers = ['ticker','company','price','change','technical','fundamental','news','composite','mid_term','pe'];
+  const idx = headers.indexOf(key);
+  if (idx >= 0) document.querySelectorAll('.scr-table th')[idx]?.classList.add('active');
+}
+
+function exportScreenerCSV() {
+  if (scanResults.length === 0) return;
+  const headers = ['Ticker','Company','Price','1D %','Technical','Fundamental','News','Composite','Mid-Term','Verdict','P/E','Sector'];
+  const rows = scanResults.map(r => {
+    const s = r.scores || {};
+    const v = (s.mid_term ?? 0) >= 40 ? 'Strong Buy' : (s.mid_term ?? 0) >= 20 ? 'Buy' : (s.mid_term ?? 0) >= -20 ? 'Neutral' : 'Avoid';
+    return [r.ticker, '"' + (r.company || '').replace(/"/g,'""') + '"',
+            r.current_price?.toFixed(2) ?? '', (r.change_pct ?? 0).toFixed(2),
+            s.technical ?? '', s.fundamental ?? '', s.news ?? '', s.composite ?? '', s.mid_term ?? '',
+            v, r.fundamentals?.pe_ratio?.toFixed(2) ?? '', '"' + (r.sector || '') + '"'].join(',');
+  });
+  const csv = headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `screener-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
 }
 
 function renderScanCard(r, append=false) {
