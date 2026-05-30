@@ -7,6 +7,11 @@ on:
   push:
     branches:
       - Centaur-prism
+    # Don't redeploy when only the daily-snapshot bot commits to static/data/.
+    # The app's behavior doesn't change — only the optional static JSON files do.
+    paths-ignore:
+      - 'static/data/**'
+      - '**/*.md'
   # Also allow manual trigger from the Actions tab
   workflow_dispatch:
 
