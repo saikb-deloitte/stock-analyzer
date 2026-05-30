@@ -8,15 +8,14 @@ import numpy as np
 import pytz
 import time
 import random
+import io
+import requests as _requests
 from datetime import datetime, time as dtime
 
 from concurrent.futures import ThreadPoolExecutor
 
 
 # ── curl_cffi browser-impersonating session ──────────────────────────────────
-# Yahoo Finance rate-limits Render's shared IPs aggressively when standard
-# `requests` is used. curl_cffi sends a real Chrome TLS fingerprint, which
-# Yahoo treats as a normal browser visit and rarely blocks.
 _yf_session = None
 def _get_yf_session():
     global _yf_session
@@ -24,20 +23,57 @@ def _get_yf_session():
         return _yf_session
     try:
         from curl_cffi import requests as curl_requests
-        # impersonate latest Chrome — accepted by Yahoo as a normal browser
         _yf_session = curl_requests.Session(impersonate="chrome131")
     except Exception:
-        _yf_session = None  # fall back to yfinance default
+        _yf_session = None
     return _yf_session
 
 
+# ── Stooq: free, no-auth, no rate-limit daily OHLCV source ───────────────────
+# https://stooq.com — Polish financial portal with global equity data.
+# Returns CSV; no API key, no per-IP throttling.
+def _stooq_download(ticker, period_days=365):
+    """Download daily OHLCV from Stooq. Returns DataFrame with same columns as yfinance."""
+    # Stooq uses .us suffix for US stocks (e.g. AAPL → aapl.us)
+    sym = ticker.lower() + '.us'
+    url = f'https://stooq.com/q/d/l/?s={sym}&i=d'
+    try:
+        r = _requests.get(url, timeout=15, headers={'User-Agent': 'Mozilla/5.0'})
+        if r.status_code != 200 or not r.text.strip() or r.text.startswith('No data'):
+            return None
+        df = pd.read_csv(io.StringIO(r.text))
+        if df.empty or 'Close' not in df.columns:
+            return None
+        df['Date'] = pd.to_datetime(df['Date'])
+        df = df.set_index('Date').sort_index()
+        # Trim to requested window
+        if period_days:
+            cutoff = df.index[-1] - pd.Timedelta(days=period_days + 14)
+            df = df[df.index >= cutoff]
+        # Stooq columns: Date, Open, High, Low, Close, Volume — exactly what yfinance returns
+        return df
+    except Exception:
+        return None
+
+
 def _yf_download_with_retry(ticker, **kwargs):
-    """yfinance download with browser-impersonating session + exponential backoff."""
+    """Multi-source OHLCV: tries Stooq first (no rate limit), falls back to yfinance."""
+    period = kwargs.get('period', '1y')
+    # Map yfinance periods to days
+    period_days = {'5d': 7, '1mo': 31, '3mo': 93, '6mo': 186, '1y': 365, '2y': 730, '5y': 1825}.get(period, 365)
+
+    # 1️⃣ Try Stooq first — free, no rate limit, no auth
+    if kwargs.get('interval', '1d') == '1d':
+        df = _stooq_download(ticker, period_days=period_days)
+        if df is not None and not df.empty and len(df) >= 60:
+            return df
+
+    # 2️⃣ Fallback to yfinance (with curl_cffi session if available)
     session = _get_yf_session()
     if session is not None:
         kwargs.setdefault('session', session)
     last_err = None
-    for attempt in range(3):
+    for attempt in range(2):  # 2 attempts (reduced from 3 to be gentler on Yahoo)
         try:
             df = yf.download(ticker, **kwargs)
             if not df.empty:
@@ -46,11 +82,11 @@ def _yf_download_with_retry(ticker, **kwargs):
             last_err = e
             err_str = str(e).lower()
             if 'rate limit' in err_str or 'too many' in err_str or '429' in err_str:
-                time.sleep(2 ** attempt * 3 + random.uniform(0, 1))   # 3-4s, 6-7s, 12-13s
+                time.sleep(2 ** attempt * 4 + random.uniform(0, 1))   # 4-5s, 8-9s
             else:
                 raise
-        if attempt < 2:
-            time.sleep(2 ** attempt * 3 + random.uniform(0, 1))
+        if attempt < 1:
+            time.sleep(2 ** attempt * 4 + random.uniform(0, 1))
     if last_err:
         raise last_err
     raise ValueError(f'No data returned for {ticker} after retries')

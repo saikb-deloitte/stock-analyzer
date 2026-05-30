@@ -14,10 +14,11 @@ from screener import run_screener
 
 app = FastAPI(title='SK Stock Analyzer API', version='1.0')
 
-# ── In-memory TTL cache (adaptive: longer when market is closed) ─────────────
+# ── In-memory TTL cache (aggressive — personal-use, not real-time trading) ───
 _CACHE: dict = {}
-_CACHE_TTL_MARKET_OPEN = 600    # 10 min during market hours
-_CACHE_TTL_MARKET_CLOSED = 3600 # 1 hour after hours (data doesn't change much)
+_CACHE_TTL_MARKET_OPEN = 1800   # 30 min during market hours
+_CACHE_TTL_MARKET_CLOSED = 14400 # 4 hours after hours (data is nearly static)
+_STALE_FALLBACK_TTL = 86400 * 3  # serve up to 3-day-old data on Yahoo errors
 
 def _current_ttl():
     """Returns cache TTL based on US market hours (rough NYSE check)."""
@@ -73,21 +74,24 @@ def analyze(ticker: str, refresh: bool = Query(default=False)):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         err_str = str(e).lower()
-        # Detect Yahoo Finance rate limits and return a friendly 429
-        if 'too many' in err_str or 'rate limit' in err_str or '429' in err_str:
-            # Try returning stale cache as last-resort fallback
+        is_rate_limit = ('too many' in err_str or 'rate limit' in err_str or '429' in err_str)
+        is_no_data    = ('no price data' in err_str or 'no data' in err_str)
+
+        # Return stale cache (up to 3 days old) as last-resort on Yahoo errors
+        if is_rate_limit or is_no_data:
             stale = _CACHE.get(ticker)
-            if stale:
+            if stale and (time.time() - stale['ts']) < _STALE_FALLBACK_TTL:
                 d = stale['data']
                 d['_cached'] = True
                 d['_cache_age_s'] = round(time.time() - stale['ts'])
                 d['_stale'] = True
                 return d
-            raise HTTPException(
-                status_code=429,
-                detail='Yahoo Finance rate-limited this server. Try again in 60 seconds.',
-                headers={'Retry-After': '60'},
-            )
+            if is_rate_limit:
+                raise HTTPException(
+                    status_code=429,
+                    detail='Yahoo Finance rate-limited this server. Try again in 60 seconds.',
+                    headers={'Retry-After': '60'},
+                )
         raise HTTPException(status_code=500, detail=f'Analysis error: {str(e)}')
 
 
@@ -203,6 +207,29 @@ def chart(
 @app.get('/health')
 def health():
     return {'status': 'ok'}
+
+
+@app.get('/diag')
+def diag():
+    """Diagnostic endpoint — checks data-source health."""
+    out = {'cache_size': len(_CACHE), 'cache_ttl_now_s': _current_ttl()}
+    # Check curl_cffi
+    try:
+        from curl_cffi import requests as curl_requests
+        out['curl_cffi'] = 'installed'
+    except Exception as e:
+        out['curl_cffi'] = f'NOT installed: {e}'
+    # Check Stooq
+    try:
+        from analyzer import _stooq_download
+        df = _stooq_download('AAPL', period_days=30)
+        out['stooq'] = 'OK' if (df is not None and not df.empty) else 'returned empty'
+        if df is not None and not df.empty:
+            out['stooq_rows'] = len(df)
+            out['stooq_last_close'] = float(df['Close'].iloc[-1])
+    except Exception as e:
+        out['stooq'] = f'ERROR: {e}'
+    return out
 
 
 if __name__ == '__main__':
