@@ -472,7 +472,10 @@
 
   /* Long-Term Picks */
   .picks-header { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-  /* VALUE view */
+  /* GEMS (value) view */
+  .sb-gem { display: block; margin: 0 auto 4px; filter: drop-shadow(0 0 4px rgba(125,211,252,0.45)); transition: transform 0.18s, filter 0.18s; }
+  .sb-btn:hover .sb-gem { transform: scale(1.12) rotate(-4deg); filter: drop-shadow(0 0 8px rgba(0,212,170,0.6)); }
+  .sb-btn.active .sb-gem { filter: drop-shadow(0 0 10px rgba(183,148,246,0.75)); }
   .val-filters { display: flex; gap: 10px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; flex-wrap: wrap; }
   .vf-item { display: flex; flex-direction: column; gap: 4px; min-width: 110px; }
   .vf-item label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
@@ -1082,8 +1085,28 @@
     <button class="sb-btn" onclick="showView('compare')" id="sb-compare" title="Compare 2-3 stocks side-by-side">
       <i class="fa fa-scale-balanced"></i><span>Compare</span>
     </button>
-    <button class="sb-btn" onclick="showView('value')" id="sb-value" title="Value — undervalued stocks with strong fundamentals">
-      <i class="fa fa-gem"></i><span>Value</span>
+    <button class="sb-btn" onclick="showView('value')" id="sb-value" title="Gems — undervalued NSE stocks with strong fundamentals">
+      <svg class="sb-gem" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <defs>
+          <linearGradient id="sb-gem-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"  stop-color="#7dd3fc"/>
+            <stop offset="55%" stop-color="#00d4aa"/>
+            <stop offset="100%" stop-color="#b794f6"/>
+          </linearGradient>
+        </defs>
+        <!-- Faceted diamond -->
+        <polygon points="12,2 22,9 12,22 2,9" fill="url(#sb-gem-grad)" stroke="#0f1419" stroke-width="0.6" stroke-linejoin="round"/>
+        <!-- Internal facet lines -->
+        <line x1="2"  y1="9" x2="22" y2="9"  stroke="#0f1419" stroke-width="0.6"/>
+        <line x1="12" y1="2" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+        <line x1="2"  y1="9" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+        <line x1="22" y1="9" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+        <line x1="7"  y1="9" x2="12" y2="2"  stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+        <line x1="17" y1="9" x2="12" y2="2"  stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+        <!-- Sparkle highlight -->
+        <polygon points="6,8 9,9 6,10 5,9" fill="#ffffff" opacity="0.85"/>
+      </svg>
+      <span>Gems</span>
     </button>
     <button class="sb-btn" onclick="showView('picks')" id="sb-picks" title="Long-Term Picks — low/medium risk + positive trend">
       <i class="fa fa-tree"></i><span>Picks</span>
@@ -1371,15 +1394,30 @@
 
     </div>
 
-    <!-- ═══════════════════ VALUE VIEW ═══════════════════ -->
+    <!-- ═══════════════════ GEMS VIEW (undervalued + strong fundamentals) ═══════════════════ -->
     <div id="view-value" style="display:none;">
       <div class="picks-header">
         <div style="display:flex;flex-direction:column;gap:4px;">
-          <h2 style="margin:0;font-size:20px;font-weight:800;">
-            <i class="fa fa-gem" style="color:#7dd3fc;"></i> Value Picks
+          <h2 style="margin:0;font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px;">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="flex-shrink:0;">
+              <defs>
+                <linearGradient id="gems-h-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%"  stop-color="#7dd3fc"/>
+                  <stop offset="55%" stop-color="#00d4aa"/>
+                  <stop offset="100%" stop-color="#b794f6"/>
+                </linearGradient>
+              </defs>
+              <polygon points="12,2 22,9 12,22 2,9" fill="url(#gems-h-grad)" stroke="#0f1419" stroke-width="0.6" stroke-linejoin="round"/>
+              <line x1="2"  y1="9" x2="22" y2="9"  stroke="#0f1419" stroke-width="0.6"/>
+              <line x1="12" y1="2" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+              <line x1="2"  y1="9" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+              <line x1="22" y1="9" x2="12" y2="22" stroke="#0f1419" stroke-width="0.4" opacity="0.55"/>
+              <polygon points="6,8 9,9 6,10 5,9" fill="#ffffff" opacity="0.85"/>
+            </svg>
+            Gems · Undervalued Stocks
           </h2>
           <span style="color:var(--text-muted);font-size:12px;">
-            Undervalued (price &lt; fair value) · strong fundamentals (ROE filter) · risk-capped
+            Hidden gems: price &lt; fair value · strong fundamentals (ROE filter) · risk-capped
           </span>
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;">
@@ -4437,7 +4475,7 @@ const VIEW_TITLE = {
   watchlist: 'Watchlist',
   compare:   'Compare',
   picks:     'Long-Term Picks',
-  value:     'Value Picks',
+  value:     'Gems · Undervalued',
 };
 function setPageTitle(parts) {
   const arr = Array.isArray(parts) ? parts : [parts];

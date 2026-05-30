@@ -2753,7 +2753,10 @@ def analyze(ticker):
             'name':     info.get('longName') or info.get('shortName') or ticker.replace('.NS', '').replace('.BO', ''),
             'sector':   info.get('sector', 'N/A'),
             'industry': info.get('industry', 'N/A'),
-            'exchange': info.get('exchange', 'NSE'),
+            # yfinance returns "NSI" for NSE India and "BSE" for BSE.
+            # Normalize NSI → NSE (NSI is just yfinance's internal code and
+            # means nothing to retail investors).
+            'exchange': ({'NSI': 'NSE'}.get((info.get('exchange') or '').upper(), info.get('exchange') or 'NSE')),
             'price':    curr_price,
             'prev_close': prev_close,
             'day_change': day_chg,
