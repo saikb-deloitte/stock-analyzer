@@ -29,31 +29,48 @@ def _get_yf_session():
     return _yf_session
 
 
-# ── Stooq: free, no-auth, no rate-limit daily OHLCV source ───────────────────
-# https://stooq.com — Polish financial portal with global equity data.
-# Returns CSV; no API key, no per-IP throttling.
+# ── Stooq: free, no-auth daily OHLCV source ──────────────────────────────────
+_STOOQ_LAST_ERROR = None  # exposed by /diag
+
 def _stooq_download(ticker, period_days=365):
-    """Download daily OHLCV from Stooq. Returns DataFrame with same columns as yfinance."""
-    # Stooq uses .us suffix for US stocks (e.g. AAPL → aapl.us)
+    """Download daily OHLCV from Stooq. Returns DataFrame or None."""
+    global _STOOQ_LAST_ERROR
     sym = ticker.lower() + '.us'
-    url = f'https://stooq.com/q/d/l/?s={sym}&i=d'
-    try:
-        r = _requests.get(url, timeout=15, headers={'User-Agent': 'Mozilla/5.0'})
-        if r.status_code != 200 or not r.text.strip() or r.text.startswith('No data'):
-            return None
-        df = pd.read_csv(io.StringIO(r.text))
-        if df.empty or 'Close' not in df.columns:
-            return None
-        df['Date'] = pd.to_datetime(df['Date'])
-        df = df.set_index('Date').sort_index()
-        # Trim to requested window
-        if period_days:
-            cutoff = df.index[-1] - pd.Timedelta(days=period_days + 14)
-            df = df[df.index >= cutoff]
-        # Stooq columns: Date, Open, High, Low, Close, Volume — exactly what yfinance returns
-        return df
-    except Exception:
-        return None
+    # Try multiple URL formats — Stooq sometimes blocks cloud IPs on www, but
+    # the bare domain endpoint often works.
+    urls = [
+        f'https://stooq.com/q/d/l/?s={sym}&i=d',
+        f'https://stooq.com/q/d/l/?s={sym}&i=d&o=1111111&c=0',
+    ]
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': 'text/csv,text/plain,*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+    for url in urls:
+        try:
+            r = _requests.get(url, timeout=15, headers=headers)
+            text = r.text.strip()
+            if r.status_code != 200:
+                _STOOQ_LAST_ERROR = f'HTTP {r.status_code} from {url}'
+                continue
+            if not text or text.lower().startswith('no data') or '<html' in text.lower()[:200]:
+                _STOOQ_LAST_ERROR = f'Bad body (status={r.status_code}, first 80 chars): {text[:80]!r}'
+                continue
+            df = pd.read_csv(io.StringIO(text))
+            if df.empty or 'Close' not in df.columns:
+                _STOOQ_LAST_ERROR = f'Parsed CSV missing Close col. Cols: {list(df.columns)}'
+                continue
+            df['Date'] = pd.to_datetime(df['Date'])
+            df = df.set_index('Date').sort_index()
+            if period_days:
+                cutoff = df.index[-1] - pd.Timedelta(days=period_days + 14)
+                df = df[df.index >= cutoff]
+            _STOOQ_LAST_ERROR = None
+            return df
+        except Exception as e:
+            _STOOQ_LAST_ERROR = f'Exception on {url}: {type(e).__name__}: {e}'
+    return None
 
 
 def _yf_download_with_retry(ticker, **kwargs):

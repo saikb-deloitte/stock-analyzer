@@ -221,14 +221,30 @@ def diag():
         out['curl_cffi'] = f'NOT installed: {e}'
     # Check Stooq
     try:
-        from analyzer import _stooq_download
+        from analyzer import _stooq_download, _STOOQ_LAST_ERROR
         df = _stooq_download('AAPL', period_days=30)
+        from analyzer import _STOOQ_LAST_ERROR as _err_after
         out['stooq'] = 'OK' if (df is not None and not df.empty) else 'returned empty'
+        out['stooq_last_error'] = _err_after
         if df is not None and not df.empty:
             out['stooq_rows'] = len(df)
             out['stooq_last_close'] = float(df['Close'].iloc[-1])
     except Exception as e:
-        out['stooq'] = f'ERROR: {e}'
+        out['stooq'] = f'ERROR: {type(e).__name__}: {e}'
+    # Test yfinance with curl_cffi
+    try:
+        import yfinance as yf
+        from analyzer import _get_yf_session
+        session = _get_yf_session()
+        kwargs = {'period': '5d', 'interval': '1d', 'progress': False, 'auto_adjust': True}
+        if session:
+            kwargs['session'] = session
+        df = yf.download('AAPL', **kwargs)
+        out['yfinance'] = 'OK' if (df is not None and not df.empty) else 'returned empty'
+        if df is not None and not df.empty:
+            out['yfinance_rows'] = len(df)
+    except Exception as e:
+        out['yfinance'] = f'ERROR: {type(e).__name__}: {str(e)[:150]}'
     return out
 
 
