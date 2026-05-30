@@ -73,24 +73,114 @@ def _stooq_download(ticker, period_days=365):
     return None
 
 
-def _yf_download_with_retry(ticker, **kwargs):
-    """Multi-source OHLCV: tries Stooq first (no rate limit), falls back to yfinance."""
-    period = kwargs.get('period', '1y')
-    # Map yfinance periods to days
-    period_days = {'5d': 7, '1mo': 31, '3mo': 93, '6mo': 186, '1y': 365, '2y': 730, '5y': 1825}.get(period, 365)
+_DIRECT_YAHOO_LAST_ERROR = None
 
-    # 1️⃣ Try Stooq first — free, no rate limit, no auth
-    if kwargs.get('interval', '1d') == '1d':
+def _yahoo_chart_direct(ticker, period='1y'):
+    """Call Yahoo's chart API DIRECTLY with curl_cffi — bypasses yfinance library quirks."""
+    global _DIRECT_YAHOO_LAST_ERROR
+    session = _get_yf_session()
+    if session is None:
+        _DIRECT_YAHOO_LAST_ERROR = 'no curl_cffi session'
+        return None
+    url = f'https://query1.finance.yahoo.com/v8/finance/chart/{ticker}'
+    params = {'range': period, 'interval': '1d', 'includePrePost': 'false', 'events': 'div,split'}
+    try:
+        r = session.get(url, params=params, timeout=15)
+        if r.status_code != 200:
+            _DIRECT_YAHOO_LAST_ERROR = f'HTTP {r.status_code}'
+            return None
+        j = r.json()
+        result = (j.get('chart', {}).get('result') or [None])[0]
+        if not result:
+            _DIRECT_YAHOO_LAST_ERROR = 'no result in JSON'
+            return None
+        timestamps = result.get('timestamp', [])
+        ind = result.get('indicators', {})
+        quote = (ind.get('quote') or [{}])[0]
+        adj = ((ind.get('adjclose') or [{}])[0]).get('adjclose', [])
+        if not timestamps or not quote.get('close'):
+            _DIRECT_YAHOO_LAST_ERROR = 'empty timestamps/close'
+            return None
+        df = pd.DataFrame({
+            'Open':   quote.get('open', []),
+            'High':   quote.get('high', []),
+            'Low':    quote.get('low', []),
+            'Close':  adj if adj else quote.get('close', []),
+            'Volume': quote.get('volume', []),
+        }, index=pd.to_datetime(timestamps, unit='s'))
+        df = df.dropna(subset=['Close'])
+        _DIRECT_YAHOO_LAST_ERROR = None
+        return df if not df.empty else None
+    except Exception as e:
+        _DIRECT_YAHOO_LAST_ERROR = f'{type(e).__name__}: {e}'
+        return None
+
+
+_TWELVE_DATA_LAST_ERROR = None
+
+def _twelve_data_download(ticker, period_days=365):
+    """Twelve Data API — requires TWELVE_DATA_API_KEY env var. 800 req/day free."""
+    global _TWELVE_DATA_LAST_ERROR
+    key = os.environ.get('TWELVE_DATA_API_KEY', '').strip()
+    if not key:
+        _TWELVE_DATA_LAST_ERROR = 'no API key set'
+        return None
+    # Twelve Data: outputsize is bars to return; ~252 bars per year
+    outputsize = min(int(period_days * 0.7), 5000)
+    url = 'https://api.twelvedata.com/time_series'
+    params = {'symbol': ticker, 'interval': '1day', 'outputsize': outputsize, 'apikey': key, 'order': 'asc'}
+    try:
+        r = _requests.get(url, params=params, timeout=15)
+        j = r.json()
+        if j.get('status') == 'error' or j.get('code'):
+            _TWELVE_DATA_LAST_ERROR = j.get('message', 'error') + f' (code {j.get("code")})'
+            return None
+        values = j.get('values', [])
+        if not values:
+            _TWELVE_DATA_LAST_ERROR = 'no values in response'
+            return None
+        df = pd.DataFrame(values)
+        df['datetime'] = pd.to_datetime(df['datetime'])
+        df = df.set_index('datetime').sort_index()
+        # Cast string columns to float
+        for col in ['open', 'high', 'low', 'close', 'volume']:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        df = df.rename(columns={'open':'Open','high':'High','low':'Low','close':'Close','volume':'Volume'})
+        _TWELVE_DATA_LAST_ERROR = None
+        return df
+    except Exception as e:
+        _TWELVE_DATA_LAST_ERROR = f'{type(e).__name__}: {e}'
+        return None
+
+
+def _yf_download_with_retry(ticker, **kwargs):
+    """Multi-source OHLCV cascade: tries fastest/most-reliable first."""
+    period = kwargs.get('period', '1y')
+    period_days = {'5d': 7, '1mo': 31, '3mo': 93, '6mo': 186, '1y': 365, '2y': 730, '5y': 1825}.get(period, 365)
+    is_daily = kwargs.get('interval', '1d') == '1d'
+
+    if is_daily:
+        # 1️⃣ Twelve Data (if key is configured) — no IP blocks
+        df = _twelve_data_download(ticker, period_days=period_days)
+        if df is not None and not df.empty and len(df) >= 60:
+            return df
+
+        # 2️⃣ Direct Yahoo chart API via curl_cffi (bypasses yfinance lib wrapper)
+        df = _yahoo_chart_direct(ticker, period=period)
+        if df is not None and not df.empty and len(df) >= 60:
+            return df
+
+        # 3️⃣ Stooq (often blocked from Render but try anyway — might work on retry)
         df = _stooq_download(ticker, period_days=period_days)
         if df is not None and not df.empty and len(df) >= 60:
             return df
 
-    # 2️⃣ Fallback to yfinance (with curl_cffi session if available)
+    # 4️⃣ Final fallback: yfinance library (with curl_cffi session)
     session = _get_yf_session()
     if session is not None:
         kwargs.setdefault('session', session)
     last_err = None
-    for attempt in range(2):  # 2 attempts (reduced from 3 to be gentler on Yahoo)
+    for attempt in range(2):
         try:
             df = yf.download(ticker, **kwargs)
             if not df.empty:
@@ -99,14 +189,14 @@ def _yf_download_with_retry(ticker, **kwargs):
             last_err = e
             err_str = str(e).lower()
             if 'rate limit' in err_str or 'too many' in err_str or '429' in err_str:
-                time.sleep(2 ** attempt * 4 + random.uniform(0, 1))   # 4-5s, 8-9s
+                time.sleep(2 ** attempt * 4 + random.uniform(0, 1))
             else:
                 raise
         if attempt < 1:
             time.sleep(2 ** attempt * 4 + random.uniform(0, 1))
     if last_err:
         raise last_err
-    raise ValueError(f'No data returned for {ticker} after retries')
+    raise ValueError(f'No price data found for {ticker} from any source')
 
 
 def _yf_ticker(symbol):

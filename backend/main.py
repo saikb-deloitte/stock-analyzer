@@ -231,7 +231,31 @@ def diag():
             out['stooq_last_close'] = float(df['Close'].iloc[-1])
     except Exception as e:
         out['stooq'] = f'ERROR: {type(e).__name__}: {e}'
-    # Test yfinance with curl_cffi
+    # Test direct Yahoo chart API via curl_cffi
+    try:
+        from analyzer import _yahoo_chart_direct, _DIRECT_YAHOO_LAST_ERROR
+        df = _yahoo_chart_direct('AAPL', period='1mo')
+        from analyzer import _DIRECT_YAHOO_LAST_ERROR as _err_yh
+        out['yahoo_direct'] = 'OK' if (df is not None and not df.empty) else 'returned empty'
+        out['yahoo_direct_error'] = _err_yh
+        if df is not None and not df.empty:
+            out['yahoo_direct_rows'] = len(df)
+    except Exception as e:
+        out['yahoo_direct'] = f'ERROR: {type(e).__name__}: {str(e)[:120]}'
+
+    # Test Twelve Data (if API key set)
+    try:
+        from analyzer import _twelve_data_download
+        df = _twelve_data_download('AAPL', period_days=30)
+        from analyzer import _TWELVE_DATA_LAST_ERROR as _err_td
+        out['twelve_data'] = 'OK' if (df is not None and not df.empty) else 'returned empty / no key'
+        out['twelve_data_error'] = _err_td
+        if df is not None and not df.empty:
+            out['twelve_data_rows'] = len(df)
+    except Exception as e:
+        out['twelve_data'] = f'ERROR: {type(e).__name__}: {str(e)[:120]}'
+
+    # Test yfinance library fallback
     try:
         import yfinance as yf
         from analyzer import _get_yf_session
@@ -240,11 +264,12 @@ def diag():
         if session:
             kwargs['session'] = session
         df = yf.download('AAPL', **kwargs)
-        out['yfinance'] = 'OK' if (df is not None and not df.empty) else 'returned empty'
+        out['yfinance_lib'] = 'OK' if (df is not None and not df.empty) else 'returned empty'
         if df is not None and not df.empty:
             out['yfinance_rows'] = len(df)
     except Exception as e:
-        out['yfinance'] = f'ERROR: {type(e).__name__}: {str(e)[:150]}'
+        out['yfinance_lib'] = f'ERROR: {type(e).__name__}: {str(e)[:120]}'
+
     return out
 
 
