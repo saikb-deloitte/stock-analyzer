@@ -1455,6 +1455,46 @@ async function loadTicker() {
 }
 
 // ── Screener ──
+// Slug helper — mirrors scripts/build_snapshot.py's slug() so paths line up.
+function snapshotSlug(idx) {
+  return idx.toLowerCase().replace(/\s+/g, '_').replace(/\//g, '_');
+}
+
+// Try the live screener; on failure, fall back to the daily static snapshot.
+// Returns {stocks, snapshotMode, snapshotDate} for the UI to render.
+async function loadScreenerWithFallback(index) {
+  // 1) Try live API first (with built-in retry on 5xx)
+  try {
+    const data = await fetchJSON(`/api/screener?index=${encodeURIComponent(index)}`, {
+      maxRetries: 1,    // fail fast — fallback is right there
+      backoffMs: 2500,
+      onRetry: (n, total) => {
+        const el = document.getElementById('screener-content');
+        if (el) el.innerHTML = `<div class="loading"><div class="spinner"></div> Live fetch slow — retrying (${n}/${total})…</div>`;
+      }
+    });
+    if (Array.isArray(data) && data.length > 0) {
+      return { stocks: data, snapshotMode: false, snapshotDate: null };
+    }
+  } catch (e) {
+    console.debug('[screener] live fetch failed, trying static snapshot:', e.message);
+  }
+
+  // 2) Fall back to the daily static snapshot
+  const el = document.getElementById('screener-content');
+  if (el) el.innerHTML = `<div class="loading"><div class="spinner"></div> Loading daily snapshot…</div>`;
+  const url = `/static/data/snapshot_${snapshotSlug(index)}.json`;
+  const snap = await fetchJSON(url, { maxRetries: 0 });
+  if (!snap || !Array.isArray(snap.stocks)) {
+    throw new Error('Snapshot unavailable for ' + index);
+  }
+  return {
+    stocks:        snap.stocks,
+    snapshotMode:  true,
+    snapshotDate:  snap.generated_at_iso || snap.generated_at,
+  };
+}
+
 async function loadScreener(forceRefresh=false) {
   const index = document.getElementById('index-select').value;
   const statusEl = document.getElementById('screener-status');
@@ -1465,16 +1505,25 @@ async function loadScreener(forceRefresh=false) {
 
   const t0 = Date.now();
   try {
-    const data = await fetchJSON(`/api/screener?index=${encodeURIComponent(index)}`, {
-      onRetry: (n, total) => {
-        contentEl.innerHTML = `<div class="loading"><div class="spinner"></div> Building ${index} cache (first load is slow — retry ${n}/${total})…</div>`;
-      }
-    });
-    screenerData = data;
+    const { stocks, snapshotMode, snapshotDate } = await loadScreenerWithFallback(index);
+    screenerData = stocks;
     const elapsed = ((Date.now()-t0)/1000).toFixed(1);
-    statusEl.textContent = `${data.length} stocks · ${elapsed}s`;
-    renderTopPicks(data);
-    renderScreenerTable(data);
+
+    if (snapshotMode) {
+      // Friendly badge — user knows this is a snapshot, not live
+      let ageStr = '';
+      try {
+        const d = typeof snapshotDate === 'string' ? new Date(snapshotDate) : new Date(snapshotDate * 1000);
+        const hoursAgo = Math.round((Date.now() - d.getTime()) / 3600000);
+        ageStr = hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.round(hoursAgo/24)}d ago`;
+      } catch {}
+      statusEl.innerHTML = `<span style="color:#ffd740;">📅 Snapshot mode</span> · ${stocks.length} stocks · updated ${ageStr}`;
+    } else {
+      statusEl.textContent = `${stocks.length} stocks · ${elapsed}s`;
+    }
+
+    renderTopPicks(stocks);
+    renderScreenerTable(stocks);
   } catch(e) {
     contentEl.innerHTML = `<div class="alert-custom"><i class="fa fa-triangle-exclamation"></i> ${e.message}<br><br><button class="primary-btn" onclick="loadScreener(true)">Try again</button></div>`;
   }
