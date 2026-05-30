@@ -14,13 +14,29 @@ from screener import run_screener
 
 app = FastAPI(title='SK Stock Analyzer API', version='1.0')
 
-# ── In-memory 5-minute TTL cache ─────────────────────────────────
+# ── In-memory TTL cache (adaptive: longer when market is closed) ─────────────
 _CACHE: dict = {}
-_CACHE_TTL = 300  # seconds
+_CACHE_TTL_MARKET_OPEN = 600    # 10 min during market hours
+_CACHE_TTL_MARKET_CLOSED = 3600 # 1 hour after hours (data doesn't change much)
+
+def _current_ttl():
+    """Returns cache TTL based on US market hours (rough NYSE check)."""
+    try:
+        import pytz
+        from datetime import datetime, time as dtime
+        now = datetime.now(pytz.timezone('America/New_York'))
+        if now.weekday() >= 5:
+            return _CACHE_TTL_MARKET_CLOSED
+        t = now.time()
+        if dtime(9, 30) <= t <= dtime(16, 0):
+            return _CACHE_TTL_MARKET_OPEN
+        return _CACHE_TTL_MARKET_CLOSED
+    except Exception:
+        return _CACHE_TTL_MARKET_OPEN
 
 def _get_cached(key: str):
     entry = _CACHE.get(key)
-    if entry and (time.time() - entry['ts']) < _CACHE_TTL:
+    if entry and (time.time() - entry['ts']) < _current_ttl():
         return entry['data']
     return None
 
@@ -56,6 +72,22 @@ def analyze(ticker: str, refresh: bool = Query(default=False)):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        err_str = str(e).lower()
+        # Detect Yahoo Finance rate limits and return a friendly 429
+        if 'too many' in err_str or 'rate limit' in err_str or '429' in err_str:
+            # Try returning stale cache as last-resort fallback
+            stale = _CACHE.get(ticker)
+            if stale:
+                d = stale['data']
+                d['_cached'] = True
+                d['_cache_age_s'] = round(time.time() - stale['ts'])
+                d['_stale'] = True
+                return d
+            raise HTTPException(
+                status_code=429,
+                detail='Yahoo Finance rate-limited this server. Try again in 60 seconds.',
+                headers={'Retry-After': '60'},
+            )
         raise HTTPException(status_code=500, detail=f'Analysis error: {str(e)}')
 
 
