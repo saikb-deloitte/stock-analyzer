@@ -188,7 +188,16 @@ def _yf_download_with_retry(ticker, **kwargs):
         if df is not None and not df.empty and len(df) >= 60:
             return df
 
-    # 4️⃣ Final fallback: yfinance library (with curl_cffi session)
+        # 4️⃣ GitHub static fallback — pre-fetched twice daily via GitHub Actions
+        try:
+            from static_fallback import static_fetch_ohlcv
+            df = static_fetch_ohlcv(ticker)
+            if df is not None and not df.empty and len(df) >= 60:
+                return df
+        except Exception:
+            pass
+
+    # 5️⃣ Final fallback: yfinance library (with curl_cffi session)
     session = _get_yf_session()
     if session is not None:
         kwargs.setdefault('session', session)
@@ -413,7 +422,17 @@ class StockAnalyzer:
         sr_levels = find_support_resistance(df)
 
         stock_obj = _yf_ticker(self.ticker)
-        info = stock_obj.info
+        try:
+            info = stock_obj.info or {}
+            if not info or len(info) < 5:
+                raise ValueError('empty info')
+        except Exception:
+            # Fall back to static info from GitHub
+            try:
+                from static_fallback import static_fetch_info
+                info = static_fetch_info(self.ticker) or {}
+            except Exception:
+                info = {}
         company_name = info.get('longName', self.ticker)
         sector = info.get('sector', fa_metrics.get('sector', 'Unknown'))
         industry = info.get('industry', 'Unknown')

@@ -212,25 +212,32 @@ def quote(symbol: str):
     cached = _get_cached(cache_key)
     if cached:
         return cached
+    df = None
+    # Try direct Yahoo first
     try:
         from analyzer import _yahoo_chart_direct
         df = _yahoo_chart_direct(symbol, period='5d')
-        if df is None or df.empty or len(df) < 2:
-            raise HTTPException(status_code=404, detail='No data')
-        cur = float(df['Close'].iloc[-1])
-        prev = float(df['Close'].iloc[-2])
-        result = {
-            'symbol': symbol,
-            'price': round(cur, 2),
-            'change': round(cur - prev, 2),
-            'change_pct': round((cur - prev) / prev * 100, 2),
-        }
-        _set_cached(cache_key, result)
-        return result
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        pass
+    # Fall back to static GitHub data
+    if df is None or df.empty or len(df) < 2:
+        try:
+            from static_fallback import static_fetch_ohlcv
+            df = static_fetch_ohlcv(symbol)
+        except Exception:
+            df = None
+    if df is None or df.empty or len(df) < 2:
+        raise HTTPException(status_code=404, detail='No data')
+    cur = float(df['Close'].iloc[-1])
+    prev = float(df['Close'].iloc[-2])
+    result = {
+        'symbol': symbol,
+        'price': round(cur, 2),
+        'change': round(cur - prev, 2),
+        'change_pct': round((cur - prev) / prev * 100, 2),
+    }
+    _set_cached(cache_key, result)
+    return result
 
 
 @app.get('/gems')
@@ -310,6 +317,20 @@ def diag():
             out['twelve_data_rows'] = len(df)
     except Exception as e:
         out['twelve_data'] = f'ERROR: {type(e).__name__}: {str(e)[:120]}'
+
+    # Test GitHub static fallback
+    try:
+        from static_fallback import static_fetch_ohlcv, static_data_age, static_data_available
+        avail = static_data_available()
+        out['github_static'] = 'available' if avail else 'no manifest'
+        out['github_static_age'] = static_data_age()
+        if avail:
+            df = static_fetch_ohlcv('AAPL')
+            out['github_static_aapl'] = 'OK' if (df is not None and not df.empty) else 'no AAPL data'
+            if df is not None and not df.empty:
+                out['github_static_aapl_rows'] = len(df)
+    except Exception as e:
+        out['github_static'] = f'ERROR: {type(e).__name__}: {str(e)[:120]}'
 
     # Test yfinance library fallback
     try:
