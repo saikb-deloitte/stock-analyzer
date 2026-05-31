@@ -1343,6 +1343,8 @@ const API = (window.location.hostname === 'localhost' || window.location.hostnam
   ? 'http://localhost:8001'
   : 'https://stock-analyzer-wzbd.onrender.com';
 let tvChart = null, rsiChart = null, macdChart = null;
+let _currentTicker = null;
+let _currentChartData = null;
 let scanResults = [];
 let scanES = null;
 let currentSortKey = 'mid_term';
@@ -2302,8 +2304,7 @@ function renderSocial(d) {
 }
 
 // ── Timeframe toggle ──────────────────────────────────────────
-let _currentTicker = null;
-let _currentChartData = null;
+// (_currentTicker is declared at top with other globals — see "var _currentTicker")
 
 function setTimeframe(interval, period, btn) {
   if (!_currentTicker) return;
