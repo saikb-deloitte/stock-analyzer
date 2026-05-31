@@ -136,10 +136,10 @@ def main() -> int:
             if result and result.get('success'):
                 info_all[t] = result['info']
                 successes.append(t)
-                print(f'[{i}/{len(UNIVERSE)}] {t} ✓')
+                print(f'[{i}/{len(UNIVERSE)}] {t} OK')
             else:
                 failures.append((t, result.get('error', 'unknown') if result else 'no result'))
-                print(f'[{i}/{len(UNIVERSE)}] {t} ✗  {result.get("error","")[:60] if result else ""}')
+                print(f'[{i}/{len(UNIVERSE)}] {t} FAIL  {result.get("error","")[:60] if result else ""}')
 
     # Write consolidated info
     info_path = DATA_DIR / 'info.json'
