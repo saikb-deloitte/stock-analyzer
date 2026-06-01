@@ -1503,8 +1503,10 @@ async function analyzeStock(ticker, refresh=false) {
     addRecent(ticker);
     if (data._stale) {
       const cb = document.getElementById('r-cache-badge');
-      cb.innerHTML = `<span style="background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:2px 8px;font-size:.7rem;font-weight:600">⚠ Stale data (rate-limited) · <a href="#" onclick="doRefresh(event)" style="color:var(--accent);text-decoration:none">Retry</a></span>`;
-      cb.style.display = 'block';
+      if (cb) {
+        cb.innerHTML = `<span style="background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:2px 8px;font-size:.7rem;font-weight:600">⚠ Stale data (rate-limited) · <a href="#" onclick="doRefresh(event)" style="color:var(--accent);text-decoration:none">Retry</a></span>`;
+        cb.style.display = 'block';
+      }
     }
   } catch(e) { showError(e.message); }
 }
@@ -1813,9 +1815,19 @@ function renderAll(d) {
   const prev = document.getElementById('fa-metrics-grid').previousElementSibling;
   if (prev && prev.tagName === 'DIV' && !prev.classList.contains('section-title')) prev.remove();
 
-  renderPrice(d); renderEarningsWarning(d); renderVerdict(d); renderTradeSetup(d);
-  renderRisk(d); renderCharts(d); renderSignals(d);
-  renderNews(d); renderSocial(d); renderFundamentals(d); renderSR(d);
+  // Each step in try/catch — one failure shouldn't break the whole render
+  const safe = (name, fn) => { try { fn(); } catch(e) { console.error(`[render ${name}]`, e); } };
+  safe('Price',            () => renderPrice(d));
+  safe('EarningsWarning',  () => renderEarningsWarning(d));
+  safe('Verdict',          () => renderVerdict(d));
+  safe('TradeSetup',       () => renderTradeSetup(d));
+  safe('Risk',             () => renderRisk(d));
+  safe('Charts',           () => renderCharts(d));
+  safe('Signals',          () => renderSignals(d));
+  safe('News',             () => renderNews(d));
+  safe('Social',           () => renderSocial(d));
+  safe('Fundamentals',     () => renderFundamentals(d));
+  safe('SR',               () => renderSR(d));
 }
 
 function doRefresh(e) {
