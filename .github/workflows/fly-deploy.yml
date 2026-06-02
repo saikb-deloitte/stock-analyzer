@@ -7,11 +7,14 @@ on:
   push:
     branches:
       - Centaur-prism
-    # Don't redeploy when only the daily-snapshot bot commits to static/data/.
-    # The app's behavior doesn't change — only the optional static JSON files do.
+    # Skip Fly redeploy ONLY when docs change. We DO redeploy on
+    # static/data/** changes — otherwise Fly's Docker image gets stuck
+    # with whatever snapshots existed at last code push, while Render
+    # (which auto-deploys on every push) stays fresh. Result was Fly
+    # serving 3-day-old snapshots for everything but NIFTY 50.
     paths-ignore:
-      - 'static/data/**'
       - '**/*.md'
+      - 'docs/**'
   # Also allow manual trigger from the Actions tab
   workflow_dispatch:
 
