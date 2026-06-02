@@ -49,3 +49,8 @@ reel_audio_preview.html
 # variants, post mockups, reel storyboards, png export tools, etc.). They're
 # content assets, not app code.
 centaur_prism_*.html
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
