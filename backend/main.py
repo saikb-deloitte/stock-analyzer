@@ -110,8 +110,9 @@ def analyze(ticker: str, refresh: bool = Query(default=False)):
 @app.get('/screen/stream')
 def screen_stream(
     max_price: float = Query(default=5.0, ge=0.01, le=50.0),
-    min_score: int = Query(default=35, ge=0, le=100),
+    min_score: int = Query(default=35, ge=-100, le=100),
     extra: Optional[str] = Query(default=None, description='Comma-separated extra tickers'),
+    universe: str = Query(default='penny', description='penny | large_cap | tech | financials | healthcare | energy | consumer | dividend'),
 ):
     extra_tickers = [t.strip().upper() for t in extra.split(',')] if extra else []
 
@@ -120,6 +121,7 @@ def screen_stream(
             extra_tickers=extra_tickers,
             max_price=max_price,
             min_score=min_score,
+            universe=universe,
         ):
             yield chunk
 

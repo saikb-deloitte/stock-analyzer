@@ -868,16 +868,28 @@ main{max-width:1400px;margin:0 auto;padding:20px}
 
     <!-- Controls bar -->
     <div class="screener-controls">
-      <select id="scan-universe" class="scr-select">
-        <option value="penny:5">Mid-Term &lt;$5 · 70 stocks</option>
-        <option value="penny:10">Mid-Term &lt;$10 · 70 stocks</option>
-        <option value="penny:20">Mid-Term &lt;$20 · 70 stocks</option>
+      <select id="scan-universe" class="scr-select" onchange="onUniverseChange()" style="min-width:230px">
+        <optgroup label="📊 Index / Sector (full scan)">
+          <option value="large_cap">S&amp;P Large Caps · ~60</option>
+          <option value="tech">Technology · ~30</option>
+          <option value="financials">Financials · ~25</option>
+          <option value="healthcare">Healthcare · ~24</option>
+          <option value="energy">Energy · ~14</option>
+          <option value="consumer">Consumer · ~25</option>
+          <option value="dividend">Dividend Stalwarts · ~26</option>
+        </optgroup>
+        <optgroup label="🪙 Penny / Mid-Term (price-filtered)">
+          <option value="penny:5">Penny &lt;$5 · ~70</option>
+          <option value="penny:10">Penny &lt;$10 · ~70</option>
+          <option value="penny:20">Penny &lt;$20 · ~70</option>
+        </optgroup>
       </select>
       <select id="scan-min-score" class="scr-select" style="min-width:170px">
         <option value="40">Min Score: 40 (Strong Buy)</option>
-        <option value="35" selected>Min Score: 35</option>
+        <option value="35">Min Score: 35</option>
         <option value="25">Min Score: 25 (Buy)</option>
         <option value="15">Min Score: 15</option>
+        <option value="-100" selected>Show all (rank by score)</option>
       </select>
       <input id="extra-tickers" class="scr-input" type="text" placeholder="Add tickers (e.g. SOUN, BBAI)" style="min-width:240px">
       <button class="scr-btn primary" id="btn-scan" onclick="startScan()">↻ Scan Now</button>
@@ -1365,6 +1377,7 @@ let currentSortKey = 'mid_term';
 
 // ── Tab switching ─────────────────────────────────────────────
 const SCREENS = ['analyzer', 'scanner', 'gems', 'about'];
+let _screenerAutoRan = false;
 function switchTab(tab) {
   SCREENS.forEach(s => {
     const el = document.getElementById(s + '-screen');
@@ -1372,7 +1385,11 @@ function switchTab(tab) {
     const nav = document.getElementById('nav-' + s);
     if (nav) nav.classList.toggle('active', s === tab);
   });
-  // Search bar is global now (top-bar) — always visible
+  // Auto-run the screener the first time the Screen tab is opened (Centaur-style)
+  if (tab === 'scanner' && !_screenerAutoRan) {
+    _screenerAutoRan = true;
+    setTimeout(() => { if (typeof startScan === 'function') startScan(); }, 100);
+  }
 }
 
 // ── Formatters ───────────────────────────────────────────────
@@ -2410,15 +2427,21 @@ function redrawTVChart(cd) {
 // ═══════════════════════════════════════════════════
 // SCANNER LOGIC
 // ═══════════════════════════════════════════════════
+// Auto-scan when the user picks a different universe (Centaur-style)
+function onUniverseChange() {
+  startScan();
+}
+
 let _scanStart = 0;
 function startScan() {
   if (scanES) { scanES.close(); scanES = null; }
   scanResults = [];
   _scanStart = Date.now();
-  const universe = document.getElementById('scan-universe').value; // "penny:5"
-  const [uType, uPrice] = universe.split(':');
-  const maxPrice = parseFloat(uPrice) || 5;
-  const minScore = parseInt(document.getElementById('scan-min-score').value) || 35;
+  const universeVal = document.getElementById('scan-universe').value; // "penny:5" or "large_cap"
+  const isPenny = universeVal.startsWith('penny:');
+  const maxPrice = isPenny ? (parseFloat(universeVal.split(':')[1]) || 5) : 0;
+  const universeParam = isPenny ? 'penny' : universeVal;
+  const minScore = parseInt(document.getElementById('scan-min-score').value);
   const extra = document.getElementById('extra-tickers').value.trim();
 
   document.getElementById('scan-empty').style.display = 'none';
@@ -2435,7 +2458,7 @@ function startScan() {
   document.getElementById('btn-stop').style.display = 'inline-flex';
   document.getElementById('btn-export').disabled = true;
 
-  let url = `${API}/screen/stream?max_price=${maxPrice}&min_score=${minScore}`;
+  let url = `${API}/screen/stream?universe=${universeParam}&max_price=${maxPrice}&min_score=${minScore}`;
   if (extra) url += `&extra=${encodeURIComponent(extra)}`;
   scanES = new EventSource(url);
 

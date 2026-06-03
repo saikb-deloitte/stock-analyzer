@@ -36,6 +36,43 @@ PENNY_UNIVERSE = [
 ]
 
 
+# ── Named index universes (US equities) — scanned in full, no price cap ──────
+INDEX_UNIVERSES = {
+    'large_cap': [
+        'AAPL','MSFT','GOOGL','AMZN','META','NVDA','BRK-B','LLY','AVGO','TSLA',
+        'JPM','V','UNH','XOM','MA','PG','JNJ','HD','COST','MRK','ABBV','CVX',
+        'CRM','BAC','KO','PEP','WMT','NFLX','ADBE','TMO','AMD','CSCO','ACN',
+        'MCD','ABT','LIN','DHR','WFC','TXN','DIS','INTC','VZ','PM','CAT','IBM',
+        'GE','QCOM','NOW','INTU','AMGN','SPGI','UBER','GS','HON','BKNG','RTX',
+        'NEE','PFE','LOW','UNP','T',
+    ],
+    'tech': [
+        'AAPL','MSFT','GOOGL','META','NVDA','AVGO','CRM','ADBE','AMD','CSCO',
+        'ACN','TXN','NOW','INTU','QCOM','IBM','ORCL','INTC','MU','AMAT','LRCX',
+        'PLTR','SHOP','UBER','SNOW','PANW','ANET','ADI','KLAC','SNPS','CDNS',
+    ],
+    'financials': [
+        'JPM','V','MA','BAC','WFC','GS','MS','SPGI','BLK','AXP','C','SCHW',
+        'CB','PGR','MMC','USB','PNC','TFC','COF','AON','MET','AIG','PRU','AFL','TRV',
+    ],
+    'healthcare': [
+        'LLY','UNH','JNJ','MRK','ABBV','TMO','ABT','DHR','PFE','AMGN','BMY',
+        'MDT','GILD','CVS','ISRG','VRTX','REGN','CI','ZTS','BSX','SYK','HUM','BDX','MRNA',
+    ],
+    'energy': [
+        'XOM','CVX','COP','SLB','EOG','MPC','PSX','VLO','OXY','WMB','KMI','HES','DVN','APA',
+    ],
+    'consumer': [
+        'AMZN','TSLA','HD','COST','WMT','PG','KO','PEP','MCD','NKE','SBUX','LOW',
+        'TJX','TGT','DG','EL','MDLZ','CL','MO','PM','BBY','ROST','DLTR','KR','CHWY',
+    ],
+    'dividend': [
+        'JNJ','PG','KO','PEP','XOM','CVX','MCD','ABBV','MRK','VZ','T','IBM','MMM',
+        'CAT','HD','LOW','TXN','PM','MO','CL','GD','LMT','SO','DUK','O','NEE',
+    ],
+}
+
+
 _YF_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
 
@@ -134,9 +171,16 @@ def batch_get_prices(tickers):
 def analyze_candidate(ticker, max_price=5.0):
     """Full analysis of a single candidate. Returns dict or None."""
     try:
-        df = yf.download(ticker, period='1y', interval='1d',
-                         progress=False, auto_adjust=True)
-        if df.empty or len(df) < 60:
+        # Use the resilient multi-source cascade (Yahoo direct → Stooq → GitHub static)
+        # so screener works even when Render's IP is blocked by Yahoo.
+        try:
+            from analyzer import _yf_download_with_retry
+            df = _yf_download_with_retry(ticker, period='1y', interval='1d',
+                                         progress=False, auto_adjust=True)
+        except Exception:
+            df = yf.download(ticker, period='1y', interval='1d',
+                             progress=False, auto_adjust=True)
+        if df is None or df.empty or len(df) < 60:
             return None
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
@@ -231,10 +275,20 @@ def analyze_candidate(ticker, max_price=5.0):
                 if rt_price and rt_price > 0:
                     current_price = float(rt_price)
         except Exception:
+            # Yahoo info blocked — fall back to static GitHub info
             company = ticker
             sector = fa_metrics.get('sector', 'Unknown')
             analyst_target = None
             short_float_pct = 0
+            try:
+                from static_fallback import static_fetch_info
+                sinfo = static_fetch_info(ticker)
+                if sinfo:
+                    company = sinfo.get('longName') or sinfo.get('shortName') or ticker
+                    sector = sinfo.get('sector', sector)
+                    analyst_target = sinfo.get('targetMeanPrice')
+            except Exception:
+                pass
 
         def v(col):
             val = df[col].iloc[-1]
@@ -298,9 +352,34 @@ def analyze_candidate(ticker, max_price=5.0):
         return None
 
 
-def run_screener(extra_tickers=None, max_price=5.0, min_score=35, workers=6):
+def run_screener(extra_tickers=None, max_price=5.0, min_score=35, workers=6, universe='penny'):
     """Generator — yields SSE-ready JSON strings for progress and results."""
 
+    # ── Index universe mode: scan a fixed list in full, no price cap, show all ──
+    if universe and universe != 'penny' and universe in INDEX_UNIVERSES:
+        tickers = list(dict.fromkeys(INDEX_UNIVERSES[universe] + (extra_tickers or [])))
+        label = universe.replace('_', ' ').title()
+        yield _sse({'type': 'status',
+                    'message': f'Scanning {len(tickers)} {label} stocks…',
+                    'total': len(tickers)})
+
+        done_count = 0
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            # huge max_price → no price rejection for index scans
+            futures = {executor.submit(analyze_candidate, t, 1e12): t for t in tickers}
+            for future in as_completed(futures):
+                done_count += 1
+                ticker = futures[future]
+                result = future.result()
+                yield _sse({'type': 'progress', 'done': done_count,
+                            'total': len(tickers), 'ticker': ticker})
+                # Index mode: emit ALL analyzed stocks (Centaur-style table); user sorts
+                if result:
+                    yield _sse({'type': 'result', 'data': result})
+        yield _sse({'type': 'done', 'count': done_count})
+        return
+
+    # ── Penny-stock mode (original behaviour) ──
     yield _sse({'type': 'status', 'message': 'Building dynamic ticker universe…', 'total': 0})
 
     dynamic = get_dynamic_universe(max_price=max_price)
