@@ -166,6 +166,19 @@ header{display:none}
 .gem-score{font-size:1.35rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums;line-height:1}
 .gem-score-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 
+/* ══════ Quick-picks bar (Recent + Popular) ══════ */
+.quick-picks-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:2px}
+.quick-picks-bar:empty{display:none}
+.qpick-label{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-right:2px}
+.qbtn{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:5px 11px;font-size:.78rem;font-weight:600;color:var(--text);cursor:pointer;transition:all .15s;font-family:inherit}
+.qbtn:hover{border-color:var(--accent);color:var(--accent)}
+.qbtn.recent{border-color:rgba(0,217,165,.3)}
+@media(max-width:720px){
+  .quick-picks-bar{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+  .quick-picks-bar::-webkit-scrollbar{height:3px}
+  .quick-picks-bar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+}
+
 /* ══════ NEW SCREENER (Centaur-style) ══════ */
 .screener-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
 .screener-title{font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
@@ -707,6 +720,7 @@ main{max-width:1400px;margin:0 auto;padding:20px}
   <main class="main-content">
   <!-- ══════════ ANALYZER TAB ══════════ -->
   <div id="analyzer-screen">
+    <div class="quick-picks-bar" id="quick-picks"></div>
     <div id="landing">
       <div class="landing-icon">📈</div>
       <h2>Professional Stock Analysis</h2>
@@ -1477,6 +1491,8 @@ function doSearch() {
 }
 function quickPick(t) {
   document.getElementById('search-input').value = t;
+  switchTab('analyzer');           // route to detailed view (was staying on screener/gems)
+  window.scrollTo({top: 0, behavior: 'smooth'});
   analyzeStock(t);
 }
 function retryLast() { if (_lastTicker) analyzeStock(_lastTicker, true); }

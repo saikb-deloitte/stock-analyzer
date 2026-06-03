@@ -48,10 +48,22 @@ def _cache_age(key: str):
     entry = _CACHE.get(key)
     return round(time.time() - entry['ts']) if entry else None
 
+# CORS — restrict to known frontends (plus localhost for dev).
+# Cloudflare Pages preview deploys use random *.prism-stocks.pages.dev subdomains,
+# so we allow that pattern via regex too.
+_ALLOWED_ORIGINS = [
+    'https://prism-stocks.pages.dev',
+    'https://magnificent-tanuki-153daa.netlify.app',  # legacy Netlify (keep until retired)
+    'http://localhost:8001',
+    'http://localhost:3000',
+    'http://127.0.0.1:8001',
+    'http://127.0.0.1:5500',  # VS Code Live Server
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
-    allow_methods=['*'],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_origin_regex=r'https://[a-z0-9]+\.prism-stocks\.pages\.dev',  # CF preview deploys
+    allow_methods=['GET', 'POST', 'OPTIONS'],
     allow_headers=['*'],
 )
 
