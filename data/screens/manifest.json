@@ -1,0 +1,15 @@
+{
+  "updated": "2026-06-03T02:02:51.839763+00:00",
+  "universes": {
+    "large_cap": 61,
+    "tech": 31,
+    "financials": 24,
+    "healthcare": 24,
+    "energy": 13,
+    "consumer": 25,
+    "dividend": 26
+  },
+  "unique_tickers": 138,
+  "analyzed_ok": 136,
+  "duration_s": 41.3
+}
