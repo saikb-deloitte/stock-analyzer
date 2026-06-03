@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Wrangler / Cloudflare
+.wrangler/
+
+# Logs
+*.log
+fetch.log
+compute.log
+
+# OS
+.DS_Store
+Thumbs.db
