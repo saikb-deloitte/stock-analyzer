@@ -1457,6 +1457,7 @@ function addRecent(t) {
 function renderQuickPicks() {
   const recent = getRecent();
   const wrap = document.getElementById('quick-picks');
+  if (!wrap) return;  // quick-picks bar removed in Prism redesign — no-op
   let html = '';
   if (recent.length) {
     html += '<span class="qpick-label">Recent</span>';
