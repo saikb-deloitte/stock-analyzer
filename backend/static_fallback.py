@@ -80,6 +80,49 @@ def static_fetch_info(ticker: str) -> dict:
     return cached.get(ticker, {}) if cached else {}
 
 
+def static_fetch_screen(universe: str):
+    """Return pre-computed screener results for a universe from GitHub, or None."""
+    universe = universe.strip().lower()
+    cache_key = f'screen:{universe}'
+    cached = _get(cache_key)
+    if cached is not None:
+        return cached
+    try:
+        r = _requests.get(f'{RAW_BASE}/screens/{universe}.json', timeout=10)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        _put(cache_key, data)
+        return data
+    except Exception:
+        return None
+
+
+def static_screen_age() -> str | None:
+    """Returns 'X ago' for the screens manifest, or None."""
+    cached = _get('screens_manifest')
+    if cached is None:
+        try:
+            r = _requests.get(f'{RAW_BASE}/screens/manifest.json', timeout=5)
+            if r.status_code == 200:
+                cached = r.json()
+                _put('screens_manifest', cached)
+        except Exception:
+            return None
+    if not cached or not cached.get('updated'):
+        return None
+    try:
+        from datetime import datetime, timezone
+        updated = datetime.fromisoformat(cached['updated'].replace('Z', '+00:00'))
+        delta = datetime.now(timezone.utc) - updated
+        h = delta.total_seconds() / 3600
+        if h < 1: return f'{int(delta.total_seconds()/60)}m ago'
+        if h < 24: return f'{int(h)}h ago'
+        return f'{int(h/24)}d ago'
+    except Exception:
+        return None
+
+
 def static_data_available() -> bool:
     """Quick check — is the manifest reachable?"""
     cached = _get('manifest')

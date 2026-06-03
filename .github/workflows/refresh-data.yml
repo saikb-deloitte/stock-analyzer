@@ -28,10 +28,13 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install yfinance pandas requests pytz
+          pip install yfinance pandas numpy requests pytz curl_cffi
 
-      - name: Fetch & save static data
+      - name: Fetch & save static OHLCV + info
         run: python scripts/fetch_static_data.py
+
+      - name: Pre-compute screener snapshots
+        run: python scripts/compute_screens.py
 
       - name: Commit & push if data changed
         run: |

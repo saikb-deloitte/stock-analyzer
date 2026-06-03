@@ -136,6 +136,23 @@ def screen_stream(
     )
 
 
+@app.get('/screen/snapshot')
+def screen_snapshot(universe: str = Query(default='large_cap')):
+    """Instant pre-computed screener results (refreshed 2x daily by GitHub Actions)."""
+    from static_fallback import static_fetch_screen, static_screen_age
+    data = static_fetch_screen(universe)
+    if not data:
+        raise HTTPException(status_code=404,
+                            detail=f'No snapshot for "{universe}" yet. Run a live scan instead.')
+    return {
+        'universe': universe,
+        'results': data.get('results', []),
+        'count': data.get('count', 0),
+        'updated': data.get('updated'),
+        'age': static_screen_age(),
+    }
+
+
 @app.get('/chart/{ticker}')
 def chart(
     ticker: str,

@@ -892,7 +892,7 @@ main{max-width:1400px;margin:0 auto;padding:20px}
         <option value="-100" selected>Show all (rank by score)</option>
       </select>
       <input id="extra-tickers" class="scr-input" type="text" placeholder="Add tickers (e.g. SOUN, BBAI)" style="min-width:240px">
-      <button class="scr-btn primary" id="btn-scan" onclick="startScan()">↻ Scan Now</button>
+      <button class="scr-btn primary" id="btn-scan" onclick="startScan()" title="Run a fresh live scan (slower, real-time)">↻ Live Scan</button>
       <button class="scr-btn" id="btn-stop" onclick="stopScan()" style="display:none">■ Stop</button>
       <button class="scr-btn" id="btn-export" onclick="exportScreenerCSV()" disabled>📥 Export CSV</button>
       <span class="scr-stats" id="scr-stats"></span>
@@ -1385,10 +1385,13 @@ function switchTab(tab) {
     const nav = document.getElementById('nav-' + s);
     if (nav) nav.classList.toggle('active', s === tab);
   });
-  // Auto-run the screener the first time the Screen tab is opened (Centaur-style)
+  // Auto-load the instant snapshot the first time the Screen tab is opened
   if (tab === 'scanner' && !_screenerAutoRan) {
     _screenerAutoRan = true;
-    setTimeout(() => { if (typeof startScan === 'function') startScan(); }, 100);
+    setTimeout(() => {
+      const val = document.getElementById('scan-universe')?.value || 'large_cap';
+      if (val.startsWith('penny:')) startScan(); else loadSnapshot(val);
+    }, 100);
   }
 }
 
@@ -2427,9 +2430,45 @@ function redrawTVChart(cd) {
 // ═══════════════════════════════════════════════════
 // SCANNER LOGIC
 // ═══════════════════════════════════════════════════
-// Auto-scan when the user picks a different universe (Centaur-style)
+// When the user picks a universe: index → instant snapshot; penny → live scan
 function onUniverseChange() {
-  startScan();
+  const val = document.getElementById('scan-universe').value;
+  if (val.startsWith('penny:')) startScan();      // penny: dynamic, live only
+  else loadSnapshot(val);                          // index: instant pre-computed
+}
+
+// Load pre-computed snapshot (instant — served from GitHub static via backend)
+async function loadSnapshot(universe) {
+  if (scanES) { scanES.close(); scanES = null; }
+  scanResults = [];
+  document.getElementById('scan-empty').style.display = 'none';
+  document.getElementById('picks-row').style.display = 'none';
+  document.getElementById('scr-table-wrap').style.display = 'none';
+  document.getElementById('scan-progress').style.display = 'block';
+  document.getElementById('prog-fill').style.width = '40%';
+  document.getElementById('prog-title').textContent = '📸 Loading snapshot…';
+  document.getElementById('prog-stats').textContent = '';
+  document.getElementById('prog-ticker').textContent = '';
+  document.getElementById('scr-stats').textContent = '';
+
+  try {
+    const r = await fetch(`${API}/screen/snapshot?universe=${universe}`);
+    if (!r.ok) {
+      // No snapshot yet → fall back to live scan
+      document.getElementById('prog-title').textContent = 'No snapshot yet — running live scan…';
+      startScan();
+      return;
+    }
+    const data = await r.json();
+    scanResults = data.results || [];
+    document.getElementById('scan-progress').style.display = 'none';
+    document.getElementById('scr-stats').innerHTML =
+      `<span style="color:var(--accent)">📸 Snapshot</span> · ${scanResults.length} stocks · updated ${data.age || '—'}`;
+    renderScreener();
+  } catch (e) {
+    document.getElementById('prog-title').textContent = 'Snapshot failed — running live scan…';
+    startScan();
+  }
 }
 
 let _scanStart = 0;
