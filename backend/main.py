@@ -109,7 +109,7 @@ def analyze(ticker: str, refresh: bool = Query(default=False)):
 
 @app.get('/screen/stream')
 def screen_stream(
-    max_price: float = Query(default=5.0, ge=0.01, le=50.0),
+    max_price: float = Query(default=5.0, ge=0, le=100000.0),
     min_score: int = Query(default=35, ge=-100, le=100),
     extra: Optional[str] = Query(default=None, description='Comma-separated extra tickers'),
     universe: str = Query(default='penny', description='penny | large_cap | tech | financials | healthcare | energy | consumer | dividend'),
