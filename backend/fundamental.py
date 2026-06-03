@@ -122,7 +122,23 @@ SECTOR_PE = {
 
 def get_fundamentals(ticker):
     t = yf.Ticker(ticker)
-    info = t.info
+    try:
+        info = t.info or {}
+    except Exception:
+        info = {}
+    # Fall back to static GitHub info when Yahoo .info is blocked/stubbed on Render
+    if not info or len(info) < 5 or (info.get('trailingPE') is None and info.get('profitMargins') is None):
+        try:
+            import sys, os
+            sys.path.insert(0, os.path.dirname(__file__))
+            from static_fallback import static_fetch_info
+            sinfo = static_fetch_info(ticker)
+            if sinfo:
+                merged = dict(sinfo)
+                merged.update({k: v for k, v in info.items() if v is not None})
+                info = merged
+        except Exception:
+            pass
 
     sector = info.get('sector', 'Technology')
     sector_pe = _fetch_live_sector_pe(sector) or SECTOR_PE.get(sector, 20)

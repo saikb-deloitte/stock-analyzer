@@ -1806,6 +1806,9 @@ function gemCardHTML(g) {
 
   const fmtN = (n, dec=1) => (n === null || n === undefined || isNaN(n)) ? '—' : Number(n).toFixed(dec);
   const fmtPct = (n) => (n === null || n === undefined || isNaN(n)) ? '—' : (n > 0 ? '+' : '') + Number(n).toFixed(1) + '%';
+  // Fraction helpers — guard null BEFORE multiplying (null*100=0 was showing "0.0%")
+  const pctF  = (frac) => (frac === null || frac === undefined || isNaN(frac)) ? '—' : (frac*100 > 0 ? '+' : '') + (frac*100).toFixed(1) + '%';
+  const clsF  = (frac, goodPct, warnPct) => (frac === null || frac === undefined || isNaN(frac)) ? '' : (frac*100 >= goodPct ? '' : (frac*100 >= warnPct ? 'warn' : 'bad'));
   const cls = (val, good, warn) => val >= good ? '' : (val >= warn ? 'warn' : 'bad');
 
   const tagsHTML = (g.tags || []).map(t => `<span class="gem-tag gtag-${t}">${t.toUpperCase()}</span>`).join('');
@@ -1825,9 +1828,9 @@ function gemCardHTML(g) {
         <div class="gem-m"><div class="gem-ml">P/B</div><div class="gem-mv">${fmtN(g.pb)}</div></div>
         <div class="gem-m"><div class="gem-ml">P/S</div><div class="gem-mv">${fmtN(g.ps)}</div></div>
         <div class="gem-m"><div class="gem-ml">PEG</div><div class="gem-mv">${fmtN(g.peg)}</div></div>
-        <div class="gem-m"><div class="gem-ml">Margin</div><div class="gem-mv ${cls(g.profit_margin*100, 10, 0)}">${fmtPct(g.profit_margin*100)}</div></div>
-        <div class="gem-m"><div class="gem-ml">ROE</div><div class="gem-mv ${cls(g.roe*100, 10, 0)}">${fmtPct(g.roe*100)}</div></div>
-        <div class="gem-m"><div class="gem-ml">Div Yld</div><div class="gem-mv">${fmtPct(g.div_yield*100)}</div></div>
+        <div class="gem-m"><div class="gem-ml">Margin</div><div class="gem-mv ${clsF(g.profit_margin, 10, 0)}">${pctF(g.profit_margin)}</div></div>
+        <div class="gem-m"><div class="gem-ml">ROE</div><div class="gem-mv ${clsF(g.roe, 10, 0)}">${pctF(g.roe)}</div></div>
+        <div class="gem-m"><div class="gem-ml">Div Yld</div><div class="gem-mv">${pctF(g.div_yield)}</div></div>
         <div class="gem-m"><div class="gem-ml">Debt/Eq</div><div class="gem-mv ${cls(2 - (g.debt_equity || 0), 1, 0)}">${fmtN(g.debt_equity, 2)}</div></div>
       </div>
       <div class="gem-tags">${tagsHTML}</div>

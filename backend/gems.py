@@ -176,18 +176,47 @@ def _score_gem(m):
     social = 0
 
     composite = (fa_norm * 0.65 + ta * 0.10 + news * 0.15 + social * 0.05 + value_bonus * 0.05)
-    return round(max(-100, min(100, composite)))
+    composite = round(max(-100, min(100, composite)))
+
+    # Low-confidence guard: a "gem" must have enough fundamental data to judge.
+    # With <3 FA signals the FA score is unreliable — cap so it can't rank as
+    # a strong buy off a single metric (e.g. only a P/E).
+    if signals < 3:
+        composite = min(composite, 15)
+
+    return composite
 
 
 def _fetch_one(ticker):
     """Fetch fundamentals + sparkline for one ticker."""
     try:
-        # Get info via direct Yahoo (avoids most rate limits)
-        t_obj = _yf_ticker(ticker)
-        info = t_obj.info or {}
+        # Get info via direct Yahoo; fall back to static GitHub info when Yahoo
+        # is blocked / returns a stub (common on Render's shared IP).
+        info = {}
+        try:
+            info = _yf_ticker(ticker).info or {}
+        except Exception:
+            info = {}
+        if not info or len(info) < 5 or info.get('trailingPE') is None and info.get('sector') is None:
+            try:
+                from static_fallback import static_fetch_info
+                sinfo = static_fetch_info(ticker)
+                if sinfo:
+                    # Merge: prefer live values, fill gaps from static
+                    merged = dict(sinfo)
+                    merged.update({k: v for k, v in info.items() if v is not None})
+                    info = merged
+            except Exception:
+                pass
 
         # OHLCV for sparkline + 52w + current price
         df = _yahoo_chart_direct(ticker, period='3mo')
+        if df is None or df.empty:
+            try:
+                from static_fallback import static_fetch_ohlcv
+                df = static_fetch_ohlcv(ticker)
+            except Exception:
+                df = None
         if df is None or df.empty:
             return None
 
@@ -228,6 +257,12 @@ def _fetch_one(ticker):
         # Normalize debt/equity (yfinance returns as percent like 50.0 = 0.5)
         if metrics['debt_equity'] and metrics['debt_equity'] > 5:
             metrics['debt_equity'] = metrics['debt_equity'] / 100
+
+        # Normalize dividend yield — yfinance 0.2.5x+ returns it as a percent
+        # number (e.g. 2.25 meaning 2.25%) instead of a fraction (0.0225).
+        # Anything > 1 is clearly already a percent → convert to fraction.
+        if metrics['div_yield'] and metrics['div_yield'] > 1:
+            metrics['div_yield'] = metrics['div_yield'] / 100
 
         metrics['tags'] = _classify_tags(metrics)
         metrics['score'] = _score_gem(metrics)
