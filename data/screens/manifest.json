@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-04T10:51:13.291296+00:00",
+  "updated": "2026-06-04T17:28:31.399919+00:00",
   "universes": {
     "large_cap": 61,
     "tech": 31,
@@ -11,5 +11,5 @@
   },
   "unique_tickers": 138,
   "analyzed_ok": 136,
-  "duration_s": 18.3
+  "duration_s": 33.9
 }
