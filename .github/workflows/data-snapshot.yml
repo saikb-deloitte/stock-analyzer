@@ -57,6 +57,20 @@ jobs:
         env:
           PYTHONUNBUFFERED: '1'
 
+      - name: Run setup backtest (24-mo, 50 F&O stocks)
+        # Validates the 5 intraday setup types against 2 years of NSE data.
+        # Produces snapshot_setup_backtest.json which the live API merges
+        # into /api/intraday_signals so users see measured win rates
+        # alongside heuristic conviction scores.
+        # Runs once per snapshot job (~3-5 min total).
+        # `continue-on-error` because a backtest failure shouldn't block
+        # the required daily snapshots from committing.
+        continue-on-error: true
+        run: |
+          python scripts/backtest_setups.py --tickers 50
+        env:
+          PYTHONUNBUFFERED: '1'
+
       - name: Verify snapshot files produced
         # Fail loudly if the build step "succeeded" but produced no JSON
         # for any REQUIRED file. ALL NSE is best-effort (300 stocks, can

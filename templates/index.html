@@ -620,6 +620,43 @@
   .isc-act-btn { flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.12s; }
   .isc-act-btn:hover { color: var(--text-primary); border-color: #ffd740; }
 
+  /* Live price badge on each setup card */
+  .isc-live { margin-top: 10px; }
+  .isc-live-spinner { font-size: 11px; color: var(--text-muted); padding: 6px 10px; display: block; }
+  .isc-live-na { font-size: 11px; color: var(--text-muted); padding: 6px 10px; display: block; font-style: italic; }
+  .isc-live-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid; border-radius: 8px; }
+  .isc-live-price { font-size: 15px; font-weight: 800; color: var(--text-primary); }
+  .isc-live-chg { font-size: 11px; font-weight: 700; margin-left: 4px; }
+  .isc-live-msg { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+  .isc-live-msg > span { text-transform: none; letter-spacing: 0; }
+  .isc-live-pulse { width: 8px; height: 8px; border-radius: 50%; animation: livePulse 2s ease-in-out infinite; flex-shrink: 0; margin-left: 10px; }
+  @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* Backtest badge inside setup card */
+  .isc-bt { margin-top: 8px; padding: 8px 10px; border: 1px solid; border-radius: 6px; }
+  .isc-bt-h { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .isc-bt-verdict { margin-left: auto; font-size: 10px; }
+  .isc-bt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .isc-bt-grid > div { text-align: center; }
+  .isc-bt-grid span { display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); }
+  .isc-bt-grid label { display: block; font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 1px; }
+
+  /* Setup Performance card (top of intraday view) */
+  .intra-perf-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+  .ipc-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+  .ipc-head i { color: #ffd740; font-size: 18px; margin-top: 2px; }
+  .ipc-title { font-size: 14px; font-weight: 800; color: var(--text-primary); }
+  .ipc-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.3; }
+  .ipc-total { font-size: 22px; font-weight: 800; color: #ffd740; text-align: right; }
+  .ipc-total label { display: block; font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+  .ipc-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .ipc-row { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 8px; padding: 6px 10px; background: var(--bg-elevated); border-radius: 6px; align-items: center; }
+  .ipc-name { font-size: 12px; font-weight: 700; }
+  .ipc-cell { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-align: center; }
+  .ipc-cell small { color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+  .ipc-foot { font-size: 11px; color: var(--text-secondary); line-height: 1.4; padding: 8px 10px; background: rgba(255,215,64,0.05); border-radius: 6px; border-left: 3px solid #ffd740; }
+  .ipc-foot i { color: #ffd740; margin-right: 4px; }
+
   /* Position sizer */
   .intra-sizer { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
   .is-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
@@ -2068,6 +2105,11 @@ function showView(view) {
   if (valView) valView.style.display = view === 'value' ? 'block' : 'none';
   const intraView = document.getElementById('view-intraday');
   if (intraView) intraView.style.display = view === 'intraday' ? 'block' : 'none';
+  // Stop live-price polling when leaving intraday view
+  if (view !== 'intraday' && window.__livePollTimer) {
+    clearInterval(window.__livePollTimer);
+    window.__livePollTimer = null;
+  }
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
   if (view === 'screener') {
@@ -5224,8 +5266,14 @@ function renderIntradayView(d) {
   setupEl.innerHTML = d.setups.map(s => {
     const convPct = Math.min(s.conviction, 100);
     const safeTkr = (s.ticker || '').replace(/'/g, "\\'");
+    // Backtest stats for this setup type (may be undefined before first run)
+    const bt = s.backtest;
+    const btBadge = bt ? renderBacktestBadge(bt) : '';
     return `
-      <div class="intra-setup-card" onclick="if(!event.target.matches('.isc-act-btn,.isc-act-btn *')){analyzeStock('${safeTkr}');}">
+      <div class="intra-setup-card" data-ticker="${s.ticker}" data-side="${s.side}"
+           data-entry-lo="${s.entry_zone[0]}" data-entry-hi="${s.entry_zone[1]}"
+           data-stop="${s.stop}" data-t1="${s.target1}" data-t2="${s.target2}"
+           onclick="if(!event.target.matches('.isc-act-btn,.isc-act-btn *')){analyzeStock('${safeTkr}');}">
         <div class="isc-top">
           <div class="isc-tkr-wrap">
             <div class="isc-tkr">${s.ticker}</div>
@@ -5235,11 +5283,18 @@ function renderIntradayView(d) {
           </div>
           <span class="isc-side-pill ${s.side}">${s.side}</span>
         </div>
+
+        <!-- LIVE PRICE STATUS BADGE — populated by pollLivePrices() -->
+        <div class="isc-live" id="live-${s.ticker}">
+          <span class="isc-live-spinner"><i class="fa fa-circle-notch fa-spin"></i> Fetching live quote…</span>
+        </div>
+
         <div class="isc-conv-bar">
-          <span style="font-size:10px;color:var(--text-muted);">Conviction</span>
+          <span style="font-size:10px;color:var(--text-muted);">My conviction</span>
           <div class="isc-conv-track"><div class="isc-conv-fill" style="width:${convPct}%;"></div></div>
           <span class="isc-conv-num">${s.conviction}/100</span>
         </div>
+        ${btBadge}
         <div class="isc-levels">
           <div class="isc-lvl entry"><div class="iscl-l">Entry</div><div class="iscl-v">₹${s.entry_zone[0]}<br>₹${s.entry_zone[1]}</div></div>
           <div class="isc-lvl sl"><div class="iscl-l">Stop</div><div class="iscl-v">₹${s.stop}</div></div>
@@ -5271,6 +5326,12 @@ function renderIntradayView(d) {
       </div>`;
   }).join('');
 
+  // Start live-price polling for all setup cards now in the DOM
+  startLivePricePolling();
+
+  // Render the "Setup Performance" backtest card at top
+  renderSetupPerformanceCard(d.backtest);
+
   // Pre-populate risk rules modal body
   const r = d.risk_rules;
   document.getElementById('intra-rules-body').innerHTML = `
@@ -5294,6 +5355,191 @@ function renderIntradayView(d) {
       <p style="font-size:11px; color:var(--text-muted); margin-bottom:0;">
         For educational use only · Not investment advice · DYOR before any trade
       </p>
+    </div>`;
+}
+
+// ── Backtest badge per card (real measured win rate of this setup type) ──
+function renderBacktestBadge(bt) {
+  const wr = bt.win_rate_pct;
+  const pf = bt.profit_factor;
+  const net = bt.avg_net_pnl_pct;
+  const profit = bt.is_profitable;
+  const color = profit ? '#69f0ae' : '#f85149';
+  const verdict = profit
+    ? `Backtested PROFITABLE`
+    : `Backtested LOSING — caution`;
+  return `
+    <div class="isc-bt" style="border-color:${color}33; background:${color}11;">
+      <div class="isc-bt-h" style="color:${color};">
+        <i class="fa fa-flask"></i> 24-mo backtest · ${bt.n_trades} trades
+        <span class="isc-bt-verdict" style="color:${color};">${verdict}</span>
+      </div>
+      <div class="isc-bt-grid">
+        <div><span>${wr}%</span><label>Win rate</label></div>
+        <div><span>${(bt.avg_r >= 0 ? '+' : '')}${bt.avg_r}R</span><label>Avg per trade</label></div>
+        <div><span>${pf}×</span><label>Profit factor</label></div>
+        <div><span style="color:${color};">${(net >= 0 ? '+' : '')}${net}%</span><label>Net P&amp;L/trade</label></div>
+      </div>
+    </div>`;
+}
+
+// ── Setup Performance card (top of intraday view, summary across 5 setups) ──
+function renderSetupPerformanceCard(backtest) {
+  // Find or create the card container
+  let host = document.getElementById('intra-perf-card');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'intra-perf-card';
+    // Insert after the honest banner, before the summary stats
+    const summary = document.getElementById('intra-summary');
+    summary.parentNode.insertBefore(host, summary);
+  }
+  const stats = (backtest || {}).by_setup_type;
+  if (!stats || !Object.keys(stats).length) {
+    host.innerHTML = `
+      <div class="intra-perf-card" style="border-color:rgba(255,215,64,0.3);">
+        <div class="ipc-head">
+          <i class="fa fa-flask"></i>
+          <div>
+            <div class="ipc-title">Setup Performance · Backtest Not Yet Run</div>
+            <div class="ipc-sub">The 24-month historical validation will populate after the next daily snapshot job (3× daily). Until then, conviction scores are heuristic-only.</div>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+  // Build a row per setup
+  const niceName = {
+    'TREND_CONTINUATION': 'Trend Continuation',
+    'OVERSOLD_BOUNCE':    'Oversold Bounce',
+    'BREAKOUT_WATCH':     'Breakout Watch',
+    'NEW_HIGH_MOMENTUM':  '52W High Momentum',
+  };
+  const rows = Object.entries(stats)
+    .sort((a, b) => (b[1].avg_r || 0) - (a[1].avg_r || 0))
+    .map(([type, s]) => {
+      const profit = s.is_profitable;
+      const color = profit ? '#69f0ae' : '#f85149';
+      const flag  = profit ? '✓' : '✗';
+      return `
+        <div class="ipc-row">
+          <div class="ipc-name" style="color:${color};">${flag} ${niceName[type] || type}</div>
+          <div class="ipc-cell">${s.n_trades} <small>trades</small></div>
+          <div class="ipc-cell">${s.win_rate_pct}% <small>win</small></div>
+          <div class="ipc-cell">${(s.avg_r >= 0 ? '+' : '')}${s.avg_r}R <small>avg</small></div>
+          <div class="ipc-cell" style="color:${color};">${(s.avg_net_pnl_pct >= 0 ? '+' : '')}${s.avg_net_pnl_pct}% <small>net</small></div>
+        </div>`;
+    }).join('');
+  const cfg = (backtest || {}).config || {};
+  const genDt = backtest.generated_at_iso ? new Date(backtest.generated_at_iso).toLocaleDateString('en-IN', {day:'2-digit',month:'short'}) : '';
+  host.innerHTML = `
+    <div class="intra-perf-card">
+      <div class="ipc-head">
+        <i class="fa fa-flask"></i>
+        <div style="flex:1;">
+          <div class="ipc-title">Setup Performance · 24-mo backtest</div>
+          <div class="ipc-sub">Real measured win rates over ${cfg.tickers_scanned || '?'} F&amp;O stocks · costs included (slippage + brokerage) · refreshed ${genDt}</div>
+        </div>
+        <div class="ipc-total">${backtest.total_trades || 0}<label>trades</label></div>
+      </div>
+      <div class="ipc-rows">${rows}</div>
+      <div class="ipc-foot">
+        <i class="fa fa-circle-info"></i>
+        <strong>Read this honestly:</strong> ✓ = setup type makes money over 2 years (after costs). ✗ = it doesn't —
+        the heuristic conviction score may flag it, but historical data says be skeptical. Trade the profitable ones with confidence; treat the losing ones as informational, not actionable.
+      </div>
+    </div>`;
+}
+
+// ── Live price polling ──
+// Stored on window so showView() can stop it when leaving the view.
+window.__livePollTimer = window.__livePollTimer || null;
+window.__lastLivePollAt = window.__lastLivePollAt || 0;
+
+function startLivePricePolling() {
+  if (window.__livePollTimer) clearInterval(window.__livePollTimer);
+  pollLivePrices();
+  window.__livePollTimer = setInterval(pollLivePrices, 30000);
+}
+
+async function pollLivePrices() {
+  if (document.hidden) return;
+  if (Date.now() - window.__lastLivePollAt < 20000) return;
+  window.__lastLivePollAt = Date.now();
+
+  const cards = document.querySelectorAll('.intra-setup-card[data-ticker]');
+  // Only poll cards that are at least partially in viewport (cheap optimization)
+  const visibleCards = Array.from(cards).filter(card => {
+    const r = card.getBoundingClientRect();
+    return r.top < window.innerHeight + 200 && r.bottom > -200;
+  });
+  if (!visibleCards.length) return;
+
+  // Fire all in parallel — each is cheap (NSE direct API + 25s server cache)
+  await Promise.all(visibleCards.map(async (card) => {
+    const ticker = card.dataset.ticker;
+    if (!ticker) return;
+    try {
+      const r = await fetchJSON(`/api/intraday_quote/${ticker}`, {
+        maxRetries: 0, timeoutMs: 8000,
+      });
+      if (r.error || r.price == null) {
+        return setLiveBadge(card, null, 'unavailable');
+      }
+      const live = parseFloat(r.price);
+      const entryLo = parseFloat(card.dataset.entryLo);
+      const entryHi = parseFloat(card.dataset.entryHi);
+      const stop    = parseFloat(card.dataset.stop);
+      const t1      = parseFloat(card.dataset.t1);
+      const t2      = parseFloat(card.dataset.t2);
+      const side    = card.dataset.side;
+
+      const status = evaluateLiveStatus(side, live, entryLo, entryHi, stop, t1, t2);
+      setLiveBadge(card, r, status);
+    } catch (e) {
+      setLiveBadge(card, null, 'unavailable');
+    }
+  }));
+}
+
+function evaluateLiveStatus(side, live, entryLo, entryHi, stop, t1, t2) {
+  // Returns {label, color, kind, message}
+  if (side === 'LONG') {
+    if (live <= stop)        return { label: 'STOPPED OUT', color: '#f85149', kind: 'void', msg: 'Live price hit your stop — setup invalidated' };
+    if (live >= t2)          return { label: 'T2 ALREADY HIT', color: '#f85149', kind: 'void', msg: 'You missed the move — don\'t chase' };
+    if (live >= t1)          return { label: 'T1 ALREADY HIT', color: '#ffd740', kind: 'void', msg: 'Move already played out — wait for next setup' };
+    if (live > entryHi)      return { label: 'PAST ENTRY ZONE', color: '#ffd740', kind: 'wait', msg: 'Above entry zone — wait for pullback or skip' };
+    if (live >= entryLo)     return { label: 'IN ENTRY ZONE', color: '#69f0ae', kind: 'go',   msg: 'Live price is inside your entry zone — trade is on' };
+    return                          { label: 'WAITING FOR ENTRY', color: '#7dd3fc', kind: 'wait', msg: `Live ${live.toFixed(2)} below entry zone ${entryLo}-${entryHi}` };
+  } else {
+    if (live >= stop)        return { label: 'STOPPED OUT', color: '#f85149', kind: 'void', msg: 'Live price hit your stop — setup invalidated' };
+    if (live <= t2)          return { label: 'T2 ALREADY HIT', color: '#f85149', kind: 'void', msg: 'You missed the move — don\'t chase' };
+    if (live <= t1)          return { label: 'T1 ALREADY HIT', color: '#ffd740', kind: 'void', msg: 'Move already played out' };
+    if (live < entryLo)      return { label: 'PAST ENTRY ZONE', color: '#ffd740', kind: 'wait', msg: 'Below entry zone — wait for bounce or skip' };
+    if (live <= entryHi)     return { label: 'IN ENTRY ZONE', color: '#69f0ae', kind: 'go',   msg: 'Live price is inside short zone — trade is on' };
+    return                          { label: 'WAITING FOR ENTRY', color: '#7dd3fc', kind: 'wait', msg: `Live ${live.toFixed(2)} above entry zone ${entryLo}-${entryHi}` };
+  }
+}
+
+function setLiveBadge(card, quote, statusOrKey) {
+  const el = card.querySelector('.isc-live');
+  if (!el) return;
+  if (statusOrKey === 'unavailable') {
+    el.innerHTML = `<span class="isc-live-na"><i class="fa fa-wifi" style="opacity:.4"></i> Live quote unavailable — using snapshot levels</span>`;
+    return;
+  }
+  const st = statusOrKey;
+  const price = quote ? Number(quote.price).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
+  const chgPct = quote && quote.day_change_pct != null ? quote.day_change_pct : null;
+  const chgColor = chgPct == null ? 'var(--text-muted)' : (chgPct >= 0 ? 'var(--green)' : 'var(--red)');
+  const chgStr   = chgPct == null ? '' : `${chgPct >= 0 ? '+' : ''}${chgPct}%`;
+  el.innerHTML = `
+    <div class="isc-live-row" style="border-color:${st.color}55; background:${st.color}11;">
+      <div>
+        <div class="isc-live-price">₹${price} <span class="isc-live-chg" style="color:${chgColor};">${chgStr}</span></div>
+        <div class="isc-live-msg" style="color:${st.color};">${st.label} · <span style="color:var(--text-muted);font-weight:500;">${st.msg}</span></div>
+      </div>
+      <div class="isc-live-pulse" style="background:${st.color};" title="Updated ${Math.round((Date.now() - window.__lastLivePollAt)/1000)}s ago"></div>
     </div>`;
 }
 

@@ -4247,6 +4247,83 @@ def _build_intraday_setup(row, df, sector_strength=None):
     return best
 
 
+@app.route('/api/intraday_quote/<path:ticker>')
+def intraday_quote(ticker):
+    """Fast single-ticker live quote — bypasses yfinance for cloud reliability.
+    Used by the intraday view to validate that a setup is still tradeable
+    (live price within entry zone, not stopped, not past target).
+
+    Cache: 25s — short enough that intraday polling at 30s intervals always
+    sees fresh-enough data, long enough to absorb burst polling from
+    multiple cards on screen at once.
+    """
+    sym = ticker.replace('.NS', '').replace('.BO', '').upper()
+    cache_key = f'quote_live:{sym}'
+    cached = get_cached(cache_key, ttl=25)
+    if cached is not None:
+        return jsonify(cached)
+
+    quote = _fetch_nse_quote(sym)
+    if quote is None:
+        # Fallback: yfinance fast_info (works for single ticker even when bulk fails)
+        try:
+            tk = yf.Ticker(sym + '.NS')
+            fi = tk.fast_info
+            price = fi.get('last_price') or fi.get('regular_market_price')
+            prev  = fi.get('previous_close')
+            if price:
+                quote = {
+                    'symbol':     sym,
+                    'price':      round(float(price), 2),
+                    'prev_close': round(float(prev), 2) if prev else None,
+                    'day_change_pct': round((float(price) - float(prev)) / float(prev) * 100, 2) if prev else None,
+                    'source':     'yfinance_fast',
+                    'as_of':      int(time.time()),
+                }
+        except Exception:
+            quote = None
+
+    if quote is None:
+        return jsonify({'error': 'Quote unavailable', 'symbol': sym}), 503
+    set_cached(cache_key, quote, ttl=25)
+    return jsonify(quote)
+
+
+def _fetch_nse_quote(symbol):
+    """Pull last-traded-price for an NSE stock via NSE's quote-equity API.
+    Returns dict or None. This works from cloud IPs (NSE doesn't bot-detect
+    like Yahoo) so it's our preferred live-quote path."""
+    s = _get_nse_session()
+    if s is None:
+        return None
+    try:
+        url = f'{_NSE_HOME}/api/quote-equity?symbol={symbol}'
+        r = s.get(url, timeout=8)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        pi = data.get('priceInfo') or {}
+        last_price = pi.get('lastPrice')
+        prev_close = pi.get('previousClose')
+        if last_price is None:
+            return None
+        return {
+            'symbol':     symbol,
+            'price':      round(float(last_price), 2),
+            'prev_close': round(float(prev_close), 2) if prev_close is not None else None,
+            'day_change':     round(float(pi.get('change') or 0), 2),
+            'day_change_pct': round(float(pi.get('pChange') or 0), 2),
+            'day_high':   round(float(pi.get('intraDayHighLow', {}).get('max') or 0), 2) or None,
+            'day_low':    round(float(pi.get('intraDayHighLow', {}).get('min') or 0), 2) or None,
+            'open':       round(float(pi.get('open') or 0), 2) or None,
+            'source':     'nse_direct',
+            'as_of':      int(time.time()),
+        }
+    except Exception as e:
+        print(f'  [nse_quote {symbol}] failed: {e}')
+        return None
+
+
 @app.route('/api/intraday_signals')
 def intraday_signals():
     """Returns:
@@ -4401,6 +4478,23 @@ def _intraday_signals_impl():
         ),
     }
 
+    # Load backtest stats (computed offline by scripts/backtest_setups.py,
+    # surfaced as snapshot_setup_backtest.json). Lets the UI show measured
+    # win-rates next to my heuristic conviction.
+    backtest_stats = _load_setup_backtest_stats()
+    # Annotate each setup with its measured historical edge
+    for s in setups:
+        bt = backtest_stats.get('by_setup_type', {}).get(s.get('type'))
+        if bt:
+            s['backtest'] = {
+                'win_rate_pct':    bt.get('win_rate_pct'),
+                'avg_r':           bt.get('avg_r'),
+                'profit_factor':   bt.get('profit_factor'),
+                'avg_net_pnl_pct': bt.get('avg_net_pnl_pct'),
+                'is_profitable':   bt.get('is_profitable'),
+                'n_trades':        bt.get('n_trades'),
+            }
+
     result = {
         'generated_at':    int(time.time()),
         'market_summary':  market_summary,
@@ -4408,9 +4502,24 @@ def _intraday_signals_impl():
         'setups':          setups,
         'risk_rules':      risk_rules,
         'universe_size':   len(candidates_for_setup),
+        'backtest':        backtest_stats,   # full payload for the "Setup Performance" card
     }
     set_cached(cache_key, result, ttl=900)
     return jsonify(result)
+
+
+def _load_setup_backtest_stats():
+    """Load the offline-computed setup backtest. Returns empty dict if missing
+    (e.g., before the first GitHub Actions run after deploy)."""
+    try:
+        path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'snapshot_setup_backtest.json')
+        if not os.path.exists(path):
+            return {}
+        with open(path, encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f'  [backtest_stats] load failed: {e}')
+        return {}
 
 
 # ════════════════════════════════════════════════════════════════════════════
