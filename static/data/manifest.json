@@ -1,6 +1,6 @@
 {
-  "generated_at": 1780696554,
-  "generated_at_iso": "2026-06-05T21:55:54.651489+00:00",
+  "generated_at": 1780697140,
+  "generated_at_iso": "2026-06-05T22:05:40.529836+00:00",
   "snapshots": [
     {
       "kind": "screener",
@@ -31,6 +31,11 @@
       "kind": "screener",
       "index": "NIFTY Midcap",
       "file": "snapshot_nifty_midcap.json"
+    },
+    {
+      "kind": "screener",
+      "index": "ALL NSE",
+      "file": "snapshot_all_nse.json"
     },
     {
       "kind": "picks",
