@@ -5081,18 +5081,29 @@ async function loadIntradaySignals(force) {
   const idxEl   = document.getElementById('intra-indices');
   const setupEl = document.getElementById('intra-setups');
   if (idxEl && (!force || !__intradayData)) {
-    idxEl.innerHTML   = '<div class="loading"><div class="spinner"></div> Loading index pivots…</div>';
-    setupEl.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning F&O stocks for high-conviction setups…</div>';
+    idxEl.innerHTML = '<div class="loading"><div class="spinner"></div> Loading index pivots (parallel fetch)…</div>';
+    setupEl.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning ~40 F&O stocks for high-conviction setups… <br><span style="font-size:11px;color:var(--text-muted);">First scan can take 30-60s on cold cache · cached 15 min after</span></div>';
   }
+  // Show a "still working" message after 30s so the user knows it's not stuck
+  let stillWorkingTimer = setTimeout(() => {
+    if (setupEl && setupEl.querySelector('.loading')) {
+      setupEl.innerHTML = '<div class="loading"><div class="spinner"></div> Still computing… cold-cache scans of 40 stocks take up to 90s. Hang tight.</div>';
+    }
+  }, 30000);
   try {
     const r = await fetchJSON('/api/intraday_signals' + (force ? '?_t=' + Date.now() : ''),
-                              { timeoutMs: 45000, maxRetries: 0 });
+                              { timeoutMs: 90000, maxRetries: 0 });
     if (r.error) throw new Error(r.error);
     __intradayData = r;
     renderIntradayView(r);
   } catch (e) {
-    if (idxEl) idxEl.innerHTML = `<div class="alert-custom"><i class="fa fa-triangle-exclamation"></i> Could not load: ${e.message}</div>`;
+    if (idxEl) idxEl.innerHTML = `<div class="alert-custom">
+      <i class="fa fa-triangle-exclamation"></i> Could not load: ${e.message}
+      <br><span style="font-size:11px;color:var(--text-muted);">The first scan after the server wakes up can be slow. Click <b>Refresh</b> to retry — it'll be instant for the next 15 min.</span>
+    </div>`;
     if (setupEl) setupEl.innerHTML = '';
+  } finally {
+    clearTimeout(stillWorkingTimer);
   }
 }
 

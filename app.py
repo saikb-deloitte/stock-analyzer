@@ -4270,7 +4270,8 @@ def _intraday_signals_impl():
     if cached:
         return jsonify(cached)
 
-    # ── 1. Index cards (the 4 most-traded NSE indices for intraday) ──
+    # ── 1. Index cards (4 most-traded NSE indices for intraday) ──
+    # Parallel fetch — each yfinance call 3-5s; serial would be 20s+.
     index_targets = [
         ('^NSEI',     'NIFTY 50'),
         ('^NSEBANK',  'NIFTY BANK'),
@@ -4278,10 +4279,19 @@ def _intraday_signals_impl():
         ('NIFTY_FIN_SERVICE.NS', 'FINNIFTY'),
     ]
     index_cards = []
-    for sym, nm in index_targets:
-        card = _intraday_index_card(sym, nm)
-        if card:
-            index_cards.append(card)
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        future_to_idx = {ex.submit(_intraday_index_card, sym, nm): (sym, nm) for sym, nm in index_targets}
+        for fut in future_to_idx:
+            try:
+                card = fut.result(timeout=18)
+                if card:
+                    index_cards.append(card)
+            except Exception as e:
+                sym, nm = future_to_idx[fut]
+                print(f'  [intraday {sym}] index fetch failed/timed out: {e}')
+    # Restore original order (parallel exec gives unpredictable order)
+    order_map = {nm: i for i, (_, nm) in enumerate(index_targets)}
+    index_cards.sort(key=lambda c: order_map.get(c.get('name'), 999))
 
     # ── 2. Stock setups ──
     # Reuse warmest cached screener result (no extra yfinance calls).
@@ -4320,25 +4330,40 @@ def _intraday_signals_impl():
 
     # Filter to F&O-liquid stocks only
     fno_candidates = [r for r in rows if r.get('ticker', '').upper() in NSE_FNO_STOCKS]
-
     # If nothing matched (e.g. row format differs), don't drop all candidates
     candidates_for_setup = fno_candidates if fno_candidates else rows[:60]
 
-    # Compute setups (fetch each stock's daily OHLC — cached by fetch_history)
-    setups = []
-    for r in candidates_for_setup[:80]:    # cap to keep response time bounded
+    # Pre-sort by short_term so most-interesting candidates fetch first —
+    # if we time out mid-scan we still have the best ones evaluated.
+    candidates_for_setup = sorted(
+        candidates_for_setup,
+        key=lambda r: abs((r.get('short_term') or 50) - 50),
+        reverse=True,
+    )[:40]   # cap at 40 (was 80) — 40 stocks × ~1s parallel = 8s in best case
+
+    # Parallel fetch (mirrors screener's ThreadPoolExecutor pattern)
+    def _one_setup(r):
         ticker = r.get('ticker')
         if not ticker:
-            continue
+            return None
         try:
             df, _src = fetch_history(ticker + '.NS', period='6mo')
             sector_score = sector_avg_st.get(r.get('sector_grouped') or r.get('sector'))
-            s = _build_intraday_setup(r, df, sector_strength=sector_score)
-            if s:
-                setups.append(s)
+            return _build_intraday_setup(r, df, sector_strength=sector_score)
         except Exception as e:
             print(f'  [intraday {ticker}] setup build failed: {e}')
-            continue
+            return None
+
+    setups = []
+    with ThreadPoolExecutor(max_workers=_SCREENER_WORKERS) as ex:
+        futures = {ex.submit(_one_setup, r): r.get('ticker') for r in candidates_for_setup}
+        for fut in futures:
+            try:
+                s = fut.result(timeout=30)
+                if s:
+                    setups.append(s)
+            except Exception as e:
+                print(f'  [intraday {futures[fut]}] future timed out: {e}')
 
     # Sort by conviction desc, cap to top 12
     setups.sort(key=lambda x: x.get('conviction', 0), reverse=True)
