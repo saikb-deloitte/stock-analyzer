@@ -540,6 +540,96 @@
 
   /* Long-Term Picks */
   .picks-header { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  /* INTRADAY view */
+  .sb-intra { display: block; margin: 0 auto 4px; filter: drop-shadow(0 0 4px rgba(255,215,64,0.55)); transition: transform 0.18s, filter 0.18s; }
+  .sb-btn:hover .sb-intra { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(255,145,0,0.7)); }
+  .sb-btn.active .sb-intra { filter: drop-shadow(0 0 10px rgba(255,215,64,0.9)); }
+
+  .intra-head { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; }
+  .intra-honest { display: flex; gap: 12px; padding: 12px 16px; background: linear-gradient(135deg, rgba(255,215,64,0.08), rgba(255,145,0,0.04)); border: 1px solid rgba(255,215,64,0.3); border-radius: 10px; margin-bottom: 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+  .intra-honest > i { color: #ffd740; font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .intra-honest-toggle { background: none; border: none; color: #ffd740; font-weight: 700; cursor: pointer; padding: 0; margin-left: 6px; }
+  .intra-honest-toggle:hover { text-decoration: underline; }
+
+  .intra-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .is-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; text-align: center; }
+  .is-stat .iss-num { font-size: 20px; font-weight: 800; color: var(--text-primary); }
+  .is-stat.bullish .iss-num { color: #69f0ae; }
+  .is-stat.bearish .iss-num { color: #f85149; }
+  .is-stat.neutral .iss-num { color: #ffd740; }
+  .is-stat .iss-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+  .is-stat .iss-sub { font-size: 10px; color: var(--text-secondary); margin-top: 4px; line-height: 1.3; }
+
+  .intra-section-h { font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0 0 10px 4px; display: flex; align-items: center; gap: 6px; }
+  .intra-section-h i { color: #ffd740; }
+  .intra-section-sub { color: var(--text-muted); font-size: 11px; font-weight: 500; margin-left: 8px; }
+
+  /* Index pivot cards */
+  .intra-idx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-bottom: 8px; }
+  .intra-idx-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .iic-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .iic-name { font-size: 14px; font-weight: 800; color: var(--text-primary); }
+  .iic-price { font-size: 17px; font-weight: 800; }
+  .iic-chg { font-size: 11px; font-weight: 600; margin-left: 4px; }
+  .iic-bias { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.4px; margin-top: 2px; }
+  .iic-bias.bullish { background: rgba(105,240,174,0.18); color: #69f0ae; }
+  .iic-bias.bearish { background: rgba(248,81,73,0.18); color: #f85149; }
+  .iic-bias.neutral { background: rgba(255,215,64,0.18); color: #ffd740; }
+  .iic-reason { font-size: 10px; color: var(--text-muted); margin-top: 4px; line-height: 1.3; }
+  .iic-piv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .iic-piv { text-align: center; padding: 4px; border-radius: 6px; background: var(--bg-elevated); }
+  .iic-piv.r { background: rgba(248,81,73,0.10); }
+  .iic-piv.s { background: rgba(105,240,174,0.10); }
+  .iic-piv.pp { background: rgba(255,215,64,0.15); border: 1px solid rgba(255,215,64,0.3); }
+  .iic-piv .iicp-l { font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; }
+  .iic-piv .iicp-v { font-size: 12px; color: var(--text-primary); font-weight: 700; margin-top: 1px; }
+
+  /* Stock setup cards */
+  .intra-setup-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+  .intra-setup-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s; position: relative; }
+  .intra-setup-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(255,215,64,0.15); border-color: #ffd740; }
+  .isc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .isc-tkr-wrap { flex: 1; }
+  .isc-tkr { font-size: 16px; font-weight: 800; color: var(--text-primary); }
+  .isc-name { font-size: 11px; color: var(--text-muted); line-height: 1.25; margin-top: 1px; }
+  .isc-sector { font-size: 10px; color: #b794f6; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+  .isc-side-pill { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+  .isc-side-pill.LONG { background: rgba(105,240,174,0.18); color: #69f0ae; }
+  .isc-side-pill.SHORT { background: rgba(248,81,73,0.18); color: #f85149; }
+  .isc-setup-name { font-size: 11px; color: #ffd740; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+  .isc-conv-bar { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+  .isc-conv-track { flex: 1; height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
+  .isc-conv-fill { height: 100%; background: linear-gradient(90deg, #ffd740, #ff9100); border-radius: 3px; }
+  .isc-conv-num { font-size: 11px; font-weight: 700; color: #ffd740; min-width: 40px; text-align: right; }
+  .isc-levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .isc-lvl { text-align: center; padding: 6px 4px; border-radius: 6px; }
+  .isc-lvl.entry { background: rgba(255,215,64,0.10); }
+  .isc-lvl.sl { background: rgba(248,81,73,0.10); }
+  .isc-lvl.t1 { background: rgba(105,240,174,0.08); }
+  .isc-lvl.t2 { background: rgba(105,240,174,0.14); }
+  .isc-lvl .iscl-l { font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; }
+  .isc-lvl .iscl-v { font-size: 11px; color: var(--text-primary); font-weight: 700; margin-top: 2px; }
+  .isc-rr-bar { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-secondary); }
+  .isc-rr-bar strong { color: var(--text-primary); }
+  .isc-conf { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .isc-conf-h { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; margin-bottom: 4px; }
+  .isc-conf-list { list-style: none; padding: 0; margin: 0; font-size: 11px; color: var(--text-secondary); }
+  .isc-conf-list li { padding: 1px 0; padding-left: 12px; position: relative; line-height: 1.4; }
+  .isc-conf-list li::before { content: '✓'; color: #69f0ae; position: absolute; left: 0; font-weight: 700; }
+  .isc-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .isc-act-btn { flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.12s; }
+  .isc-act-btn:hover { color: var(--text-primary); border-color: #ffd740; }
+
+  /* Position sizer */
+  .intra-sizer { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .is-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .is-field label { display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px; }
+  .is-field input { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-primary); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  .is-field input:focus { outline: none; border-color: #ffd740; box-shadow: 0 0 0 2px rgba(255,215,64,0.15); }
+  .is-result { margin-top: 14px; padding: 12px 14px; background: var(--bg-elevated); border-radius: 8px; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+  .is-result.ok { background: rgba(105,240,174,0.10); color: #69f0ae; }
+  .is-result.warn { background: rgba(248,81,73,0.10); color: #f85149; }
+
   /* GEMS view */
   .sb-gem { display: block; margin: 0 auto 4px; filter: drop-shadow(0 0 4px rgba(125,211,252,0.45)); transition: transform 0.18s, filter 0.18s; }
   .sb-btn:hover .sb-gem { transform: scale(1.12) rotate(-4deg); filter: drop-shadow(0 0 8px rgba(0,212,170,0.6)); }
@@ -1269,6 +1359,19 @@
     <button class="sb-btn" onclick="showView('watchlist')" id="sb-watchlist" title="Watchlist — your saved stocks">
       <i class="fa fa-star"></i><span>Watch</span>
     </button>
+    <button class="sb-btn" onclick="showView('intraday')" id="sb-intraday" title="Intraday — high-conviction day-trade setups + index pivots">
+      <svg class="sb-intra" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <defs>
+          <linearGradient id="sb-intra-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="#ffd740"/>
+            <stop offset="100%" stop-color="#ff9100"/>
+          </linearGradient>
+        </defs>
+        <!-- Lightning bolt — speed/intraday metaphor -->
+        <polygon points="13,2 5,14 11,14 9,22 19,9 13,9 15,2" fill="url(#sb-intra-grad)" stroke="#0f1419" stroke-width="0.5" stroke-linejoin="round"/>
+      </svg>
+      <span>Intraday</span>
+    </button>
     <button class="sb-btn" onclick="showView('compare')" id="sb-compare" title="Compare 2-3 stocks side-by-side">
       <i class="fa fa-scale-balanced"></i><span>Compare</span>
     </button>
@@ -1760,6 +1863,92 @@
       </div>
     </div>
 
+    <!-- ═══════════════════ INTRADAY VIEW ═══════════════════ -->
+    <div id="view-intraday" style="display:none;">
+      <div class="intra-head">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <h2 style="margin:0;font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px;">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <defs>
+                <linearGradient id="intra-h-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#ffd740"/>
+                  <stop offset="100%" stop-color="#ff9100"/>
+                </linearGradient>
+              </defs>
+              <polygon points="13,2 5,14 11,14 9,22 19,9 13,9 15,2" fill="url(#intra-h-grad)" stroke="#0f1419" stroke-width="0.5" stroke-linejoin="round"/>
+            </svg>
+            Intraday · High-Conviction Setups
+          </h2>
+          <span style="color:var(--text-muted);font-size:12px;" id="intra-asof">—</span>
+        </div>
+        <button class="refresh-btn" onclick="loadIntradaySignals(true)"><i class="fa fa-rotate-right"></i> Refresh</button>
+      </div>
+
+      <!-- HONESTY BAR — realistic expectations -->
+      <div class="intra-honest">
+        <i class="fa fa-circle-info"></i>
+        <div>
+          <strong>Reality check:</strong> No honest intraday system wins 85% of trades — even institutional algos hit 55-65%.
+          What's 85%+ reliable here: every setup has <strong>4+ technical confirmations</strong>, mathematically-correct levels (pivots, ATR stops), <strong>R:R ≥ 1.5</strong>, and only F&O-liquid stocks.
+          Trade the discipline, not the win rate.
+          <button class="intra-honest-toggle" onclick="document.getElementById('intra-rules-modal').style.display='flex'">See risk rules →</button>
+        </div>
+      </div>
+
+      <!-- Market summary strip -->
+      <div id="intra-summary" class="intra-summary"></div>
+
+      <!-- 4 index pivot cards -->
+      <div class="intra-section-h">
+        <i class="fa fa-chart-line"></i> Index Bias &amp; Pivot Levels
+        <span class="intra-section-sub">Classical pivots from yesterday's OHLC — Indian intraday's most-watched levels</span>
+      </div>
+      <div id="intra-indices" class="intra-idx-grid">
+        <div class="loading"><div class="spinner"></div> Loading index pivots…</div>
+      </div>
+
+      <!-- Stock setups -->
+      <div class="intra-section-h" style="margin-top:24px;">
+        <i class="fa fa-bullseye"></i> Today's High-Conviction Setups
+        <span class="intra-section-sub" id="intra-setup-count">Ranked by conviction · F&amp;O-liquid stocks only</span>
+      </div>
+      <div id="intra-setups" class="intra-setup-grid">
+        <div class="loading"><div class="spinner"></div> Scanning F&amp;O stocks for high-conviction setups…</div>
+      </div>
+
+      <!-- Bottom: position sizer -->
+      <div class="intra-section-h" style="margin-top:24px;">
+        <i class="fa fa-calculator"></i> Position Sizer (1% rule)
+        <span class="intra-section-sub">Computes shares to buy so a stop-loss hit costs you exactly 1% of capital</span>
+      </div>
+      <div class="intra-sizer">
+        <div class="is-row">
+          <div class="is-field"><label>Capital (₹)</label><input type="number" id="is-capital" value="100000" oninput="recalcPositionSize()"></div>
+          <div class="is-field"><label>Risk per trade (%)</label><input type="number" id="is-risk" value="1" step="0.1" oninput="recalcPositionSize()"></div>
+          <div class="is-field"><label>Entry price (₹)</label><input type="number" id="is-entry" placeholder="—" oninput="recalcPositionSize()"></div>
+          <div class="is-field"><label>Stop loss (₹)</label><input type="number" id="is-stop" placeholder="—" oninput="recalcPositionSize()"></div>
+        </div>
+        <div class="is-result" id="is-result">Enter entry + stop to size your position</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ INTRADAY RISK RULES MODAL ═══════════════════ -->
+    <div id="intra-rules-modal" class="al-modal" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+      <div class="al-card" style="max-width:560px;">
+        <div class="al-head">
+          <div>
+            <div class="al-title"><i class="fa fa-shield"></i> Intraday Rules of Engagement</div>
+            <div class="al-sub">The discipline that makes a 55% system profitable</div>
+          </div>
+          <button class="al-close" onclick="document.getElementById('intra-rules-modal').style.display='none'">×</button>
+        </div>
+        <div class="al-body" id="intra-rules-body"></div>
+        <div class="al-foot">
+          <button class="al-btn-primary" onclick="document.getElementById('intra-rules-modal').style.display='none'">Got it</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══════════════════ COMPARE VIEW ═══════════════════ -->
     <div id="view-compare" style="display:none;">
       <div class="cmp-header">
@@ -1877,6 +2066,8 @@ function showView(view) {
   if (cmpView) cmpView.style.display = view === 'compare' ? 'block' : 'none';
   const valView = document.getElementById('view-value');
   if (valView) valView.style.display = view === 'value' ? 'block' : 'none';
+  const intraView = document.getElementById('view-intraday');
+  if (intraView) intraView.style.display = view === 'intraday' ? 'block' : 'none';
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
   if (view === 'screener') {
@@ -1896,6 +2087,10 @@ function showView(view) {
       loadValuePicks(true);
     }
     setPageTitle(VIEW_TITLE.value);
+  } else if (view === 'intraday') {
+    document.getElementById('sb-intraday').classList.add('active');
+    if (!window.__intradayLoaded) { loadIntradaySignals(); window.__intradayLoaded = true; }
+    setPageTitle(VIEW_TITLE.intraday);
   } else if (view === 'watchlist') {
     document.getElementById('sb-watchlist').classList.add('active');
     loadWatchlist();
@@ -4853,6 +5048,7 @@ const VIEW_TITLE = {
   compare:   'Compare',
   picks:     'Long-Term Picks',
   value:     'Gems · Undervalued',
+  intraday:  'Intraday Signals',
 };
 function setPageTitle(parts) {
   const arr = Array.isArray(parts) ? parts : [parts];
@@ -4875,6 +5071,229 @@ function dismissEduBar() {
     }
   } catch (e) {}
 })();
+
+// ══════════════════════════════════════════════════════════════════════
+// INTRADAY — high-conviction setups + index pivots
+// ══════════════════════════════════════════════════════════════════════
+let __intradayData = null;
+
+async function loadIntradaySignals(force) {
+  const idxEl   = document.getElementById('intra-indices');
+  const setupEl = document.getElementById('intra-setups');
+  if (idxEl && (!force || !__intradayData)) {
+    idxEl.innerHTML   = '<div class="loading"><div class="spinner"></div> Loading index pivots…</div>';
+    setupEl.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning F&O stocks for high-conviction setups…</div>';
+  }
+  try {
+    const r = await fetchJSON('/api/intraday_signals' + (force ? '?_t=' + Date.now() : ''),
+                              { timeoutMs: 45000, maxRetries: 0 });
+    if (r.error) throw new Error(r.error);
+    __intradayData = r;
+    renderIntradayView(r);
+  } catch (e) {
+    if (idxEl) idxEl.innerHTML = `<div class="alert-custom"><i class="fa fa-triangle-exclamation"></i> Could not load: ${e.message}</div>`;
+    if (setupEl) setupEl.innerHTML = '';
+  }
+}
+
+function renderIntradayView(d) {
+  // As-of timestamp
+  document.getElementById('intra-asof').textContent =
+    `As of ${d.market_summary.as_of_ist} · ${d.universe_size} F&O stocks scanned`;
+
+  // Market summary strip
+  const ms = d.market_summary;
+  const biasClass = ms.bias === 'BULLISH' ? 'bullish' : (ms.bias === 'BEARISH' ? 'bearish' : 'neutral');
+  const biasIcon  = ms.bias === 'BULLISH' ? '🟢' : (ms.bias === 'BEARISH' ? '🔴' : '🟡');
+  const topSector = (ms.top_sectors[0] || {}).sector || '—';
+  const botSector = (ms.bot_sectors[0] || {}).sector || '—';
+
+  document.getElementById('intra-summary').innerHTML = `
+    <div class="is-stat ${biasClass}">
+      <div class="iss-num">${biasIcon} ${ms.bias}</div>
+      <div class="iss-lbl">Market Bias</div>
+      <div class="iss-sub">NIFTY 50 structure</div>
+    </div>
+    <div class="is-stat bullish">
+      <div class="iss-num">${ms.long_signals}</div>
+      <div class="iss-lbl">Long Setups</div>
+      <div class="iss-sub">High conviction</div>
+    </div>
+    <div class="is-stat bearish">
+      <div class="iss-num">${ms.short_signals}</div>
+      <div class="iss-lbl">Short Setups</div>
+      <div class="iss-sub">F&amp;O eligible</div>
+    </div>
+    <div class="is-stat">
+      <div class="iss-num" style="font-size:14px;line-height:1.2;">${topSector}</div>
+      <div class="iss-lbl">Strongest Sector</div>
+      <div class="iss-sub" style="color:#f85149;">Weakest: ${botSector}</div>
+    </div>
+  `;
+
+  // Index cards
+  const idxEl = document.getElementById('intra-indices');
+  idxEl.innerHTML = d.index_cards.map(c => {
+    const bc = c.bias.toLowerCase();
+    const chgClass = c.day_chg >= 0 ? 'var(--green)' : 'var(--red)';
+    const chgPrefix = c.day_chg >= 0 ? '+' : '';
+    return `
+      <div class="intra-idx-card">
+        <div class="iic-top">
+          <div>
+            <div class="iic-name">${c.name}</div>
+            <span class="iic-bias ${bc}">${c.bias}${c.strength ? ' · ' + c.strength : ''}</span>
+          </div>
+          <div style="text-align:right;">
+            <div class="iic-price">${Number(c.price).toLocaleString('en-IN', {maximumFractionDigits: 2})}</div>
+            <div class="iic-chg" style="color:${chgClass};">${chgPrefix}${c.day_chg}%</div>
+          </div>
+        </div>
+        <div class="iic-reason">${c.reason || ''}</div>
+        <div class="iic-piv-grid">
+          <div class="iic-piv s"><div class="iicp-l">S2</div><div class="iicp-v">${c.pivots.s2}</div></div>
+          <div class="iic-piv s"><div class="iicp-l">S1</div><div class="iicp-v">${c.pivots.s1}</div></div>
+          <div class="iic-piv pp"><div class="iicp-l">PP</div><div class="iicp-v">${c.pivots.pp}</div></div>
+          <div class="iic-piv r"><div class="iicp-l">R1</div><div class="iicp-v">${c.pivots.r1}</div></div>
+          <div class="iic-piv r"><div class="iicp-l">R2</div><div class="iicp-v">${c.pivots.r2}</div></div>
+          <div class="iic-piv"><div class="iicp-l">ATR</div><div class="iicp-v">${c.atr_pct ?? '—'}%</div></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Stock setups
+  const setupEl = document.getElementById('intra-setups');
+  document.getElementById('intra-setup-count').textContent =
+    `${d.setups.length} setups · ranked by conviction · F&O-liquid stocks only`;
+  if (!d.setups.length) {
+    setupEl.innerHTML = `
+      <div class="vc-empty" style="grid-column: 1/-1;">
+        <i class="fa fa-magnifying-glass"></i>
+        <h3 style="margin:6px 0;color:var(--text-secondary);">No high-conviction setups right now</h3>
+        <div style="font-size:13px;">Setups need 4+ technical confirmations. Try again after the next bar closes.</div>
+      </div>`;
+    return;
+  }
+  setupEl.innerHTML = d.setups.map(s => {
+    const convPct = Math.min(s.conviction, 100);
+    const safeTkr = (s.ticker || '').replace(/'/g, "\\'");
+    return `
+      <div class="intra-setup-card" onclick="if(!event.target.matches('.isc-act-btn,.isc-act-btn *')){analyzeStock('${safeTkr}');}">
+        <div class="isc-top">
+          <div class="isc-tkr-wrap">
+            <div class="isc-tkr">${s.ticker}</div>
+            <div class="isc-name">${(s.name || '').slice(0, 40)}</div>
+            <div class="isc-sector">${s.sector || ''}</div>
+            <div class="isc-setup-name">${s.name_pretty}</div>
+          </div>
+          <span class="isc-side-pill ${s.side}">${s.side}</span>
+        </div>
+        <div class="isc-conv-bar">
+          <span style="font-size:10px;color:var(--text-muted);">Conviction</span>
+          <div class="isc-conv-track"><div class="isc-conv-fill" style="width:${convPct}%;"></div></div>
+          <span class="isc-conv-num">${s.conviction}/100</span>
+        </div>
+        <div class="isc-levels">
+          <div class="isc-lvl entry"><div class="iscl-l">Entry</div><div class="iscl-v">₹${s.entry_zone[0]}<br>₹${s.entry_zone[1]}</div></div>
+          <div class="isc-lvl sl"><div class="iscl-l">Stop</div><div class="iscl-v">₹${s.stop}</div></div>
+          <div class="isc-lvl t1"><div class="iscl-l">Target 1</div><div class="iscl-v">₹${s.target1}</div></div>
+          <div class="isc-lvl t2"><div class="iscl-l">Target 2</div><div class="iscl-v">₹${s.target2}</div></div>
+        </div>
+        <div class="isc-rr-bar">
+          <span>R:R T1: <strong>1 : ${s.rr1}</strong></span>
+          <span>T2: <strong>1 : ${s.rr2}</strong></span>
+          <span>ATR: <strong>${s.atr_pct}%</strong></span>
+        </div>
+        <div class="isc-conf">
+          <div class="isc-conf-h">Why this setup</div>
+          <ul class="isc-conf-list">
+            ${s.confirmations.map(c => `<li>${c}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="isc-actions">
+          <button class="isc-act-btn" onclick="event.stopPropagation(); useInPositionSizer(${s.entry_zone[1]}, ${s.stop});">
+            <i class="fa fa-calculator"></i> Size it
+          </button>
+          <button class="isc-act-btn" onclick="event.stopPropagation(); openAlertModal('${safeTkr}', '${(s.name||'').replace(/'/g,'').slice(0,40)}', ${s.curr_price});">
+            <i class="fa fa-bell"></i> Alert
+          </button>
+          <button class="isc-act-btn" onclick="event.stopPropagation(); analyzeStock('${safeTkr}');">
+            <i class="fa fa-chart-line"></i> Analyze
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Pre-populate risk rules modal body
+  const r = d.risk_rules;
+  document.getElementById('intra-rules-body').innerHTML = `
+    <div style="font-size:13px; line-height:1.6; color:var(--text-secondary);">
+      <p style="margin-top:0; padding:10px 12px; background:rgba(255,215,64,0.08); border-left:3px solid #ffd740; border-radius:4px; color:var(--text-primary);">
+        ${r.why_85_is_a_myth}
+      </p>
+      <p><strong style="color:var(--text-primary);">Position discipline:</strong></p>
+      <ul style="padding-left:18px;">
+        <li>Max <strong>${r.max_trades_per_day} trades per day</strong> — overtrading is the #1 killer</li>
+        <li>Risk no more than <strong>${r.max_loss_per_trade_pct}%</strong> of capital per trade</li>
+        <li>Stop all trading for the day if you hit <strong>−${r.daily_loss_cutoff_pct}% drawdown</strong></li>
+        <li>Only take setups with <strong>R:R ≥ ${r.min_rr}</strong> (already filtered above)</li>
+      </ul>
+      <p><strong style="color:var(--text-primary);">Time discipline:</strong></p>
+      <ul style="padding-left:18px;">
+        <li>Trade window: <strong>${r.trade_window_ist} IST</strong></li>
+        <li>Avoid first 15 min (volatility) and last 30 min (squaring-off)</li>
+        <li>No trading around: ${r.avoid_around_events.join(', ')}</li>
+      </ul>
+      <p style="font-size:11px; color:var(--text-muted); margin-bottom:0;">
+        For educational use only · Not investment advice · DYOR before any trade
+      </p>
+    </div>`;
+}
+
+function useInPositionSizer(entry, stop) {
+  document.getElementById('is-entry').value = entry;
+  document.getElementById('is-stop').value = stop;
+  recalcPositionSize();
+  // Scroll smoothly to the sizer
+  document.querySelector('.intra-sizer').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  toast(`Sized: entry ₹${entry}, SL ₹${stop}`, 'success');
+}
+
+function recalcPositionSize() {
+  const cap   = parseFloat(document.getElementById('is-capital').value) || 0;
+  const risk  = parseFloat(document.getElementById('is-risk').value)    || 0;
+  const entry = parseFloat(document.getElementById('is-entry').value)   || 0;
+  const stop  = parseFloat(document.getElementById('is-stop').value)    || 0;
+  const el = document.getElementById('is-result');
+  if (cap <= 0 || risk <= 0 || entry <= 0 || stop <= 0) {
+    el.className = 'is-result';
+    el.textContent = 'Enter entry + stop to size your position';
+    return;
+  }
+  const stopDist = Math.abs(entry - stop);
+  if (stopDist === 0) {
+    el.className = 'is-result warn';
+    el.textContent = 'Stop = entry → division by zero. Pick a different stop.';
+    return;
+  }
+  const riskRupees = cap * (risk / 100);
+  const qty = Math.floor(riskRupees / stopDist);
+  const exposure = qty * entry;
+  const exposurePct = (exposure / cap) * 100;
+  const stopDistPct = (stopDist / entry) * 100;
+  let warn = '';
+  if (exposure > cap) {
+    warn = ' ⚠ Position exceeds capital — you\'d need leverage.';
+  } else if (exposurePct > 50) {
+    warn = ` ⚠ ${exposurePct.toFixed(0)}% of capital in one trade — concentration risk.`;
+  }
+  el.className = 'is-result ok';
+  el.innerHTML = `
+    Buy <strong>${qty.toLocaleString('en-IN')} shares</strong> · Exposure ₹${exposure.toLocaleString('en-IN', {maximumFractionDigits: 0})}
+    (${exposurePct.toFixed(1)}% of capital) · Risk if stopped ₹${Math.round(qty * stopDist).toLocaleString('en-IN')}
+    (${(qty * stopDist / cap * 100).toFixed(2)}% of capital)
+    · Stop distance ${stopDistPct.toFixed(2)}%${warn}`;
+}
 
 // ══════════════════════════════════════════════════════════════════════
 // ALERTS — server-side engine + bell dropdown + browser notifications
