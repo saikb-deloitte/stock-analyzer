@@ -1,14 +1,22 @@
-name: Daily data snapshot
+name: NSE data snapshot (3x daily)
 
-# Runs every day at 4:00 UTC (= 9:30 AM IST, ~3 hours before NSE pre-open).
 # Builds NIFTY 50 + key indices + picks → commits JSON to static/data/.
 # Live Render/Fly app code is NEVER modified by this workflow.
+#
+# Schedule: 3 runs per IST trading day.
+#   09:15 IST (03:45 UTC) — right at market open, captures yesterday's close
+#   12:15 IST (06:45 UTC) — mid-session pulse
+#   15:45 IST (10:15 UTC) — 15 min after market close, captures today's final prices
+#
+# Note on GitHub Actions cron reliability: scheduled workflows fire from
+# the DEFAULT branch only and can be silently skipped during high load.
+# That's why we also run on push and allow manual dispatch.
 
 on:
   schedule:
-    # cron is in UTC
-    # 4:00 UTC = 09:30 IST — captures end-of-prev-day data, ready before market opens
-    - cron: '0 4 * * *'
+    - cron: '45 3 * * *'    # 09:15 IST — market open
+    - cron: '45 6 * * *'    # 12:15 IST — mid-session
+    - cron: '15 10 * * *'   # 15:45 IST — post-close
   # Also allow manual triggering from the Actions tab
   workflow_dispatch:
 
@@ -47,11 +55,39 @@ jobs:
         env:
           PYTHONUNBUFFERED: '1'
 
+      - name: Verify snapshot files produced
+        # Fail loudly if the build step "succeeded" but produced no JSON.
+        # Previously a silent script crash mid-loop could result in stale
+        # files staying on disk + no commit ever being made.
+        run: |
+          echo "=== static/data/ contents after build ==="
+          ls -la static/data/*.json
+          REQUIRED="snapshot_nifty_50.json snapshot_nifty_bank.json snapshot_nifty_it.json snapshot_nifty_pharma.json snapshot_nifty_auto.json snapshot_nifty_midcap.json snapshot_picks_all.json"
+          MISSING=""
+          for f in $REQUIRED; do
+            if [ ! -s "static/data/$f" ]; then MISSING="$MISSING $f"; fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing or empty snapshot files:$MISSING"
+            exit 1
+          fi
+          # Check freshness: every file should have been modified in this run.
+          # If a build silently crashed and left old files, mtime would be old.
+          NOW=$(date +%s)
+          for f in $REQUIRED; do
+            MTIME=$(stat -c %Y "static/data/$f")
+            AGE=$((NOW - MTIME))
+            if [ "$AGE" -gt 1800 ]; then
+              echo "::warning::$f is $AGE seconds old (build may have skipped it)"
+            fi
+          done
+
       - name: Check for changes
         id: changes
         run: |
           if [ -z "$(git status --porcelain static/data/)" ]; then
-            echo "No changes — skipping commit"
+            echo "No changes — every snapshot was identical to committed version."
+            echo "::notice::Snapshots unchanged — likely weekend/holiday or upstream data didn't move."
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "Changes detected"
