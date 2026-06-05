@@ -1,0 +1,254 @@
+{
+  "generated_at": 1780699400,
+  "generated_at_iso": "2026-06-05T22:43:20.934415+00:00",
+  "source": "build_snapshot.py",
+  "data": {
+    "generated_at": 1780699400,
+    "index_cards": [
+      {
+        "atr": 320.39,
+        "atr_pct": 1.37,
+        "bias": "BEARISH",
+        "camarilla": {
+          "h3": 23490.34,
+          "h4": 23575.08,
+          "l3": 23320.86,
+          "l4": 23236.12
+        },
+        "day_chg": 0.05,
+        "name": "NIFTY 50",
+        "pivots": {
+          "pp": 23338.92,
+          "r1": 23526.33,
+          "r2": 23647.07,
+          "r3": 23834.48,
+          "s1": 23218.18,
+          "s2": 23030.77,
+          "s3": 22910.03
+        },
+        "prev_close": 23405.6,
+        "prev_high": 23459.65,
+        "prev_low": 23151.5,
+        "price": 23416.55,
+        "reason": "Below both DMAs, weak structure",
+        "strength": "MILD",
+        "symbol": "NSEI"
+      },
+      {
+        "atr": 952.82,
+        "atr_pct": 1.75,
+        "bias": "NEUTRAL",
+        "camarilla": {
+          "h3": 54535.81,
+          "h4": 54885.66,
+          "l3": 53836.09,
+          "l4": 53486.24
+        },
+        "day_chg": 0.22,
+        "name": "NIFTY BANK",
+        "pivots": {
+          "pp": 53837.48,
+          "r1": 54647.82,
+          "r2": 55109.69,
+          "r3": 55920.02,
+          "s1": 53375.61,
+          "s2": 52565.28,
+          "s3": 52103.41
+        },
+        "prev_close": 54185.95,
+        "prev_high": 54299.35,
+        "prev_low": 53027.15,
+        "price": 54307.85,
+        "reason": "Mixed DMA positioning \u2014 range-bound",
+        "strength": "",
+        "symbol": "NSEBANK"
+      },
+      {
+        "atr": 751.32,
+        "atr_pct": 2.56,
+        "bias": "NEUTRAL",
+        "camarilla": {
+          "h3": 29732.6,
+          "h4": 30080.75,
+          "l3": 29036.3,
+          "l4": 28688.15
+        },
+        "day_chg": -0.29,
+        "name": "NIFTY IT",
+        "pivots": {
+          "pp": 29750.82,
+          "r1": 30200.63,
+          "r2": 31016.82,
+          "r3": 31466.63,
+          "s1": 28934.63,
+          "s2": 28484.82,
+          "s3": 27668.63
+        },
+        "prev_close": 29384.45,
+        "prev_high": 30567.0,
+        "prev_low": 29301.0,
+        "price": 29300.6,
+        "reason": "Mixed DMA positioning \u2014 range-bound",
+        "strength": "",
+        "symbol": "CNXIT"
+      },
+      {
+        "atr": 435.4,
+        "atr_pct": 1.74,
+        "bias": "BEARISH",
+        "camarilla": {
+          "h3": 25091.25,
+          "h4": 25226.79,
+          "l3": 24820.15,
+          "l4": 24684.61
+        },
+        "day_chg": 0.3,
+        "name": "FINNIFTY",
+        "pivots": {
+          "pp": 24836.73,
+          "r1": 25142.67,
+          "r2": 25329.63,
+          "r3": 25635.56,
+          "s1": 24649.77,
+          "s2": 24343.83,
+          "s3": 24156.87
+        },
+        "prev_close": 24955.7,
+        "prev_high": 25023.7,
+        "prev_low": 24530.8,
+        "price": 25031.25,
+        "reason": "Below 20DMA + 50DMA, -2.8% over 5 days",
+        "strength": "STRONG",
+        "symbol": "NIFTY_FIN_SERVICE.NS"
+      }
+    ],
+    "market_summary": {
+      "as_of_ist": "06 Jun 2026, 04:13 IST",
+      "bias": "BEARISH",
+      "bot_sectors": [
+        {
+          "score": 50.0,
+          "sector": "Insurance"
+        },
+        {
+          "score": 52.3,
+          "sector": "Metals & Materials"
+        },
+        {
+          "score": 53.5,
+          "sector": "Banking"
+        }
+      ],
+      "long_signals": 3,
+      "short_signals": 0,
+      "top_sectors": [
+        {
+          "score": 62.5,
+          "sector": "Power & Utilities"
+        },
+        {
+          "score": 61.7,
+          "sector": "Metals"
+        },
+        {
+          "score": 61.4,
+          "sector": "FMCG & Consumer Staples"
+        }
+      ]
+    },
+    "risk_rules": {
+      "avoid_around_events": [
+        "RBI policy",
+        "budget day",
+        "earnings \u00b12 days",
+        "major US Fed days"
+      ],
+      "daily_loss_cutoff_pct": 3.0,
+      "max_loss_per_trade_pct": 1.0,
+      "max_trades_per_day": 5,
+      "min_rr": 1.5,
+      "trade_window_ist": "09:30 \u2013 14:30",
+      "why_85_is_a_myth": "No honest intraday system wins 85% of trades. Even institutional algos hit 55-65%. What 85%+ reliable here: setups have 4+ confirmations, levels are mathematically computed (not opinion), R:R is \u22651.5, only F&O-liquid stocks. That combination is profitable at 55% win rate."
+    },
+    "setups": [
+      {
+        "atr_pct": 2.07,
+        "confirmations": [
+          "RSI 31 (oversold)",
+          "Holding above 20-day low",
+          "ATR 2.1% (sufficient for bounce)",
+          "Sector still neutral/strong (61/100)"
+        ],
+        "conviction": 65,
+        "curr_price": 1382.9,
+        "entry_zone": [
+          1378.75,
+          1387.05
+        ],
+        "name": "NESTLE INDIA LIMITED",
+        "name_pretty": "Oversold Bounce",
+        "rr1": 1.29,
+        "rr2": 2.8,
+        "sector": "Consumer Defensive",
+        "side": "LONG",
+        "stop": 1368.1,
+        "target1": 1411.47,
+        "target2": 1440.04,
+        "ticker": "NESTLEIND",
+        "type": "OVERSOLD_BOUNCE"
+      },
+      {
+        "atr_pct": 2.58,
+        "confirmations": [
+          "RSI 36 (oversold)",
+          "Holding above 20-day low",
+          "ATR 2.6% (sufficient for bounce)",
+          "Sector still neutral/strong (56/100)"
+        ],
+        "conviction": 65,
+        "curr_price": 874.4,
+        "entry_zone": [
+          871.78,
+          877.02
+        ],
+        "name": "BAJAJ FINANCE LIMITED",
+        "name_pretty": "Oversold Bounce",
+        "rr1": 1.2,
+        "rr2": 2.56,
+        "sector": "Financial Services",
+        "side": "LONG",
+        "stop": 860.45,
+        "target1": 896.96,
+        "target2": 919.52,
+        "ticker": "BAJFINANCE",
+        "type": "OVERSOLD_BOUNCE"
+      },
+      {
+        "atr_pct": 1.97,
+        "confirmations": [
+          "Within 3% of 52W high \u20b98443.0",
+          "RSI 58 (not yet euphoric)",
+          "Pulled back to 5DMA \u2014 entry buffer"
+        ],
+        "conviction": 60,
+        "curr_price": 8249.0,
+        "entry_zone": [
+          8166.43,
+          8223.71
+        ],
+        "name": "APOLLO HOSPITALS ENTER. L",
+        "name_pretty": "52W High Momentum",
+        "rr1": 1.28,
+        "rr2": 1.82,
+        "sector": "Healthcare",
+        "side": "LONG",
+        "stop": 7987.35,
+        "target1": 8527.43,
+        "target2": 8654.07,
+        "ticker": "APOLLOHOSP",
+        "type": "NEW_HIGH_MOMENTUM"
+      }
+    ],
+    "universe_size": 40
+  }
+}
