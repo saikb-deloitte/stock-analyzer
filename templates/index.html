@@ -5081,29 +5081,65 @@ async function loadIntradaySignals(force) {
   const idxEl   = document.getElementById('intra-indices');
   const setupEl = document.getElementById('intra-setups');
   if (idxEl && (!force || !__intradayData)) {
-    idxEl.innerHTML = '<div class="loading"><div class="spinner"></div> Loading index pivots (parallel fetch)…</div>';
-    setupEl.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning ~40 F&O stocks for high-conviction setups… <br><span style="font-size:11px;color:var(--text-muted);">First scan can take 30-60s on cold cache · cached 15 min after</span></div>';
+    idxEl.innerHTML   = '<div class="loading"><div class="spinner"></div> Loading index pivots…</div>';
+    setupEl.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning F&O stocks for high-conviction setups…</div>';
   }
-  // Show a "still working" message after 30s so the user knows it's not stuck
-  let stillWorkingTimer = setTimeout(() => {
-    if (setupEl && setupEl.querySelector('.loading')) {
-      setupEl.innerHTML = '<div class="loading"><div class="spinner"></div> Still computing… cold-cache scans of 40 stocks take up to 90s. Hang tight.</div>';
-    }
-  }, 30000);
+
+  // Try live first with a TIGHT 15s timeout — if the server's still warming
+  // up, snap to the GitHub snapshot tier immediately rather than make the
+  // user wait. Once live is cached server-side (15-min TTL), subsequent
+  // calls return in <2s anyway.
+  let snapshotMode = false;
+  let snapshotDate = null;
+  let data = null;
   try {
-    const r = await fetchJSON('/api/intraday_signals' + (force ? '?_t=' + Date.now() : ''),
-                              { timeoutMs: 90000, maxRetries: 0 });
-    if (r.error) throw new Error(r.error);
-    __intradayData = r;
-    renderIntradayView(r);
-  } catch (e) {
+    data = await fetchJSON('/api/intraday_signals' + (force ? '?_t=' + Date.now() : ''),
+                           { timeoutMs: 15000, maxRetries: 0 });
+    if (data && data.error) throw new Error(data.error);
+  } catch (liveErr) {
+    console.debug('[intraday] live fetch failed, trying snapshot:', liveErr.message);
+    // Tier 2: same-origin static snapshot (Render/Fly)
+    try {
+      const snap = await fetchJSON('/static/data/snapshot_intraday.json',
+                                   { maxRetries: 0, timeoutMs: 8000 });
+      if (snap && snap.data) {
+        data = snap.data; snapshotMode = true;
+        snapshotDate = snap.generated_at_iso || snap.generated_at;
+      }
+    } catch (e) { console.debug('[intraday] same-origin snapshot failed:', e.message); }
+    // Tier 3: GitHub raw — bypasses our hosts entirely
+    if (!data) {
+      try {
+        const snap = await fetchJSON(`${GITHUB_RAW_BASE}/snapshot_intraday.json`,
+                                     { maxRetries: 0, timeoutMs: 8000 });
+        if (snap && snap.data) {
+          data = snap.data; snapshotMode = true;
+          snapshotDate = snap.generated_at_iso || snap.generated_at;
+        }
+      } catch (e) { console.debug('[intraday] GitHub snapshot failed:', e.message); }
+    }
+  }
+
+  if (!data) {
     if (idxEl) idxEl.innerHTML = `<div class="alert-custom">
-      <i class="fa fa-triangle-exclamation"></i> Could not load: ${e.message}
-      <br><span style="font-size:11px;color:var(--text-muted);">The first scan after the server wakes up can be slow. Click <b>Refresh</b> to retry — it'll be instant for the next 15 min.</span>
+      <i class="fa fa-triangle-exclamation"></i> Could not load intraday data — live API timed out and no snapshot is available yet.
+      <br><span style="font-size:11px;color:var(--text-muted);">The first snapshot will appear in static/data/ after the next GitHub Actions run (3× daily). Click <b>Refresh</b> in a few minutes.</span>
     </div>`;
     if (setupEl) setupEl.innerHTML = '';
-  } finally {
-    clearTimeout(stillWorkingTimer);
+    return;
+  }
+
+  __intradayData = data;
+  renderIntradayView(data);
+
+  // Annotate the "as of" line so users know they're seeing snapshot data
+  if (snapshotMode) {
+    const asof = document.getElementById('intra-asof');
+    if (asof) {
+      const dt = snapshotDate ? new Date(snapshotDate) : null;
+      const dtStr = dt ? dt.toLocaleString('en-IN', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'recently';
+      asof.innerHTML = `<span style="color:#ffd740;">📅 Snapshot</span> · generated ${dtStr} · live API was slow, showing latest cached scan`;
+    }
   }
 }
 

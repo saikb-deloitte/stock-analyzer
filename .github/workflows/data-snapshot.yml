@@ -65,7 +65,7 @@ jobs:
           echo "=== static/data/ contents after build ==="
           ls -la static/data/*.json
           REQUIRED="snapshot_nifty_50.json snapshot_nifty_bank.json snapshot_nifty_it.json snapshot_nifty_pharma.json snapshot_nifty_auto.json snapshot_nifty_midcap.json snapshot_picks_all.json"
-          OPTIONAL="snapshot_all_nse.json"
+          OPTIONAL="snapshot_all_nse.json snapshot_intraday.json"
           MISSING=""
           for f in $REQUIRED; do
             if [ ! -s "static/data/$f" ]; then MISSING="$MISSING $f"; fi

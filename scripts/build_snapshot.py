@@ -36,7 +36,7 @@ os.environ.pop('PUBLIC_MODE', None)
 
 # Now import the app (this loads everything including the screener logic)
 print('Loading Centaur Prism app modules...')
-from app import app, _screener_impl, _long_term_picks_impl
+from app import app, _screener_impl, _long_term_picks_impl, _intraday_signals_impl
 
 OUT_DIR = PROJ_ROOT / 'static' / 'data'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -120,6 +120,40 @@ def build_picks_snapshot(index_filter='all'):
     return True
 
 
+def build_intraday_snapshot():
+    """Pre-computes the intraday signals payload (pivots, index bias, setups)
+    so the live endpoint can fall back to a static file when yfinance is
+    blocked on cloud IPs (the common Fly/Render case)."""
+    print(f'\n=== Building intraday signals snapshot ===')
+    t0 = time.time()
+    with app.test_request_context('/api/intraday_signals'):
+        resp = _intraday_signals_impl()
+        try:
+            data = resp.get_json()
+        except Exception as e:
+            print(f'  ERROR: could not parse intraday response: {e}')
+            return False
+
+    if not isinstance(data, dict) or 'setups' not in data:
+        print(f'  ERROR: intraday returned unexpected shape: {str(data)[:200]}')
+        return False
+
+    payload = {
+        'generated_at':      int(time.time()),
+        'generated_at_iso':  datetime.now(timezone.utc).isoformat(),
+        'source':            'build_snapshot.py',
+        'data':              data,
+    }
+    out_path = OUT_DIR / 'snapshot_intraday.json'
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, indent=2, default=str)
+
+    size_kb = out_path.stat().st_size / 1024
+    elapsed = time.time() - t0
+    print(f'  OK -> {out_path.name} | {len(data.get("setups",[]))} setups | {size_kb:.1f} KB | {elapsed:.1f}s')
+    return True
+
+
 def write_index_manifest(snapshots):
     """Single file listing every snapshot built — handy for the frontend."""
     manifest = {
@@ -183,6 +217,18 @@ def main():
                 })
         except Exception as e:
             print(f'  FAIL picks: {e}')
+
+    # Intraday snapshot — pre-computes pivots + setups so the live endpoint
+    # has a fallback when yfinance is blocked on cloud IPs.
+    try:
+        if build_intraday_snapshot():
+            built.append({
+                'kind':  'intraday',
+                'index': 'all',
+                'file':  'snapshot_intraday.json',
+            })
+    except Exception as e:
+        print(f'  FAIL intraday: {e}')
 
     write_index_manifest(built)
     print(f'\nDone. {len(built)} snapshots built.')
