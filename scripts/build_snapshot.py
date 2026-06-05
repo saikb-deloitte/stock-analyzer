@@ -148,6 +148,11 @@ def main():
             'NIFTY Pharma',
             'NIFTY Auto',
             'NIFTY Midcap',
+            # ALL NSE = bhavcopy-derived top ~300 liquid stocks. Heaviest
+            # build (~5-8 min via GitHub Actions runner where yfinance is
+            # unblocked). Put last so a failure here doesn't kill the
+            # index-specific snapshots.
+            'ALL NSE',
         ]
     else:
         indices = [s.strip() for s in args.indices.split(',') if s.strip()]

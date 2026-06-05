@@ -27,7 +27,9 @@ jobs:
   snapshot:
     name: Build & commit snapshot JSON
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # Was 25 — bumped for ALL NSE (~300 stocks, adds 5-8 min on top
+    # of the ~5 min for the six small indices)
+    timeout-minutes: 40
     concurrency: snapshot-group   # one snapshot at a time
 
     steps:
@@ -56,13 +58,14 @@ jobs:
           PYTHONUNBUFFERED: '1'
 
       - name: Verify snapshot files produced
-        # Fail loudly if the build step "succeeded" but produced no JSON.
-        # Previously a silent script crash mid-loop could result in stale
-        # files staying on disk + no commit ever being made.
+        # Fail loudly if the build step "succeeded" but produced no JSON
+        # for any REQUIRED file. ALL NSE is best-effort (300 stocks, can
+        # transiently fail without blocking the rest).
         run: |
           echo "=== static/data/ contents after build ==="
           ls -la static/data/*.json
           REQUIRED="snapshot_nifty_50.json snapshot_nifty_bank.json snapshot_nifty_it.json snapshot_nifty_pharma.json snapshot_nifty_auto.json snapshot_nifty_midcap.json snapshot_picks_all.json"
+          OPTIONAL="snapshot_all_nse.json"
           MISSING=""
           for f in $REQUIRED; do
             if [ ! -s "static/data/$f" ]; then MISSING="$MISSING $f"; fi
@@ -71,8 +74,13 @@ jobs:
             echo "::error::Missing or empty snapshot files:$MISSING"
             exit 1
           fi
-          # Check freshness: every file should have been modified in this run.
-          # If a build silently crashed and left old files, mtime would be old.
+          # Report on optional files (warn but don't fail)
+          for f in $OPTIONAL; do
+            if [ ! -s "static/data/$f" ]; then
+              echo "::warning::Optional snapshot missing: $f (ALL NSE bhavcopy run may have been slow)"
+            fi
+          done
+          # Check freshness: required files should have mtime in this run.
           NOW=$(date +%s)
           for f in $REQUIRED; do
             MTIME=$(stat -c %Y "static/data/$f")
