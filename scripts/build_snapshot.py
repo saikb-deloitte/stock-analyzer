@@ -36,7 +36,7 @@ os.environ.pop('PUBLIC_MODE', None)
 
 # Now import the app (this loads everything including the screener logic)
 print('Loading Centaur Prism app modules...')
-from app import app, _screener_impl, _long_term_picks_impl, _intraday_signals_impl
+from app import app, _screener_impl, _long_term_picks_impl, _intraday_signals_impl, _detect_market_regime
 
 OUT_DIR = PROJ_ROOT / 'static' / 'data'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -117,6 +117,39 @@ def build_picks_snapshot(index_filter='all'):
     size_kb = out_path.stat().st_size / 1024
     elapsed = time.time() - t0
     print(f'  OK -> {out_path.name} | {data.get("total_picks", 0)} picks | {size_kb:.1f} KB | {elapsed:.1f}s')
+    return True
+
+
+def build_regime_snapshot():
+    """Compute ADX-based market regime from NIFTY 50 daily bars and persist
+    so the live app can fall back to this when yfinance index endpoints are
+    blocked from cloud IPs (the standard Fly/Render scenario)."""
+    print(f'\n=== Building market regime snapshot ===')
+    t0 = time.time()
+    # Clear in-memory cache so we compute fresh
+    from app import _cache
+    _cache.pop('market_regime:v1', None)
+    try:
+        regime = _detect_market_regime()
+    except Exception as e:
+        print(f'  ERROR: regime computation failed: {e}')
+        return False
+
+    if not regime or regime.get('kind') == 'UNKNOWN':
+        print(f'  WARN: regime returned UNKNOWN — {regime.get("reason","")}')
+        return False
+
+    payload = {
+        'generated_at':     int(time.time()),
+        'generated_at_iso': datetime.now(timezone.utc).isoformat(),
+        'source':           'build_snapshot.py',
+        'regime':           regime,
+    }
+    out_path = OUT_DIR / 'snapshot_regime.json'
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, indent=2, default=str)
+    elapsed = time.time() - t0
+    print(f'  OK -> {out_path.name} | {regime["kind"]} (ADX {regime.get("adx")}, dir {regime.get("direction")}) | {elapsed:.1f}s')
     return True
 
 
@@ -217,6 +250,19 @@ def main():
                 })
         except Exception as e:
             print(f'  FAIL picks: {e}')
+
+    # Regime snapshot — ADX-based NIFTY 50 trend classification. Built first
+    # since the intraday snapshot also uses it (avoid the live live call
+    # double-firing during the same workflow run).
+    try:
+        if build_regime_snapshot():
+            built.append({
+                'kind':  'regime',
+                'index': 'NIFTY 50',
+                'file':  'snapshot_regime.json',
+            })
+    except Exception as e:
+        print(f'  FAIL regime: {e}')
 
     # Intraday snapshot — pre-computes pivots + setups so the live endpoint
     # has a fallback when yfinance is blocked on cloud IPs.

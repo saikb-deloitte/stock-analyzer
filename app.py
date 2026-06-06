@@ -4572,6 +4572,11 @@ def _detect_market_regime():
       MIXED    → trade smaller, expect whipsaws
 
     Result cached 1 hour — regime doesn't shift hourly intraday.
+
+    Resilience chain:
+      1. In-memory cache (1h)
+      2. yf.Ticker('^NSEI').history — fails on Fly cloud IPs (Yahoo bot detection)
+      3. Snapshot file (static/data/snapshot_regime.json, built daily)
     """
     cache_key = 'market_regime:v1'
     cached = get_cached(cache_key, ttl=3600)
@@ -4580,7 +4585,8 @@ def _detect_market_regime():
     try:
         df = yf.Ticker('^NSEI').history(period='6mo')
         if df is None or df.empty or len(df) < 30:
-            return {'kind': 'UNKNOWN', 'adx': None, 'reason': 'No NIFTY data'}
+            # Fall through to snapshot fallback
+            raise RuntimeError('NIFTY data unavailable from Yahoo')
         df = df.dropna(subset=['Close', 'High', 'Low'])
         # calculate_adx returns (adx, plus_di, minus_di)
         adx_series, plus_di_series, minus_di_series = calculate_adx(df, 14)
@@ -4611,8 +4617,24 @@ def _detect_market_regime():
         set_cached(cache_key, result, ttl=3600)
         return result
     except Exception as e:
-        print(f'  [regime] detect failed: {e}')
-        return {'kind': 'UNKNOWN', 'adx': None, 'reason': f'Error: {e}'}
+        print(f'  [regime] live detect failed: {e} — trying snapshot')
+        # Fallback: load the snapshot file (built daily by GitHub Actions
+        # runner where yfinance works fine).
+        try:
+            path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'snapshot_regime.json')
+            if os.path.exists(path):
+                with open(path, encoding='utf-8') as f:
+                    snap = json.load(f)
+                regime = snap.get('regime') or {}
+                if regime.get('kind'):
+                    # Mark as snapshot-sourced so UI can show staleness
+                    regime['source']        = 'snapshot'
+                    regime['snapshot_iso']  = snap.get('generated_at_iso')
+                    set_cached(cache_key, regime, ttl=3600)
+                    return regime
+        except Exception as snap_e:
+            print(f'  [regime] snapshot fallback also failed: {snap_e}')
+        return {'kind': 'UNKNOWN', 'adx': None, 'reason': f'Live + snapshot both unavailable: {e}'}
 
 
 def _load_setup_backtest_stats():
