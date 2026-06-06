@@ -4442,9 +4442,66 @@ def _intraday_signals_impl():
             except Exception as e:
                 print(f'  [intraday {futures[fut]}] future timed out: {e}')
 
-    # Sort by conviction desc, cap to top 12
+    # ── 2.5 Regime detection (NIFTY 50 ADX) ──
+    # ADX > 25 = trending, 20-25 = mixed, < 20 = ranging.
+    # In trending markets: favor trend-continuation + breakout setups.
+    # In ranging markets:  favor mean-reversion (oversold-bounce) setups.
+    regime = _detect_market_regime()
+
+    # ── 2.6 Load backtest stats EARLY so we can adjust conviction ──
+    backtest_stats = _load_setup_backtest_stats()
+
+    # ── 2.7 Adjust conviction by measured backtest profitability ──
+    # The most important honesty upgrade: my heuristic score gets multiplied
+    # by how profitable that setup type ACTUALLY is over 2 years of data.
+    # A losing setup gets aggressive downweight + warning flag.
+    for s in setups:
+        original = s.get('conviction', 0)
+        s['conviction_raw'] = original
+        bt = backtest_stats.get('by_setup_type', {}).get(s.get('type'))
+        if bt:
+            avg_r = bt.get('avg_r') or 0
+            # Profitability tier multiplier
+            if avg_r >= 0.05:    mult, tier = 1.10, 'PROFITABLE'    # boost meaningful winners
+            elif avg_r >= 0:     mult, tier = 1.00, 'MARGINAL'      # neutral
+            elif avg_r >= -0.05: mult, tier = 0.70, 'LOSING'        # demote losers
+            elif avg_r >= -0.20: mult, tier = 0.45, 'BAD'           # heavy demote
+            else:                mult, tier = 0.25, 'DISASTER'      # near-zero out
+        else:
+            mult, tier = 1.0, 'UNKNOWN'
+
+        # Regime adjustment — modest +/- 5 based on setup-vs-regime fit
+        regime_adj = 0
+        rk = regime.get('kind', 'MIXED')
+        stype = s.get('type', '')
+        if rk == 'TRENDING' and stype in ('TREND_CONTINUATION', 'NEW_HIGH_MOMENTUM', 'BREAKOUT_WATCH'):
+            regime_adj = 5
+        elif rk == 'RANGING' and stype == 'OVERSOLD_BOUNCE':
+            regime_adj = 5
+        elif rk == 'TRENDING' and stype == 'OVERSOLD_BOUNCE':
+            regime_adj = -5    # mean-reversion in trending market = fade losers
+        elif rk == 'RANGING' and stype in ('TREND_CONTINUATION', 'NEW_HIGH_MOMENTUM'):
+            regime_adj = -5    # trend setups in chop = whipsaw city
+
+        adjusted = max(0, min(100, int(round(original * mult + regime_adj))))
+        s['conviction']        = adjusted
+        s['conviction_tier']   = tier
+        s['conviction_factor'] = round(mult, 2)
+        s['regime_adj']        = regime_adj
+
+    # ── 2.8 Sector concentration cap (max 2 setups per sector) ──
+    # Prevents the user from going 5x long banking — diversification by force.
     setups.sort(key=lambda x: x.get('conviction', 0), reverse=True)
-    setups = setups[:12]
+    sector_counts = {}
+    capped = []
+    MAX_PER_SECTOR = 2
+    for s in setups:
+        sec = s.get('sector') or '__other__'
+        if sector_counts.get(sec, 0) >= MAX_PER_SECTOR:
+            continue
+        sector_counts[sec] = sector_counts.get(sec, 0) + 1
+        capped.append(s)
+    setups = capped[:12]   # final cap on top-N
 
     # ── 3. Market summary ──
     nifty_card = next((c for c in index_cards if c['name'] == 'NIFTY 50'), None)
@@ -4455,6 +4512,7 @@ def _intraday_signals_impl():
 
     market_summary = {
         'bias':          bias_summary,
+        'regime':        regime,
         'long_signals':  long_count,
         'short_signals': short_count,
         'top_sectors':   top_sectors,
@@ -4478,11 +4536,8 @@ def _intraday_signals_impl():
         ),
     }
 
-    # Load backtest stats (computed offline by scripts/backtest_setups.py,
-    # surfaced as snapshot_setup_backtest.json). Lets the UI show measured
-    # win-rates next to my heuristic conviction.
-    backtest_stats = _load_setup_backtest_stats()
-    # Annotate each setup with its measured historical edge
+    # Annotate each setup with its measured historical edge for the UI.
+    # (backtest_stats was loaded earlier in this fn for conviction weighting.)
     for s in setups:
         bt = backtest_stats.get('by_setup_type', {}).get(s.get('type'))
         if bt:
@@ -4506,6 +4561,58 @@ def _intraday_signals_impl():
     }
     set_cached(cache_key, result, ttl=900)
     return jsonify(result)
+
+
+def _detect_market_regime():
+    """ADX-based regime detection on NIFTY 50 daily bars.
+    ADX > 25 = clear trend; 20-25 = mixed; < 20 = ranging/choppy.
+    A regime tells you which setups to favor:
+      TRENDING → trend continuation + breakouts work, fade mean-reversion
+      RANGING  → fade extremes (oversold bounce, overbought sell) works
+      MIXED    → trade smaller, expect whipsaws
+
+    Result cached 1 hour — regime doesn't shift hourly intraday.
+    """
+    cache_key = 'market_regime:v1'
+    cached = get_cached(cache_key, ttl=3600)
+    if cached:
+        return cached
+    try:
+        df = yf.Ticker('^NSEI').history(period='6mo')
+        if df is None or df.empty or len(df) < 30:
+            return {'kind': 'UNKNOWN', 'adx': None, 'reason': 'No NIFTY data'}
+        df = df.dropna(subset=['Close', 'High', 'Low'])
+        # calculate_adx returns (adx, plus_di, minus_di)
+        adx_series, plus_di_series, minus_di_series = calculate_adx(df, 14)
+        adx_val  = float(adx_series.iloc[-1])
+        plus_di  = float(plus_di_series.iloc[-1])
+        minus_di = float(minus_di_series.iloc[-1])
+        # ADX value → regime
+        if adx_val >= 25:
+            kind, reason = 'TRENDING', f'ADX {adx_val:.1f} — strong directional trend in force'
+            playbook = 'Favor trend-continuation + breakout setups. Avoid counter-trend bounces (will get steamrolled).'
+        elif adx_val >= 20:
+            kind, reason = 'MIXED', f'ADX {adx_val:.1f} — weak trend, possible regime shift'
+            playbook = 'Trade smaller. Both trend and mean-reversion setups have lower edge than usual.'
+        else:
+            kind, reason = 'RANGING', f'ADX {adx_val:.1f} — no trend, oscillating market'
+            playbook = 'Favor oversold-bounce setups. Avoid breakouts (most will fail / be whipsaws).'
+        direction = 'UP' if plus_di > minus_di else 'DOWN'
+
+        result = {
+            'kind':       kind,
+            'direction':  direction,
+            'adx':        round(adx_val, 1),
+            'plus_di':    round(plus_di, 1),
+            'minus_di':   round(minus_di, 1),
+            'reason':     reason,
+            'playbook':   playbook,
+        }
+        set_cached(cache_key, result, ttl=3600)
+        return result
+    except Exception as e:
+        print(f'  [regime] detect failed: {e}')
+        return {'kind': 'UNKNOWN', 'adx': None, 'reason': f'Error: {e}'}
 
 
 def _load_setup_backtest_stats():

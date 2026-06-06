@@ -632,6 +632,16 @@
   .isc-live-pulse { width: 8px; height: 8px; border-radius: 50%; animation: livePulse 2s ease-in-out infinite; flex-shrink: 0; margin-left: 10px; }
   @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
+  /* Conviction tier banner (PROFITABLE / LOSING / BAD / DISASTER) */
+  .isc-tier-profitable, .isc-tier-losing, .isc-tier-bad, .isc-tier-disaster {
+    margin-top: 6px; padding: 4px 8px; border-radius: 4px; font-size: 10px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .isc-tier-profitable { background: rgba(105,240,174,0.15); color: #69f0ae; border-left: 3px solid #69f0ae; }
+  .isc-tier-losing     { background: rgba(255,145,0,0.15);  color: #ff9100; border-left: 3px solid #ff9100; }
+  .isc-tier-bad        { background: rgba(248,81,73,0.15);  color: #f85149; border-left: 3px solid #f85149; }
+  .isc-tier-disaster   { background: rgba(248,81,73,0.25);  color: #f85149; border-left: 3px solid #f85149; font-weight: 800; }
+
   /* Backtest badge inside setup card */
   .isc-bt { margin-top: 8px; padding: 8px 10px; border: 1px solid; border-radius: 6px; }
   .isc-bt-h { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
@@ -5197,21 +5207,29 @@ function renderIntradayView(d) {
   const topSector = (ms.top_sectors[0] || {}).sector || '—';
   const botSector = (ms.bot_sectors[0] || {}).sector || '—';
 
+  // Regime card (replaces a generic stat with something actionable)
+  const regime = ms.regime || {};
+  const regimeKind = regime.kind || 'UNKNOWN';
+  const regimeColorMap = { TRENDING: '#69f0ae', MIXED: '#ffd740', RANGING: '#7dd3fc', UNKNOWN: 'var(--text-muted)' };
+  const regimeColor = regimeColorMap[regimeKind];
+  const regimeIcon = regimeKind === 'TRENDING' ? '📈' : (regimeKind === 'RANGING' ? '↔' : (regimeKind === 'MIXED' ? '🌀' : '·'));
+  const regimeDir = regime.direction ? ` ${regime.direction === 'UP' ? '↑' : '↓'}` : '';
+
   document.getElementById('intra-summary').innerHTML = `
     <div class="is-stat ${biasClass}">
       <div class="iss-num">${biasIcon} ${ms.bias}</div>
       <div class="iss-lbl">Market Bias</div>
       <div class="iss-sub">NIFTY 50 structure</div>
     </div>
-    <div class="is-stat bullish">
-      <div class="iss-num">${ms.long_signals}</div>
-      <div class="iss-lbl">Long Setups</div>
-      <div class="iss-sub">High conviction</div>
+    <div class="is-stat" title="${regime.playbook || ''}">
+      <div class="iss-num" style="color:${regimeColor};font-size:16px;">${regimeIcon} ${regimeKind}${regimeDir}</div>
+      <div class="iss-lbl">Regime · ADX ${regime.adx ?? '—'}</div>
+      <div class="iss-sub">${regime.reason || ''}</div>
     </div>
-    <div class="is-stat bearish">
-      <div class="iss-num">${ms.short_signals}</div>
-      <div class="iss-lbl">Short Setups</div>
-      <div class="iss-sub">F&amp;O eligible</div>
+    <div class="is-stat bullish">
+      <div class="iss-num">${ms.long_signals} <span style="color:#f85149;font-size:14px;">/ ${ms.short_signals}</span></div>
+      <div class="iss-lbl">Long / Short</div>
+      <div class="iss-sub">After backtest weighting + sector cap</div>
     </div>
     <div class="is-stat">
       <div class="iss-num" style="font-size:14px;line-height:1.2;">${topSector}</div>
@@ -5289,11 +5307,17 @@ function renderIntradayView(d) {
           <span class="isc-live-spinner"><i class="fa fa-circle-notch fa-spin"></i> Fetching live quote…</span>
         </div>
 
-        <div class="isc-conv-bar">
-          <span style="font-size:10px;color:var(--text-muted);">My conviction</span>
+        <div class="isc-conv-bar" title="Heuristic conviction adjusted by historical profitability${s.regime_adj ? ' + regime fit' : ''}">
+          <span style="font-size:10px;color:var(--text-muted);">Conviction</span>
           <div class="isc-conv-track"><div class="isc-conv-fill" style="width:${convPct}%;"></div></div>
-          <span class="isc-conv-num">${s.conviction}/100</span>
+          <span class="isc-conv-num">${s.conviction}/100${s.conviction_raw && s.conviction_raw !== s.conviction ? ` <span style="color:var(--text-muted);font-weight:500;font-size:10px;">(raw ${s.conviction_raw})</span>` : ''}</span>
         </div>
+        ${(s.conviction_tier && s.conviction_tier !== 'UNKNOWN' && s.conviction_tier !== 'MARGINAL') ? `
+          <div class="isc-tier-${s.conviction_tier.toLowerCase()}">
+            ${s.conviction_tier === 'PROFITABLE' ? '✓' : '⚠'} ${s.conviction_tier} setup type
+            ${s.conviction_factor ? ` · ${s.conviction_factor}× weight` : ''}
+            ${s.regime_adj ? ` · regime ${s.regime_adj > 0 ? '+' : ''}${s.regime_adj}` : ''}
+          </div>` : ''}
         ${btBadge}
         <div class="isc-levels">
           <div class="isc-lvl entry"><div class="iscl-l">Entry</div><div class="iscl-v">₹${s.entry_zone[0]}<br>₹${s.entry_zone[1]}</div></div>
