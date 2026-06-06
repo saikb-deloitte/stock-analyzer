@@ -37,7 +37,7 @@ os.environ.pop('PUBLIC_MODE', None)
 print('Loading Centaur Prism app...')
 from app import (
     app, fetch_history, calculate_rsi, calculate_atr,
-    _build_intraday_setup, NSE_FNO_STOCKS,
+    _build_intraday_setup, calculate_mtf_alignment, NSE_FNO_STOCKS,
 )
 
 OUT_DIR = PROJ_ROOT / 'static' / 'data'
@@ -145,7 +145,17 @@ def backtest_one_stock(ticker, lookback=LOOKBACK_DAYS):
         # Synthesize a minimal screener-style row (we don't have sector score here)
         row = {'ticker': ticker, 'name': ticker, 'sector': ''}
         try:
-            setup = _build_intraday_setup(row, df_slice, sector_strength=None)
+            # Compute MTF alignment from the historical slice (matches what
+            # live code does). 5m data isn't available for old dates so we
+            # pass None — new 5m setups (VWAP/ORB/GapFade) won't fire in
+            # backtest, but daily-bar setups (Pivot Bounce, BB Squeeze) will.
+            mtf = None
+            try:
+                mtf = calculate_mtf_alignment(df_slice)
+            except Exception:
+                pass
+            setup = _build_intraday_setup(row, df_slice, sector_strength=None,
+                                          regime=None, mtf=mtf, df_5m=None)
         except Exception:
             continue
         if setup is None:

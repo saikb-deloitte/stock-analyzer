@@ -632,6 +632,18 @@
   .isc-live-pulse { width: 8px; height: 8px; border-radius: 50%; animation: livePulse 2s ease-in-out infinite; flex-shrink: 0; margin-left: 10px; }
   @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
+  /* MTF (multi-timeframe) alignment dots */
+  .isc-mtf { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 8px; background: var(--bg-elevated); border-radius: 6px; font-size: 10px; }
+  .isc-mtf-h { color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+  .isc-mtf-dots { display: inline-flex; align-items: center; gap: 3px; }
+  .isc-mtf-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .isc-mtf-lbl { color: var(--text-muted); font-size: 8px; margin-right: 3px; }
+  .isc-mtf-stat { margin-left: auto; font-weight: 700; font-size: 10px; }
+
+  /* Intraday context strip (VWAP / Opening Range) */
+  .isc-intra-ctx { margin-top: 4px; padding: 4px 8px; background: rgba(125,211,252,0.08); border-left: 2px solid #7dd3fc; border-radius: 4px; font-size: 10px; color: var(--text-secondary); display: flex; gap: 8px; flex-wrap: wrap; }
+  .isc-intra-ctx strong { color: #7dd3fc; }
+
   /* Conviction tier banner (PROFITABLE / LOSING / BAD / DISASTER) */
   .isc-tier-profitable, .isc-tier-losing, .isc-tier-bad, .isc-tier-disaster {
     margin-top: 6px; padding: 4px 8px; border-radius: 4px; font-size: 10px;
@@ -5312,6 +5324,8 @@ function renderIntradayView(d) {
           <div class="isc-conv-track"><div class="isc-conv-fill" style="width:${convPct}%;"></div></div>
           <span class="isc-conv-num">${s.conviction}/100${s.conviction_raw && s.conviction_raw !== s.conviction ? ` <span style="color:var(--text-muted);font-weight:500;font-size:10px;">(raw ${s.conviction_raw})</span>` : ''}</span>
         </div>
+        ${renderMtfDots(s.mtf, s.side)}
+        ${(s.vwap || s.or_high) ? renderIntraContext(s) : ''}
         ${(s.conviction_tier && s.conviction_tier !== 'UNKNOWN' && s.conviction_tier !== 'MARGINAL') ? `
           <div class="isc-tier-${s.conviction_tier.toLowerCase()}">
             ${s.conviction_tier === 'PROFITABLE' ? '✓' : '⚠'} ${s.conviction_tier} setup type
@@ -5383,6 +5397,53 @@ function renderIntradayView(d) {
 }
 
 // ── Backtest badge per card (real measured win rate of this setup type) ──
+// ── MTF Alignment dots (Phase 2.3) ──
+// Renders 4 colored dots — one per EMA timeframe (5d / 20d / 50d / 200d) —
+// showing whether price is above (green dot = bullish) or below (red dot).
+function renderMtfDots(mtf, setupSide) {
+  if (!mtf) return '';
+  const details = mtf.details || {};
+  const order = [
+    { key: 'ema5',   label: '5D'  },
+    { key: 'ema20',  label: '20D' },
+    { key: 'ema50',  label: '50D' },
+    { key: 'ema200', label: '200D' },
+  ];
+  const dots = order.map(({ key, label }) => {
+    const above = details[key] === 'above';
+    const color = above ? '#69f0ae' : '#f85149';
+    return `<span class="isc-mtf-dot" style="background:${color};" title="Price ${above ? 'above' : 'below'} ${label} EMA (₹${mtf.emas[key]})"></span><span class="isc-mtf-lbl">${label}</span>`;
+  }).join('');
+  const score = mtf.score; // -4 to +4
+  const aligned = (setupSide === 'LONG' && mtf.bias === 'LONG')
+                || (setupSide === 'SHORT' && mtf.bias === 'SHORT');
+  const status = aligned ? '✓ aligned with setup' : (mtf.bias === 'NEUTRAL' ? 'mixed' : '⚠ against setup');
+  const statusColor = aligned ? '#69f0ae' : (mtf.bias === 'NEUTRAL' ? '#ffd740' : '#f85149');
+  return `
+    <div class="isc-mtf">
+      <span class="isc-mtf-h">Multi-TF</span>
+      <span class="isc-mtf-dots">${dots}</span>
+      <span class="isc-mtf-stat" style="color:${statusColor};">${status}</span>
+    </div>`;
+}
+
+// ── Intraday context strip (VWAP / Opening Range when available) ──
+function renderIntraContext(s) {
+  const bits = [];
+  if (s.vwap != null) {
+    const dist = s.vwap_dist_pct;
+    const distStr = dist != null ? ` (${dist >= 0 ? '+' : ''}${dist}%)` : '';
+    const distColor = (dist == null) ? 'var(--text-muted)' : (Math.abs(dist) < 0.3 ? '#69f0ae' : 'var(--text-secondary)');
+    bits.push(`<span><strong>VWAP</strong> ₹${s.vwap}<span style="color:${distColor};">${distStr}</span></span>`);
+  }
+  if (s.or_high != null && s.or_low != null) {
+    const complete = s.or_complete ? '✓' : '⏳';
+    bits.push(`<span><strong>OR</strong> ${complete} ₹${s.or_low}–${s.or_high}</span>`);
+  }
+  if (!bits.length) return '';
+  return `<div class="isc-intra-ctx">${bits.join(' · ')}</div>`;
+}
+
 function renderBacktestBadge(bt) {
   const wr = bt.win_rate_pct;
   const pf = bt.profit_factor;

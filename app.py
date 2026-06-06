@@ -4048,9 +4048,184 @@ def _intraday_index_card(symbol, display_name):
         return None
 
 
-def _build_intraday_setup(row, df, sector_strength=None):
-    """Given a screener row + its daily OHLC dataframe, evaluate ALL 5 setups
-    and return the best (highest conviction) setup, or None if no setup fires."""
+# ════════════════════════════════════════════════════════════════════════════
+# INTRADAY v2 — 5-minute candle infrastructure (Phase 1.1)
+# yfinance supports interval='5m' for the last 7 days (free).
+# These bars unlock real intraday setups (VWAP, ORB, gap fade, etc.) instead
+# of the daily-bar approximations the v1 setups used.
+# ════════════════════════════════════════════════════════════════════════════
+
+def fetch_intraday_5m(ticker, lookback_days=2):
+    """Fetch 5-minute OHLCV bars for the last `lookback_days` trading days.
+    Cached for 5 minutes (5m bars don't change inside a 5m window anyway).
+    Returns DataFrame or None."""
+    sym = ticker if ticker.endswith('.NS') else ticker + '.NS'
+    cache_key = f'5m:{sym}:{lookback_days}'
+    cached = get_cached(cache_key, ttl=300)
+    if cached is not None:
+        return cached
+    try:
+        period = f'{lookback_days}d' if lookback_days <= 7 else '7d'
+        df = yf.Ticker(sym).history(period=period, interval='5m')
+        if df is None or df.empty:
+            return None
+        df = df.dropna(subset=['Close', 'High', 'Low'])
+        if df.empty:
+            return None
+        set_cached(cache_key, df, ttl=300)
+        return df
+    except Exception as e:
+        print(f'  [5m {sym}] fetch failed: {e}')
+        return None
+
+
+def calculate_vwap_5m(df_5m):
+    """Session-anchored VWAP: cumulative (typical_price × volume) / cumulative volume,
+    reset each trading session. Returns a series aligned with df_5m index."""
+    if df_5m is None or df_5m.empty:
+        return None
+    # Group by trading date (IST) — VWAP resets at session open
+    typical = (df_5m['High'] + df_5m['Low'] + df_5m['Close']) / 3
+    pv = typical * df_5m['Volume']
+    # Trading date in IST — yfinance returns timestamps in market timezone (Asia/Kolkata for .NS)
+    try:
+        dates = df_5m.index.tz_convert('Asia/Kolkata').date
+    except Exception:
+        dates = df_5m.index.date
+    import pandas as _pd
+    grp = _pd.Series(dates, index=df_5m.index)
+    pv_cum  = pv.groupby(grp).cumsum()
+    vol_cum = df_5m['Volume'].groupby(grp).cumsum()
+    return pv_cum / vol_cum.replace(0, float('nan'))
+
+
+def calculate_opening_range_5m(df_5m, range_minutes=15):
+    """Opening Range = 9:15-9:30 IST high/low (default 15-min OR).
+    Returns dict with 'high', 'low', 'session_start' for the LAST trading day."""
+    if df_5m is None or df_5m.empty:
+        return None
+    try:
+        idx_ist = df_5m.index.tz_convert('Asia/Kolkata')
+    except Exception:
+        idx_ist = df_5m.index
+    import pandas as _pd
+    df = df_5m.copy()
+    df['ist_date'] = idx_ist.date
+    df['ist_time'] = idx_ist.time
+    # Last trading day in the data
+    last_date = df['ist_date'].iloc[-1]
+    day_df = df[df['ist_date'] == last_date]
+    if day_df.empty:
+        return None
+    # Filter to 9:15-9:15+range_minutes (i.e., first 3 5m bars for 15-min OR)
+    from datetime import time as _time
+    range_end = _time(9, 15 + range_minutes - 1, 59)
+    or_bars = day_df[day_df['ist_time'] <= range_end]
+    or_bars = or_bars[or_bars['ist_time'] >= _time(9, 15)]
+    if or_bars.empty:
+        return None
+    return {
+        'high':          round(float(or_bars['High'].max()), 2),
+        'low':           round(float(or_bars['Low'].min()), 2),
+        'range_minutes': range_minutes,
+        'bars':          len(or_bars),
+        'complete':      len(or_bars) >= (range_minutes // 5),
+    }
+
+
+def calculate_bb_squeeze(df, period=20, std_mult=2.0):
+    """Bollinger Band width over time + 'is currently squeezing' boolean.
+    Squeeze = BB width at 20-day minimum (low volatility before expansion)."""
+    if df is None or df.empty or len(df) < period + 5:
+        return None
+    close = df['Close']
+    sma = close.rolling(period).mean()
+    std = close.rolling(period).std()
+    upper = sma + std_mult * std
+    lower = sma - std_mult * std
+    width = (upper - lower) / sma * 100   # width as % of mean
+    if len(width.dropna()) < period:
+        return None
+    curr_w = float(width.iloc[-1])
+    min_w  = float(width.tail(period).min())
+    is_squeeze = curr_w <= min_w * 1.02   # within 2% of 20-day min width
+    return {
+        'curr_width_pct': round(curr_w, 2),
+        'min_width_pct':  round(min_w, 2),
+        'is_squeeze':     is_squeeze,
+        'upper':          round(float(upper.iloc[-1]), 2) if not _np_isnan(upper.iloc[-1]) else None,
+        'lower':          round(float(lower.iloc[-1]), 2) if not _np_isnan(lower.iloc[-1]) else None,
+        'middle':         round(float(sma.iloc[-1]), 2),
+    }
+
+
+def _np_isnan(v):
+    """Safe NaN check that works with both Python floats and numpy NaN."""
+    try:
+        import math
+        return math.isnan(float(v))
+    except Exception:
+        return True
+
+
+def calculate_mtf_alignment(df_daily):
+    """Multi-timeframe alignment score using daily EMA stack as proxy for
+    actual 5m/15m/1h/1d timeframes (those would need separate fetches we
+    don't want to make 40× in a single API call).
+
+    EMA(5) = roughly weekly trend (short-term momentum)
+    EMA(20) = monthly trend (intermediate)
+    EMA(50) = quarterly trend (medium)
+    EMA(200) = yearly trend (long-term)
+
+    Returns:
+      bias: 'LONG' if 3-4 EMAs below price, 'SHORT' if 3-4 above, else 'NEUTRAL'
+      score: -4 to +4 (positive = bullish stack, negative = bearish)
+      details: per-EMA direction for UI display
+    """
+    if df_daily is None or df_daily.empty or len(df_daily) < 200:
+        return None
+    close = df_daily['Close']
+    curr = float(close.iloc[-1])
+    if _np_isnan(curr):
+        return None
+    emas = {
+        'ema5':   float(close.ewm(span=5,   adjust=False).mean().iloc[-1]),
+        'ema20':  float(close.ewm(span=20,  adjust=False).mean().iloc[-1]),
+        'ema50':  float(close.ewm(span=50,  adjust=False).mean().iloc[-1]),
+        'ema200': float(close.ewm(span=200, adjust=False).mean().iloc[-1]),
+    }
+    above_count = sum(1 for v in emas.values() if curr > v)
+    score = above_count - (4 - above_count)   # -4..+4
+
+    if above_count >= 3:    bias = 'LONG'
+    elif above_count <= 1:  bias = 'SHORT'
+    else:                   bias = 'NEUTRAL'
+
+    return {
+        'bias':    bias,
+        'score':   score,                          # -4 (max bearish) to +4 (max bullish)
+        'above':   above_count,                    # how many of 4 EMAs price is above
+        'details': {k: ('above' if curr > v else 'below') for k, v in emas.items()},
+        'emas':    {k: round(v, 2) for k, v in emas.items()},
+        'curr':    round(curr, 2),
+    }
+
+
+def _build_intraday_setup(row, df, sector_strength=None, regime=None, mtf=None, df_5m=None):
+    """Given a screener row + its daily OHLC dataframe, evaluate ALL setups
+    and return the best (highest conviction) setup, or None if no setup fires.
+
+    v2 additions:
+      - regime: market regime dict from _detect_market_regime() — used to
+        gate mean-reversion setups (OVERSOLD_BOUNCE, BREAKOUT_WATCH) to
+        RANGING markets only (where they actually work).
+      - mtf: multi-timeframe alignment from calculate_mtf_alignment() —
+        adds +5 to long setups in LONG-aligned stocks (or vice versa for
+        shorts). High-alignment setups get a bonus.
+      - df_5m: optional 5-minute bars from fetch_intraday_5m() — enables
+        the new intraday-precise setups (VWAP Rejection, ORB, Gap Fade).
+    """
     if df is None or df.empty or len(df) < 30:
         return None
 
@@ -4118,9 +4293,17 @@ def _build_intraday_setup(row, df, sector_strength=None):
             'confirmations': confirmations,
         }
 
+    # ── Phase 2.4: GATE THE LOSERS ──
+    # Backtest showed OVERSOLD_BOUNCE & BREAKOUT_WATCH lose money in non-ranging
+    # markets. Only fire them when regime is RANGING (where mean-reversion works).
+    regime_kind = (regime or {}).get('kind', 'UNKNOWN')
+    allow_losers = regime_kind == 'RANGING'
+
     # Setup B: Oversold Bounce Long (counter-trend, smaller targets)
+    # GATED to RANGING regime per Phase 2.4
     setup_B = None
-    if (rsi is not None and 25 <= rsi <= 38
+    if (allow_losers
+            and rsi is not None and 25 <= rsi <= 38
             and curr < sma20 and curr > lo20 * 1.005
             and atr_pct is not None and atr_pct >= 1.5):
         conviction = 55
@@ -4142,8 +4325,10 @@ def _build_intraday_setup(row, df, sector_strength=None):
         }
 
     # Setup C: Breakout Watch (within 2% of 20D high)
+    # GATED to RANGING regime per Phase 2.4 (backtest verdict)
     setup_C = None
-    if (curr >= hi20 * 0.98 and curr <= hi20 * 1.005
+    if (allow_losers
+            and curr >= hi20 * 0.98 and curr <= hi20 * 1.005
             and rsi is not None and 55 <= rsi <= 72
             and vol_ratio > 1.2
             and atr_pct is not None and 1.5 <= atr_pct <= 5):
@@ -4218,7 +4403,195 @@ def _build_intraday_setup(row, df, sector_strength=None):
             'confirmations': confirmations,
         }
 
-    candidates = [s for s in [setup_A, setup_B, setup_C, setup_D, setup_E] if s is not None]
+    # ═════════════════════════════════════════════════════════════════════
+    # PHASE 2.1 — Five new setups using 5m data + pivots + BB
+    # ═════════════════════════════════════════════════════════════════════
+
+    # Pull pre-computed extras (passed in by caller for efficiency)
+    # 5m bars enable: VWAP, opening range, gap detection. Fallback to daily-bar
+    # approximation when 5m unavailable (e.g., during snapshot rebuild).
+    vwap_curr = None
+    or_high = or_low = None
+    or_complete = False
+    if df_5m is not None and not df_5m.empty:
+        try:
+            vwap_series = calculate_vwap_5m(df_5m)
+            if vwap_series is not None and not vwap_series.empty:
+                vwap_curr = float(vwap_series.iloc[-1])
+        except Exception:
+            pass
+        try:
+            or_data = calculate_opening_range_5m(df_5m, range_minutes=15)
+            if or_data:
+                or_high = or_data['high']
+                or_low  = or_data['low']
+                or_complete = or_data['complete']
+        except Exception:
+            pass
+
+    # Setup F: VWAP Rejection LONG
+    # Price dips to VWAP on an up trend → bounce setup. Only works when
+    # trend is intact (price above key MAs) AND VWAP is rising.
+    setup_F = None
+    if (vwap_curr is not None and curr > sma20 and sma5 > sma20
+            and abs(curr - vwap_curr) / curr < 0.005   # within 0.5% of VWAP
+            and rsi is not None and 40 <= rsi <= 65
+            and atr_pct is not None and atr_pct >= 1.5):
+        conviction = 65
+        confirmations = [f'Price at VWAP ₹{vwap_curr:.2f} on uptrend',
+                         f'5DMA > 20DMA (trend intact)',
+                         f'RSI {rsi:.0f} (room to run)']
+        if sector_strength is not None and sector_strength >= 55:
+            conviction += 5
+            confirmations.append(f'Sector strength {sector_strength:.0f}/100')
+        setup_F = {
+            'type':        'VWAP_REJECTION',
+            'side':        'LONG',
+            'name_pretty': 'VWAP Pullback Long',
+            'entry_zone':  [round(vwap_curr * 0.999, 2), round(vwap_curr * 1.005, 2)],
+            'stop':        round(vwap_curr - atr * 0.8, 2),
+            'target1':     round(curr + atr * 1.0, 2),
+            'target2':     round(curr + atr * 2.0, 2),
+            'conviction':  min(conviction, 85),
+            'confirmations': confirmations,
+        }
+
+    # Setup G: Opening Range Breakout (ORB) LONG
+    # First 15-min high break with volume = classic NSE intraday edge.
+    # Only valid after 9:30 IST (when OR is complete).
+    setup_G = None
+    if (or_complete and or_high is not None and or_low is not None
+            and curr <= or_high * 1.005   # near the OR high, not far above
+            and curr > or_high * 0.995    # not below
+            and vol_ratio > 1.1
+            and atr_pct is not None and atr_pct >= 1.0):
+        or_range = or_high - or_low
+        conviction = 60
+        confirmations = [f'OR high ₹{or_high} | OR low ₹{or_low}',
+                         f'Range = ₹{or_range:.2f}',
+                         f'Volume {vol_ratio:.1f}× avg']
+        # MTF boost (long bias confirmed by EMA stack)
+        if mtf is not None and mtf.get('bias') == 'LONG':
+            conviction += 8
+            confirmations.append(f'MTF LONG ({mtf["above"]}/4 EMAs)')
+        if sector_strength is not None and sector_strength >= 55:
+            conviction += 5
+            confirmations.append(f'Sector strength {sector_strength:.0f}/100')
+        setup_G = {
+            'type':        'ORB',
+            'side':        'LONG',
+            'name_pretty': 'Opening Range Breakout',
+            'entry_zone':  [round(or_high * 1.001, 2), round(or_high * 1.004, 2)],
+            'stop':        round(or_low, 2),                 # OR low = invalidation
+            'target1':     round(or_high + or_range, 2),     # 1× range above
+            'target2':     round(or_high + 2 * or_range, 2), # 2× range above
+            'conviction':  min(conviction, 85),
+            'confirmations': confirmations,
+        }
+
+    # Setup H: Gap Fade LONG
+    # Gap-down > 1.5% on a fundamentally sound stock → fill rate is ~65% by noon.
+    # Uses today's open vs prior close. Requires 5m data for live open.
+    setup_H = None
+    prev_close = float(close.iloc[-2]) if len(close) >= 2 else None
+    today_open = None
+    if df_5m is not None and not df_5m.empty:
+        try:
+            today_open = float(df_5m['Open'].iloc[0])
+        except Exception:
+            pass
+    if (prev_close and today_open and atr is not None):
+        gap_pct = (today_open - prev_close) / prev_close * 100
+        # Gap-down to fade up (LONG)
+        if (gap_pct <= -1.5 and gap_pct >= -4.0   # not a crash
+                and curr > today_open * 0.998       # not still falling hard
+                and rsi is not None and rsi >= 30):
+            conviction = 60
+            confirmations = [f'Gap down {gap_pct:.1f}% from prev close ₹{prev_close:.2f}',
+                             f'Open ₹{today_open:.2f} vs current ₹{curr:.2f}',
+                             f'Stabilising (RSI {rsi:.0f})']
+            if mtf is not None and mtf.get('bias') == 'LONG':
+                conviction += 8
+                confirmations.append(f'MTF still LONG ({mtf["above"]}/4 EMAs)')
+            setup_H = {
+                'type':        'GAP_FADE',
+                'side':        'LONG',
+                'name_pretty': 'Gap Fade (down → fill)',
+                'entry_zone':  [round(curr * 0.998, 2), round(curr * 1.003, 2)],
+                'stop':        round(today_open - atr * 0.5, 2),
+                'target1':     round(prev_close * 0.997, 2),   # fill back to prior close
+                'target2':     round(prev_close * 1.005, 2),   # overshoot
+                'conviction':  min(conviction, 80),
+                'confirmations': confirmations,
+            }
+
+    # Setup I: Pivot Bounce LONG
+    # Touch of yesterday's pivot S1 with intraday reversal → mean-reversion
+    # to PP/R1. Strong in ranging markets, decent in trending too.
+    setup_I = None
+    if (len(df) >= 2 and atr is not None):
+        prev_h = float(df['High'].iloc[-2])
+        prev_l = float(df['Low'].iloc[-2])
+        prev_c = float(df['Close'].iloc[-2])
+        pivots = _calculate_pivots(prev_h, prev_l, prev_c)
+        s1 = pivots['s1']; pp = pivots['pp']; r1 = pivots['r1']
+        # Long bounce off S1 (or between S1 and S2)
+        if (curr >= s1 * 0.998 and curr <= s1 * 1.012   # within 1.2% of S1
+                and rsi is not None and 30 <= rsi <= 50
+                and atr_pct is not None and atr_pct >= 1.0):
+            conviction = 55
+            confirmations = [f'At/near S1 ₹{s1} (pivot support)',
+                             f'PP ₹{pp} = T1', f'R1 ₹{r1} = T2',
+                             f'RSI {rsi:.0f} (oversold-ish)']
+            if mtf is not None and mtf.get('bias') == 'LONG':
+                conviction += 8
+                confirmations.append(f'MTF LONG ({mtf["above"]}/4 EMAs)')
+            setup_I = {
+                'type':        'PIVOT_BOUNCE',
+                'side':        'LONG',
+                'name_pretty': 'Pivot Bounce (S1)',
+                'entry_zone':  [round(s1, 2), round(s1 * 1.005, 2)],
+                'stop':        round(pivots['s2'], 2),
+                'target1':     round(pp, 2),
+                'target2':     round(r1, 2),
+                'conviction':  min(conviction, 80),
+                'confirmations': confirmations,
+            }
+
+    # Setup J: BB Squeeze Breakout LONG
+    # When Bollinger Bands compress to 20-day min width, expansion follows.
+    # Direction = whichever side price closes outside the band first.
+    setup_J = None
+    try:
+        bb = calculate_bb_squeeze(df, period=20, std_mult=2.0)
+        if bb and bb['is_squeeze'] and bb['upper'] and curr > bb['middle']:
+            # Squeeze in progress and price biased to upper band → long breakout watch
+            conviction = 55
+            confirmations = [f'BB squeeze (width {bb["curr_width_pct"]:.1f}% at 20D min)',
+                             f'Price above mid-band ₹{bb["middle"]}',
+                             f'Breakout target: ₹{bb["upper"]} (upper band)']
+            if mtf is not None and mtf.get('bias') == 'LONG':
+                conviction += 8
+                confirmations.append(f'MTF LONG ({mtf["above"]}/4 EMAs)')
+            if vol_ratio > 1.3:
+                conviction += 5
+                confirmations.append(f'Volume {vol_ratio:.1f}× (early expansion)')
+            setup_J = {
+                'type':        'BB_SQUEEZE',
+                'side':        'LONG',
+                'name_pretty': 'BB Squeeze (long)',
+                'entry_zone':  [round(bb['middle'] * 1.001, 2), round(curr * 1.003, 2)],
+                'stop':        round(bb['lower'], 2),
+                'target1':     round(bb['upper'], 2),
+                'target2':     round(bb['upper'] + atr * 1.5, 2),
+                'conviction':  min(conviction, 80),
+                'confirmations': confirmations,
+            }
+    except Exception:
+        pass
+
+    candidates = [s for s in [setup_A, setup_B, setup_C, setup_D, setup_E,
+                               setup_F, setup_G, setup_H, setup_I, setup_J] if s is not None]
     if not candidates:
         return None
     best = max(candidates, key=lambda s: s['conviction'])
@@ -4240,6 +4613,35 @@ def _build_intraday_setup(row, df, sector_strength=None):
     best['rr1'] = round(rr1, 2)
     best['rr2'] = round(rr2, 2)
     best['atr_pct'] = round(atr_pct, 2) if atr_pct else None
+
+    # Attach MTF alignment (Phase 2.3) — adds a conviction bonus if the
+    # multi-timeframe EMA stack confirms the setup's direction.
+    if mtf is not None:
+        best['mtf'] = mtf
+        # Bonus: long setup with strong LONG alignment, or short with SHORT
+        mtf_bias = mtf.get('bias')
+        if best['side'] == 'LONG' and mtf_bias == 'LONG':
+            best['conviction'] = min(100, best['conviction'] + (3 if mtf.get('above', 0) >= 3 else 0)
+                                       + (5 if mtf.get('above', 0) == 4 else 0))
+            best['confirmations'].append(f'MTF strongly LONG ({mtf["above"]}/4 EMAs above price)')
+        elif best['side'] == 'SHORT' and mtf_bias == 'SHORT':
+            best['conviction'] = min(100, best['conviction'] + (3 if mtf.get('above', 0) <= 1 else 0)
+                                       + (5 if mtf.get('above', 0) == 0 else 0))
+            best['confirmations'].append(f'MTF strongly SHORT ({4 - mtf["above"]}/4 EMAs above price)')
+        elif (best['side'] == 'LONG' and mtf_bias == 'SHORT') or \
+             (best['side'] == 'SHORT' and mtf_bias == 'LONG'):
+            # Counter-MTF setup → reduce conviction (it's fighting the larger trend)
+            best['conviction'] = max(0, best['conviction'] - 10)
+            best['confirmations'].append(f'⚠ MTF against direction — counter-trend trade')
+
+    # Attach VWAP context for UI display
+    if vwap_curr is not None:
+        best['vwap'] = round(vwap_curr, 2)
+        best['vwap_dist_pct'] = round((curr - vwap_curr) / curr * 100, 2)
+    if or_high is not None:
+        best['or_high'] = or_high
+        best['or_low']  = or_low
+        best['or_complete'] = or_complete
     best['ticker'] = row.get('ticker')
     best['name'] = row.get('name')
     best['sector'] = row.get('sector')
@@ -4410,6 +4812,10 @@ def _intraday_signals_impl():
     # If nothing matched (e.g. row format differs), don't drop all candidates
     candidates_for_setup = fno_candidates if fno_candidates else rows[:60]
 
+    # Compute regime EARLY so _one_setup can use it to gate losing setups
+    # (Phase 2.4). Cached 1h so this is essentially free on second call.
+    regime = _detect_market_regime()
+
     # Pre-sort by short_term so most-interesting candidates fetch first —
     # if we time out mid-scan we still have the best ones evaluated.
     candidates_for_setup = sorted(
@@ -4418,15 +4824,36 @@ def _intraday_signals_impl():
         reverse=True,
     )[:40]   # cap at 40 (was 80) — 40 stocks × ~1s parallel = 8s in best case
 
-    # Parallel fetch (mirrors screener's ThreadPoolExecutor pattern)
+    # Parallel fetch (mirrors screener's ThreadPoolExecutor pattern).
+    # v2: also computes MTF alignment from daily history (cheap, no extra fetch)
+    # and attempts a best-effort 5m fetch for VWAP/ORB/Gap-Fade setups.
     def _one_setup(r):
         ticker = r.get('ticker')
         if not ticker:
             return None
         try:
             df, _src = fetch_history(ticker + '.NS', period='6mo')
+            # MTF alignment — uses the same df we already fetched, no extra call
+            mtf = None
+            try:
+                mtf = calculate_mtf_alignment(df)
+            except Exception:
+                pass
+            # 5m data — BEST-EFFORT only. Fails on cloud IPs sometimes; the
+            # setup builder falls back to daily-bar logic when df_5m is None.
+            df_5m = None
+            try:
+                df_5m = fetch_intraday_5m(ticker, lookback_days=2)
+            except Exception:
+                pass
             sector_score = sector_avg_st.get(r.get('sector_grouped') or r.get('sector'))
-            return _build_intraday_setup(r, df, sector_strength=sector_score)
+            return _build_intraday_setup(
+                r, df,
+                sector_strength=sector_score,
+                regime=regime,
+                mtf=mtf,
+                df_5m=df_5m,
+            )
         except Exception as e:
             print(f'  [intraday {ticker}] setup build failed: {e}')
             return None
@@ -4442,13 +4869,10 @@ def _intraday_signals_impl():
             except Exception as e:
                 print(f'  [intraday {futures[fut]}] future timed out: {e}')
 
-    # ── 2.5 Regime detection (NIFTY 50 ADX) ──
-    # ADX > 25 = trending, 20-25 = mixed, < 20 = ranging.
-    # In trending markets: favor trend-continuation + breakout setups.
-    # In ranging markets:  favor mean-reversion (oversold-bounce) setups.
-    regime = _detect_market_regime()
+    # (regime was already computed before the setup loop so _one_setup
+    # could use it for gating losing setups)
 
-    # ── 2.6 Load backtest stats EARLY so we can adjust conviction ──
+    # ── 2.6 Load backtest stats so we can adjust conviction ──
     backtest_stats = _load_setup_backtest_stats()
 
     # ── 2.7 Adjust conviction by measured backtest profitability ──
