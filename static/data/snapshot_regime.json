@@ -1,0 +1,14 @@
+{
+  "generated_at": 1780710588,
+  "generated_at_iso": "2026-06-06T01:49:48.743698+00:00",
+  "source": "build_snapshot.py",
+  "regime": {
+    "kind": "MIXED",
+    "direction": "DOWN",
+    "adx": 20.8,
+    "plus_di": 16.8,
+    "minus_di": 31.4,
+    "reason": "ADX 20.8 \u2014 weak trend, possible regime shift",
+    "playbook": "Trade smaller. Both trend and mean-reversion setups have lower edge than usual."
+  }
+}
