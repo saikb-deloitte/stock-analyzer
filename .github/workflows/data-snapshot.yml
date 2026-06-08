@@ -13,12 +13,28 @@ name: NSE data snapshot (3x daily)
 # That's why we also run on push and allow manual dispatch.
 
 on:
+  # GitHub Actions scheduled workflows are BEST-EFFORT — under high load
+  # GitHub silently drops runs (we saw a 4-day gap with zero scheduled
+  # fires). Mitigation: fire MORE often so dropped runs hurt less.
+  # 6 attempts/day, ~4hr spacing. Even if half are dropped we still get
+  # 2-3 refreshes per day = max ~8hr staleness.
+  # For TRUE reliability, set up an external cron (cron-job.org or similar)
+  # that POSTs to the workflow_dispatch API.
   schedule:
+    - cron: '0 2 * * *'     # 07:30 IST — pre-open prep
     - cron: '45 3 * * *'    # 09:15 IST — market open
+    - cron: '30 5 * * *'    # 11:00 IST — mid-morning
     - cron: '45 6 * * *'    # 12:15 IST — mid-session
+    - cron: '0 9 * * *'     # 14:30 IST — late-session
     - cron: '15 10 * * *'   # 15:45 IST — post-close
-  # Also allow manual triggering from the Actions tab
+  # Allow manual triggering from the Actions tab (or via GitHub API)
   workflow_dispatch:
+  # Allow external cron services (cron-job.org, EasyCron) to trigger via
+  # repository_dispatch with event_type='snapshot-rebuild'. This is the
+  # RELIABLE path — GitHub's own schedule is best-effort, external crons
+  # honor their schedule precisely.
+  repository_dispatch:
+    types: [snapshot-rebuild]
 
 permissions:
   contents: write       # needed to push back commits
