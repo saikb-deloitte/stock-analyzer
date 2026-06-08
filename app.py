@@ -2456,28 +2456,112 @@ def search():
 
 @app.route('/api/indices')
 def get_indices():
-    cached = get_cached('indices')
+    # Shorter TTL (5 min) — ticker values change a lot during the day.
+    # Old 30-min cache caused user-reported "frozen at 2-day-old values".
+    cached = get_cached('indices', ttl=300)
     if cached:
         return jsonify(cached)
 
     tickers = {
-        'NIFTY 50': '^NSEI',
-        'NIFTY Bank': '^NSEBANK',
-        'NIFTY IT': '^CNXIT',
-        'SENSEX': '^BSESN',
+        'NIFTY 50':         '^NSEI',
+        'NIFTY Bank':       '^NSEBANK',
+        'NIFTY IT':         '^CNXIT',
+        'SENSEX':           '^BSESN',
         'NIFTY Midcap 100': '^CNXMC',
     }
     result = {}
-    for name, sym in tickers.items():
+    fetched_at = int(time.time())
+
+    # Parallel fetch — same trick as intraday endpoint (5x serial = 20s+).
+    def _fetch_one_index(name_sym):
+        name, sym = name_sym
         try:
             h = yf.Ticker(sym).history(period='5d')
-            if not h.empty and len(h) >= 2:
-                chg = (h['Close'].iloc[-1] - h['Close'].iloc[-2]) / h['Close'].iloc[-2] * 100
-                result[name] = {'value': safe_round(h['Close'].iloc[-1], 2), 'change': safe_round(chg, 2)}
+            if h is None or h.empty:
+                return name, None
+            # CRITICAL FIX: drop NaN-filled partial bars before computing.
+            # yfinance returns a partial bar for the current incomplete day
+            # with NaN OHLC, which poisons iloc[-1] and iloc[-2].
+            h = h.dropna(subset=['Close'])
+            if len(h) < 2:
+                return name, None
+            curr = float(h['Close'].iloc[-1])
+            prev = float(h['Close'].iloc[-2])
+            chg  = (curr - prev) / prev * 100 if prev else 0
+            # Capture the actual DATE of the latest bar — lets the UI warn
+            # if yfinance returned a stale "last known" close (which it does
+            # from cloud IPs sometimes).
+            try:
+                bar_date = h.index[-1].strftime('%Y-%m-%d')
+            except Exception:
+                bar_date = None
+            return name, {
+                'value':     round(curr, 2),
+                'change':    round(chg, 2),
+                'bar_date':  bar_date,
+                'as_of':     fetched_at,
+                'source':    'yfinance',
+            }
+        except Exception as e:
+            print(f'  [indices {name}] live fetch failed: {e}')
+            return name, None
+
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        futures = [ex.submit(_fetch_one_index, item) for item in tickers.items()]
+        for fut in futures:
+            try:
+                name, data = fut.result(timeout=15)
+                if data:
+                    result[name] = data
+            except Exception:
+                pass
+
+    # Fallback for any index that failed: try the regime snapshot (has NIFTY 50)
+    # and the per-index screener snapshots (have current prices via index).
+    if 'NIFTY 50' not in result:
+        try:
+            regime_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'snapshot_regime.json')
+            if os.path.exists(regime_path):
+                with open(regime_path, encoding='utf-8') as f:
+                    snap = json.load(f)
+                # regime snapshot doesn't carry index price/change directly,
+                # but if we have an intraday snapshot, that does.
         except Exception:
             pass
+    if 'NIFTY 50' not in result:
+        try:
+            intra_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'snapshot_intraday.json')
+            if os.path.exists(intra_path):
+                with open(intra_path, encoding='utf-8') as f:
+                    snap = json.load(f)
+                for c in (snap.get('data') or {}).get('index_cards', []):
+                    if c.get('name') == 'NIFTY 50' and c.get('price'):
+                        result['NIFTY 50'] = {
+                            'value':  c['price'],
+                            'change': c.get('day_chg', 0),
+                            'as_of':  snap.get('generated_at'),
+                            'source': 'snapshot',
+                        }
+                    elif c.get('name') == 'NIFTY BANK' and c.get('price'):
+                        result['NIFTY Bank'] = {
+                            'value':  c['price'],
+                            'change': c.get('day_chg', 0),
+                            'as_of':  snap.get('generated_at'),
+                            'source': 'snapshot',
+                        }
+                    elif c.get('name') == 'NIFTY IT' and c.get('price'):
+                        result['NIFTY IT'] = {
+                            'value':  c['price'],
+                            'change': c.get('day_chg', 0),
+                            'as_of':  snap.get('generated_at'),
+                            'source': 'snapshot',
+                        }
+        except Exception as e:
+            print(f'  [indices] snapshot fallback failed: {e}')
 
-    set_cached('indices', result)
+    # Always cache, even partial — better than nothing
+    if result:
+        set_cached('indices', result, ttl=300)
     return jsonify(result)
 
 

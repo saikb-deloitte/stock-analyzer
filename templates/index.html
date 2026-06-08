@@ -55,6 +55,10 @@
   .ticker-item { padding: 0 22px; border-right: 1px solid var(--border); font-size: 12.5px; }
   .ticker-item .sym { font-weight: 600; color: var(--accent); margin-right: 6px; }
   .ticker-item .val { margin-right: 4px; }
+  /* Staleness indicators on ticker strip */
+  .ticker-item.ti-stale .val { color: var(--text-muted); }
+  .ti-stale-warn { background: rgba(255,215,64,0.18); color: #ffd740; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: 600; }
+  .ti-stale-bad  { background: rgba(248,81,73,0.18);  color: #f85149; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: 700; }
   .up { color: var(--green); }
   .dn { color: var(--red); }
   @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -2548,10 +2552,35 @@ async function loadTicker() {
   try {
     const r = await fetch('/api/indices');
     const data = await r.json();
+    // Today (IST) for staleness comparison
+    const ist = new Date(new Date().toLocaleString('en-US', {timeZone: 'Asia/Kolkata'}));
+    const todayIst = ist.toISOString().slice(0, 10);
     const items = Object.entries(data).map(([name, d]) => {
       const chgClass = d.change >= 0 ? 'up' : 'dn';
       const sign = d.change >= 0 ? '▲' : '▼';
-      return `<span class="ticker-item"><span class="sym">${name}</span><span class="val">${d.value.toLocaleString('en-IN')}</span><span class="${chgClass}">${sign} ${Math.abs(d.change).toFixed(2)}%</span></span>`;
+      // Staleness check: bar_date vs today IST. Trading days only matter
+      // (no points for weekend penalties), but >3 days stale = real issue.
+      let staleBadge = '';
+      let staleClass = '';
+      let title = `Source: ${d.source || 'live'}`;
+      if (d.bar_date) {
+        const barDt = new Date(d.bar_date);
+        const todayDt = new Date(todayIst);
+        const diffDays = Math.floor((todayDt - barDt) / (1000 * 60 * 60 * 24));
+        title += ` · As of ${d.bar_date}`;
+        if (diffDays >= 4) {
+          staleBadge = ` <span class="ti-stale-bad" title="Data is ${diffDays} days old">⚠ ${diffDays}d</span>`;
+          staleClass = 'ti-stale';
+        } else if (diffDays >= 2) {
+          // Weekend allowance: Mon shows Fri data = 3 day gap, that's NORMAL
+          // Only flag if gap > 3 AND not Monday/Tuesday morning
+          const dow = todayDt.getUTCDay();
+          if (!(dow <= 2 && diffDays <= 3)) {
+            staleBadge = ` <span class="ti-stale-warn" title="Data is ${diffDays} days old">${diffDays}d ago</span>`;
+          }
+        }
+      }
+      return `<span class="ticker-item ${staleClass}" title="${title}"><span class="sym">${name}</span><span class="val">${d.value.toLocaleString('en-IN')}</span><span class="${chgClass}">${sign} ${Math.abs(d.change).toFixed(2)}%</span>${staleBadge}</span>`;
     });
     const repeated = [...items, ...items].join('');
     document.getElementById('ticker-tape').innerHTML = repeated;
