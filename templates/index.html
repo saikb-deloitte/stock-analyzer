@@ -1377,9 +1377,11 @@
     <input type="text" id="search-input" placeholder="Refract an NSE stock (e.g. RELIANCE, TCS, SBIN)…" autocomplete="off">
     <div class="autocomplete" id="autocomplete" style="display:none;"></div>
   </div>
-  <div class="freshness-badge" id="freshness-badge" title="Time since last upstream data fetch">
+  <div class="freshness-badge" id="freshness-badge" title="Time since last upstream data fetch · click to force refresh"
+       onclick="refreshSnapshots()" style="cursor:pointer;">
     <span class="fb-dot"></span>
     <span class="fb-text">checking…</span>
+    <i class="fa fa-rotate-right" style="margin-left:5px;font-size:10px;opacity:0.7;"></i>
   </div>
   <!-- ALERT BELL -->
   <div class="bell-wrap" id="bell-wrap">
@@ -5056,6 +5058,69 @@ async function updateUniverseInfo() {
 }
 
 // ── Freshness badge ──
+// ── Manual snapshot refresh (click freshness badge) ──
+// Posts to /api/refresh_snapshots which triggers the GitHub Actions workflow.
+// Falls back to opening the GitHub workflow page if server isn't configured.
+let __refreshing = false;
+async function refreshSnapshots() {
+  if (__refreshing) {
+    toast('Refresh already in progress…', 'info');
+    return;
+  }
+  if (!confirm('Trigger snapshot rebuild?\n\nThis runs the daily-data workflow on GitHub Actions (takes 2-3 min). Use sparingly — limited to 3 manual refreshes per hour.')) {
+    return;
+  }
+  __refreshing = true;
+  const badge = document.getElementById('freshness-badge');
+  const origHtml = badge.innerHTML;
+  badge.innerHTML = '<i class="fa fa-circle-notch fa-spin"></i> <span style="margin-left:6px;">Triggering rebuild…</span>';
+  try {
+    const r = await fetch('/api/refresh_snapshots', { method: 'POST' });
+    const d = await r.json();
+    if (r.status === 503 && d.error === 'manual_refresh_not_configured') {
+      // Server has no PAT — open GitHub UI for the user
+      if (confirm('Server doesn\'t have a GitHub token configured for one-click refresh.\n\nOpen the GitHub workflow page to trigger it manually? (Then click "Run workflow" → pick Centaur-prism branch)')) {
+        window.open(d.workflow_url, '_blank');
+      }
+      toast('Open the workflow page → Run workflow', 'info');
+    } else if (r.ok) {
+      toast('✓ Rebuild triggered — fresh data in ~2-3 min', 'success');
+      // Poll snapshot freshness every 30s for up to 5 min
+      let polls = 0;
+      const pollHandle = setInterval(async () => {
+        polls++;
+        try {
+          const fr = await fetch('/api/freshness?_t=' + Date.now());
+          const fd = await fr.json();
+          // Once age drops below 5 min, we know the new snapshot is up
+          if (fd.age_seconds != null && fd.age_seconds < 180) {
+            clearInterval(pollHandle);
+            toast('✓ Snapshot refreshed — reloading page', 'success');
+            setTimeout(() => location.reload(), 1500);
+            return;
+          }
+        } catch (e) {}
+        if (polls >= 10) {
+          clearInterval(pollHandle);
+          toast('Snapshot rebuild may still be running. Refresh manually in a minute.', 'info');
+        }
+      }, 30000);
+    } else if (r.status === 429) {
+      toast('Rate limit hit. Try again in a few minutes.', 'warn');
+    } else {
+      toast(`Refresh failed: ${d.message || d.error || 'unknown'}`, 'error');
+    }
+  } catch (e) {
+    toast('Network error: ' + e.message, 'error');
+  } finally {
+    setTimeout(() => {
+      badge.innerHTML = origHtml;
+      refreshFreshness();   // re-render badge with normal state
+      __refreshing = false;
+    }, 2000);
+  }
+}
+
 async function refreshFreshness() {
   const badge = document.getElementById('freshness-badge');
   if (!badge) return;

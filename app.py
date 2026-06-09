@@ -3678,6 +3678,64 @@ def prism_archive_delete(prism_id):
     return jsonify({'ok': True})
 
 
+@app.route('/api/refresh_snapshots', methods=['POST'])
+@limiter.limit("3 per hour", exempt_when=lambda: not IS_PUBLIC)
+def refresh_snapshots():
+    """Manually trigger the GitHub Actions snapshot rebuild.
+    Requires GITHUB_REFRESH_TOKEN env var (a fine-grained PAT with
+    'Actions: read+write' scope on the stock-analyzer repo).
+
+    Returns 200 on successful dispatch (workflow run ID + estimated time).
+    Falls back to a clear "configure your token" error message if missing.
+    """
+    token = os.environ.get('GITHUB_REFRESH_TOKEN', '').strip()
+    if not token:
+        # No PAT configured — return setup instructions so user knows what to do
+        return jsonify({
+            'error': 'manual_refresh_not_configured',
+            'message': (
+                'Server is not configured with a GitHub PAT for manual refresh. '
+                'Either set GITHUB_REFRESH_TOKEN env var on the host, or run '
+                'the workflow manually at github.com/.../actions/workflows/data-snapshot.yml '
+                '(click "Run workflow")'
+            ),
+            'workflow_url': 'https://github.com/saikb-deloitte/stock-analyzer/actions/workflows/data-snapshot.yml',
+        }), 503
+
+    try:
+        import urllib.request as _ur
+        import urllib.error as _ue
+        req = _ur.Request(
+            'https://api.github.com/repos/saikb-deloitte/stock-analyzer/actions/workflows/data-snapshot.yml/dispatches',
+            data=json.dumps({'ref': 'Centaur-prism'}).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Accept':        'application/vnd.github+json',
+                'Content-Type':  'application/json',
+                'User-Agent':    'centaur-prism-app',
+            },
+            method='POST',
+        )
+        with _ur.urlopen(req, timeout=10) as resp:
+            # GitHub returns 204 on success (no body)
+            if resp.status == 204:
+                return jsonify({
+                    'ok': True,
+                    'message': 'Snapshot rebuild triggered. New data will appear in 2-3 minutes.',
+                    'estimated_seconds': 150,
+                    'workflow_url': 'https://github.com/saikb-deloitte/stock-analyzer/actions/workflows/data-snapshot.yml',
+                })
+            return jsonify({'error': f'unexpected_status_{resp.status}'}), 502
+    except _ue.HTTPError as e:
+        return jsonify({
+            'error': 'github_api_error',
+            'status': e.code,
+            'message': e.read().decode('utf-8', errors='replace')[:300],
+        }), 502
+    except Exception as e:
+        return jsonify({'error': 'dispatch_failed', 'message': str(e)}), 500
+
+
 @app.route('/api/freshness')
 def freshness():
     """Returns when we last got fresh upstream data (for the UI badge)."""
