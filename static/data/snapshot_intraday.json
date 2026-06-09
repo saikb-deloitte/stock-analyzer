@@ -1,95 +1,98 @@
 {
-  "generated_at": 1780890344,
-  "generated_at_iso": "2026-06-08T03:45:44.194419+00:00",
+  "generated_at": 1781040317,
+  "generated_at_iso": "2026-06-09T21:25:17.965908+00:00",
   "source": "build_snapshot.py",
   "data": {
     "backtest": {
       "by_setup_type": {
         "NEW_HIGH_MOMENTUM": {
-          "avg_loss_r": -0.38,
-          "avg_net_pnl_pct": -0.059,
-          "avg_r": 0.0,
-          "avg_win_r": 0.38,
-          "expectancy_rs": 0.0,
+          "avg_loss_r": -0.39,
+          "avg_net_pnl_pct": -0.118,
+          "avg_r": 0.008,
+          "avg_win_r": 0.37,
+          "expectancy_rs": 8.0,
           "is_profitable": false,
-          "max_drawdown_r": -3.04,
-          "n_trades": 24,
+          "max_drawdown_r": -5.71,
+          "n_trades": 314,
           "outcomes": {
-            "CLOSED_MTM": 22,
-            "STOPPED": 2
+            "CLOSED_MTM": 283,
+            "STOPPED": 27,
+            "T1_HIT": 2,
+            "T2_HIT": 2
           },
-          "profit_factor": 1.0,
-          "win_rate_pct": 50.0
+          "profit_factor": 1.04,
+          "win_rate_pct": 52.9
         },
         "PIVOT_BOUNCE": {
-          "avg_loss_r": -0.64,
-          "avg_net_pnl_pct": -0.428,
-          "avg_r": -0.16,
-          "avg_win_r": 0.64,
-          "expectancy_rs": -160.0,
+          "avg_loss_r": -0.69,
+          "avg_net_pnl_pct": -0.589,
+          "avg_r": -0.23,
+          "avg_win_r": 0.68,
+          "expectancy_rs": -230.0,
           "is_profitable": false,
-          "max_drawdown_r": -1.91,
-          "n_trades": 8,
+          "max_drawdown_r": -13.76,
+          "n_trades": 57,
           "outcomes": {
-            "CLOSED_MTM": 5,
-            "STOPPED": 2,
-            "T1_HIT": 1
+            "CLOSED_MTM": 33,
+            "STOPPED": 20,
+            "T1_HIT": 4
           },
-          "profit_factor": 0.6,
-          "win_rate_pct": 37.5
+          "profit_factor": 0.5,
+          "win_rate_pct": 33.3
         },
         "TREND_CONTINUATION": {
-          "avg_loss_r": -0.36,
-          "avg_net_pnl_pct": -0.031,
-          "avg_r": 0.041,
-          "avg_win_r": 0.4,
-          "expectancy_rs": 41.0,
+          "avg_loss_r": -0.43,
+          "avg_net_pnl_pct": -0.34,
+          "avg_r": -0.052,
+          "avg_win_r": 0.39,
+          "expectancy_rs": -52.0,
           "is_profitable": false,
-          "max_drawdown_r": -3.88,
-          "n_trades": 89,
+          "max_drawdown_r": -47.76,
+          "n_trades": 767,
           "outcomes": {
-            "CLOSED_MTM": 80,
-            "STOPPED": 6,
-            "T1_HIT": 3
+            "CLOSED_MTM": 677,
+            "STOPPED": 68,
+            "T1_HIT": 22
           },
-          "profit_factor": 1.25,
-          "win_rate_pct": 52.8
+          "profit_factor": 0.77,
+          "win_rate_pct": 46.4
         }
       },
       "by_side": {
         "LONG": {
-          "avg_loss_r": -0.43,
-          "avg_net_pnl_pct": -0.0,
-          "avg_r": 0.032,
-          "avg_win_r": 0.41,
-          "expectancy_rs": 32.0,
+          "avg_loss_r": -0.44,
+          "avg_net_pnl_pct": -0.222,
+          "avg_r": -0.031,
+          "avg_win_r": 0.4,
+          "expectancy_rs": -31.0,
           "is_profitable": false,
-          "max_drawdown_r": -2.97,
-          "n_trades": 71,
+          "max_drawdown_r": -28.89,
+          "n_trades": 743,
           "outcomes": {
-            "CLOSED_MTM": 63,
-            "STOPPED": 6,
-            "T1_HIT": 2
+            "CLOSED_MTM": 639,
+            "STOPPED": 80,
+            "T1_HIT": 22,
+            "T2_HIT": 2
           },
-          "profit_factor": 1.17,
-          "win_rate_pct": 54.9
+          "profit_factor": 0.86,
+          "win_rate_pct": 48.6
         },
         "SHORT": {
-          "avg_loss_r": -0.33,
-          "avg_net_pnl_pct": -0.151,
-          "avg_r": 0.003,
-          "avg_win_r": 0.4,
-          "expectancy_rs": 3.0,
+          "avg_loss_r": -0.43,
+          "avg_net_pnl_pct": -0.422,
+          "avg_r": -0.07,
+          "avg_win_r": 0.36,
+          "expectancy_rs": -70.0,
           "is_profitable": false,
-          "max_drawdown_r": -3.61,
-          "n_trades": 50,
+          "max_drawdown_r": -31.44,
+          "n_trades": 395,
           "outcomes": {
-            "CLOSED_MTM": 44,
-            "STOPPED": 4,
-            "T1_HIT": 2
+            "CLOSED_MTM": 354,
+            "STOPPED": 35,
+            "T1_HIT": 6
           },
-          "profit_factor": 1.02,
-          "win_rate_pct": 46.0
+          "profit_factor": 0.7,
+          "win_rate_pct": 45.6
         }
       },
       "config": {
@@ -98,36 +101,37 @@
         "notional_capital": 100000,
         "risk_pct_per_trade": 1.0,
         "slippage_pct_leg": 0.05,
-        "tickers_scanned": 5,
-        "top_n_stocks": 5,
+        "tickers_scanned": 50,
+        "top_n_stocks": 50,
         "warmup_days": 60
       },
-      "generated_at": 1780771837,
-      "generated_at_iso": "2026-06-06T18:50:37.077778+00:00",
+      "generated_at": 1780890426,
+      "generated_at_iso": "2026-06-08T03:47:06.918031+00:00",
       "overall": {
-        "avg_loss_r": -0.38,
-        "avg_net_pnl_pct": -0.063,
-        "avg_r": 0.02,
-        "avg_win_r": 0.4,
-        "expectancy_rs": 20.0,
+        "avg_loss_r": -0.44,
+        "avg_net_pnl_pct": -0.291,
+        "avg_r": -0.044,
+        "avg_win_r": 0.39,
+        "expectancy_rs": -44.0,
         "is_profitable": false,
-        "max_drawdown_r": -4.37,
-        "n_trades": 121,
+        "max_drawdown_r": -58.25,
+        "n_trades": 1138,
         "outcomes": {
-          "CLOSED_MTM": 107,
-          "STOPPED": 10,
-          "T1_HIT": 4
+          "CLOSED_MTM": 993,
+          "STOPPED": 115,
+          "T1_HIT": 28,
+          "T2_HIT": 2
         },
-        "profit_factor": 1.11,
-        "win_rate_pct": 51.2
+        "profit_factor": 0.81,
+        "win_rate_pct": 47.5
       },
-      "total_signals": 133,
-      "total_trades": 121
+      "total_signals": 1286,
+      "total_trades": 1138
     },
-    "generated_at": 1780890344,
+    "generated_at": 1781040317,
     "index_cards": [
       {
-        "atr": 314.82,
+        "atr": 315.02,
         "atr_pct": 1.36,
         "bias": "BEARISH",
         "camarilla": {
@@ -136,7 +140,7 @@
           "l3": 23302.43,
           "l4": 23238.16
         },
-        "day_chg": -1.11,
+        "day_chg": -1.04,
         "name": "NIFTY 50",
         "pivots": {
           "pp": 23388.57,
@@ -150,22 +154,22 @@
         "prev_close": 23366.7,
         "prev_high": 23516.35,
         "prev_low": 23282.65,
-        "price": 23106.6,
-        "reason": "Below 20DMA + 50DMA, -1.2% over 5 days",
+        "price": 23123.0,
+        "reason": "Below 20DMA + 50DMA, -1.1% over 5 days",
         "strength": "STRONG",
         "symbol": "NSEI"
       },
       {
-        "atr": 926.96,
-        "atr_pct": 1.72,
-        "bias": "BEARISH",
+        "atr": 926.53,
+        "atr_pct": 1.71,
+        "bias": "NEUTRAL",
         "camarilla": {
           "h3": 54695.6,
           "h4": 54894.94,
           "l3": 54296.9,
           "l4": 54097.56
         },
-        "day_chg": -0.96,
+        "day_chg": -0.79,
         "name": "NIFTY BANK",
         "pivots": {
           "pp": 54500.78,
@@ -179,14 +183,14 @@
         "prev_close": 54496.25,
         "prev_high": 54865.5,
         "prev_low": 54140.6,
-        "price": 53974.4,
-        "reason": "Below both DMAs, weak structure",
-        "strength": "MILD",
+        "price": 54063.75,
+        "reason": "Mixed DMA positioning \u2014 range-bound",
+        "strength": "",
         "symbol": "NSEBANK"
       },
       {
-        "atr": 736.67,
-        "atr_pct": 2.57,
+        "atr": 741.93,
+        "atr_pct": 2.59,
         "bias": "BEARISH",
         "camarilla": {
           "h3": 29208.56,
@@ -194,7 +198,7 @@
           "l3": 28812.04,
           "l4": 28613.78
         },
-        "day_chg": -1.13,
+        "day_chg": -1.23,
         "name": "NIFTY IT",
         "pivots": {
           "pp": 29189.65,
@@ -208,14 +212,14 @@
         "prev_close": 29010.3,
         "prev_high": 29639.8,
         "prev_low": 28918.85,
-        "price": 28683.5,
-        "reason": "Below 20DMA + 50DMA, -3.9% over 5 days",
+        "price": 28653.55,
+        "reason": "Below 20DMA + 50DMA, -4.0% over 5 days",
         "strength": "STRONG",
         "symbol": "CNXIT"
       },
       {
-        "atr": 428.02,
-        "atr_pct": 1.73,
+        "atr": 427.83,
+        "atr_pct": 1.72,
         "bias": "BEARISH",
         "camarilla": {
           "h3": 25168.02,
@@ -223,7 +227,7 @@
           "l3": 24945.58,
           "l4": 24834.35
         },
-        "day_chg": -1.18,
+        "day_chg": -1.0,
         "name": "FINNIFTY",
         "pivots": {
           "pp": 25120.85,
@@ -237,35 +241,35 @@
         "prev_close": 25056.8,
         "prev_high": 25355.1,
         "prev_low": 24950.65,
-        "price": 24761.65,
+        "price": 24805.0,
         "reason": "Below both DMAs, weak structure",
         "strength": "MILD",
         "symbol": "NIFTY_FIN_SERVICE.NS"
       }
     ],
     "market_summary": {
-      "as_of_ist": "08 Jun 2026, 09:15 IST",
+      "as_of_ist": "10 Jun 2026, 02:55 IST",
       "bias": "BEARISH",
       "bot_sectors": [
         {
-          "score": 52.0,
+          "score": 50.0,
           "sector": "Insurance"
-        },
-        {
-          "score": 53.2,
-          "sector": "IT & Technology"
         },
         {
           "score": 54.7,
           "sector": "Banking"
+        },
+        {
+          "score": 56.0,
+          "sector": "Industrials & Capital Goods"
         }
       ],
-      "long_signals": 3,
+      "long_signals": 1,
       "regime": {
         "adx": 21.9,
         "direction": "DOWN",
         "kind": "MIXED",
-        "minus_di": 34.1,
+        "minus_di": 34.2,
         "playbook": "Trade smaller. Both trend and mean-reversion setups have lower edge than usual.",
         "plus_di": 15.7,
         "reason": "ADX 21.9 \u2014 weak trend, possible regime shift"
@@ -273,16 +277,16 @@
       "short_signals": 2,
       "top_sectors": [
         {
-          "score": 65.3,
+          "score": 62.5,
+          "sector": "Coal"
+        },
+        {
+          "score": 61.3,
           "sector": "Metals"
         },
         {
-          "score": 65.2,
+          "score": 61.2,
           "sector": "FMCG & Consumer Staples"
-        },
-        {
-          "score": 64.5,
-          "sector": "Power & Utilities"
         }
       ]
     },
@@ -302,219 +306,132 @@
     },
     "setups": [
       {
-        "atr_pct": 1.86,
+        "atr_pct": 2.0,
         "backtest": {
-          "avg_net_pnl_pct": -0.059,
-          "avg_r": 0.0,
+          "avg_net_pnl_pct": -0.118,
+          "avg_r": 0.008,
           "is_profitable": false,
-          "n_trades": 24,
-          "profit_factor": 1.0,
-          "win_rate_pct": 50.0
+          "n_trades": 314,
+          "profit_factor": 1.04,
+          "win_rate_pct": 52.9
         },
         "confirmations": [
-          "Within 3% of 52W high \u20b98443.0",
-          "RSI 60 (not yet euphoric)",
-          "Pulled back to 5DMA \u2014 entry buffer",
-          "Sector strength 64/100"
+          "Within 3% of 52W high \u20b98490.0",
+          "RSI 66 (not yet euphoric)",
+          "Pulled back to 5DMA \u2014 entry buffer"
         ],
-        "conviction": 70,
+        "conviction": 60,
         "conviction_factor": 1.0,
-        "conviction_raw": 70,
+        "conviction_raw": 60,
         "conviction_tier": "MARGINAL",
-        "curr_price": 8250.0,
+        "curr_price": 8358.5,
         "entry_zone": [
-          8220.23,
-          8277.88
+          8241.88,
+          8299.69
         ],
         "name": "APOLLO HOSPITALS ENTER. L",
         "name_pretty": "52W High Momentum",
-        "or_complete": false,
-        "or_high": 8250.0,
-        "or_low": 8250.0,
+        "or_complete": true,
+        "or_high": 8458.0,
+        "or_low": 8370.5,
         "regime_adj": 0,
-        "rr1": 1.11,
-        "rr2": 1.67,
+        "rr1": 1.14,
+        "rr2": 1.66,
         "sector": "Healthcare",
         "side": "LONG",
-        "stop": 8052.11,
-        "target1": 8527.43,
-        "target2": 8654.07,
+        "stop": 8057.91,
+        "target1": 8574.9,
+        "target2": 8702.25,
         "ticker": "APOLLOHOSP",
         "type": "NEW_HIGH_MOMENTUM",
-        "vwap": null,
-        "vwap_dist_pct": null
+        "vwap": 8488.58,
+        "vwap_dist_pct": -1.56
       },
       {
-        "atr_pct": 1.97,
+        "atr_pct": 2.72,
         "backtest": {
-          "avg_net_pnl_pct": -0.059,
-          "avg_r": 0.0,
+          "avg_net_pnl_pct": -0.34,
+          "avg_r": -0.052,
           "is_profitable": false,
-          "n_trades": 24,
-          "profit_factor": 1.0,
-          "win_rate_pct": 50.0
-        },
-        "confirmations": [
-          "Within 3% of 52W high \u20b91431.07",
-          "RSI 50 (not yet euphoric)",
-          "Pulled back to 5DMA \u2014 entry buffer",
-          "Sector strength 64/100"
-        ],
-        "conviction": 70,
-        "conviction_factor": 1.0,
-        "conviction_raw": 70,
-        "conviction_tier": "MARGINAL",
-        "curr_price": 1395.8,
-        "entry_zone": [
-          1379.58,
-          1389.25
-        ],
-        "name": "CIPLA LTD",
-        "name_pretty": "52W High Momentum",
-        "or_complete": false,
-        "or_high": 1395.8,
-        "or_low": 1395.8,
-        "regime_adj": 0,
-        "rr1": 1.41,
-        "rr2": 1.95,
-        "sector": "Healthcare",
-        "side": "LONG",
-        "stop": 1349.41,
-        "target1": 1445.39,
-        "target2": 1466.85,
-        "ticker": "CIPLA",
-        "type": "NEW_HIGH_MOMENTUM",
-        "vwap": null,
-        "vwap_dist_pct": null
-      },
-      {
-        "atr_pct": 2.69,
-        "backtest": {
-          "avg_net_pnl_pct": -0.031,
-          "avg_r": 0.041,
-          "is_profitable": false,
-          "n_trades": 89,
-          "profit_factor": 1.25,
-          "win_rate_pct": 52.8
+          "n_trades": 767,
+          "profit_factor": 0.77,
+          "win_rate_pct": 46.4
         },
         "confirmations": [
           "Price below 5/20/50 DMA stack (bearish stack)",
           "RSI 33 (weak but not oversold)",
           "Volume 1.4\u00d7 avg (distribution)",
-          "Down -1.9% over 5 days"
-        ],
-        "conviction": 55,
-        "conviction_factor": 1.0,
-        "conviction_raw": 55,
-        "conviction_tier": "MARGINAL",
-        "curr_price": 871.95,
-        "entry_zone": [
-          870.21,
-          873.69
-        ],
-        "name": "BAJAJ FINANCE LIMITED",
-        "name_pretty": "Short on Weakness",
-        "or_complete": false,
-        "or_high": 872.05,
-        "or_low": 872.05,
-        "regime_adj": 0,
-        "rr1": 1.12,
-        "rr2": 2.3,
-        "sector": "Financial Services",
-        "side": "SHORT",
-        "stop": 900.05,
-        "target1": 836.82,
-        "target2": 801.69,
-        "ticker": "BAJFINANCE",
-        "type": "TREND_CONTINUATION",
-        "vwap": null,
-        "vwap_dist_pct": null
-      },
-      {
-        "atr_pct": 2.12,
-        "backtest": {
-          "avg_net_pnl_pct": -0.031,
-          "avg_r": 0.041,
-          "is_profitable": false,
-          "n_trades": 89,
-          "profit_factor": 1.25,
-          "win_rate_pct": 52.8
-        },
-        "confirmations": [
-          "Price below 5/20/50 DMA stack (bearish stack)",
-          "RSI 36 (weak but not oversold)",
-          "Volume 1.7\u00d7 avg (distribution)",
-          "Down -4.5% over 5 days"
-        ],
-        "conviction": 55,
-        "conviction_factor": 1.0,
-        "conviction_raw": 55,
-        "conviction_tier": "MARGINAL",
-        "curr_price": 1680.0,
-        "entry_zone": [
-          1676.64,
-          1683.36
-        ],
-        "name": "BAJAJ FINSERV LTD.",
-        "name_pretty": "Short on Weakness",
-        "or_complete": false,
-        "or_high": 1680.0,
-        "or_low": 1680.0,
-        "regime_adj": 0,
-        "rr1": 1.09,
-        "rr2": 2.25,
-        "sector": "Financial Services",
-        "side": "SHORT",
-        "stop": 1722.8,
-        "target1": 1626.51,
-        "target2": 1573.01,
-        "ticker": "BAJAJFINSV",
-        "type": "TREND_CONTINUATION",
-        "vwap": null,
-        "vwap_dist_pct": null
-      },
-      {
-        "atr_pct": 3.13,
-        "backtest": {
-          "avg_net_pnl_pct": -0.428,
-          "avg_r": -0.16,
-          "is_profitable": false,
-          "n_trades": 8,
-          "profit_factor": 0.6,
-          "win_rate_pct": 37.5
-        },
-        "confirmations": [
-          "At/near S1 \u20b92170.0 (pivot support)",
-          "PP \u20b92220.9 = T1",
-          "R1 \u20b92249.8 = T2",
-          "RSI 39 (oversold-ish)"
+          "Down -2.0% over 5 days"
         ],
         "conviction": 25,
         "conviction_factor": 0.45,
         "conviction_raw": 55,
         "conviction_tier": "BAD",
-        "curr_price": 2167.0,
+        "curr_price": 871.1,
         "entry_zone": [
-          2170.0,
-          2180.85
+          869.36,
+          872.84
         ],
-        "name": "TATA CONSULTANCY SERV LT",
-        "name_pretty": "Pivot Bounce (S1)",
-        "or_complete": false,
-        "or_high": 2167.0,
-        "or_low": 2167.0,
+        "name": "BAJAJ FINANCE LIMITED",
+        "name_pretty": "Short on Weakness",
+        "or_complete": true,
+        "or_high": 883.0,
+        "or_low": 872.15,
         "regime_adj": 0,
-        "rr1": 1.01,
-        "rr2": 1.73,
-        "sector": "Technology",
-        "side": "LONG",
-        "stop": 2141.1,
-        "target1": 2220.9,
-        "target2": 2249.8,
-        "ticker": "TCS",
-        "type": "PIVOT_BOUNCE",
-        "vwap": null,
-        "vwap_dist_pct": null
+        "rr1": 1.12,
+        "rr2": 2.3,
+        "sector": "Financial Services",
+        "side": "SHORT",
+        "stop": 899.51,
+        "target1": 835.59,
+        "target2": 800.09,
+        "ticker": "BAJFINANCE",
+        "type": "TREND_CONTINUATION",
+        "vwap": 882.83,
+        "vwap_dist_pct": -1.35
+      },
+      {
+        "atr_pct": 2.21,
+        "backtest": {
+          "avg_net_pnl_pct": -0.34,
+          "avg_r": -0.052,
+          "is_profitable": false,
+          "n_trades": 767,
+          "profit_factor": 0.77,
+          "win_rate_pct": 46.4
+        },
+        "confirmations": [
+          "Price below 5/20/50 DMA stack (bearish stack)",
+          "RSI 35 (weak but not oversold)",
+          "Volume 1.6\u00d7 avg (distribution)",
+          "Down -4.8% over 5 days"
+        ],
+        "conviction": 25,
+        "conviction_factor": 0.45,
+        "conviction_raw": 55,
+        "conviction_tier": "BAD",
+        "curr_price": 1674.6,
+        "entry_zone": [
+          1671.25,
+          1677.95
+        ],
+        "name": "BAJAJ FINSERV LTD.",
+        "name_pretty": "Short on Weakness",
+        "or_complete": true,
+        "or_high": 1691.9,
+        "or_low": 1674.5,
+        "regime_adj": 0,
+        "rr1": 1.09,
+        "rr2": 2.25,
+        "sector": "Financial Services",
+        "side": "SHORT",
+        "stop": 1718.94,
+        "target1": 1619.18,
+        "target2": 1563.76,
+        "ticker": "BAJAJFINSV",
+        "type": "TREND_CONTINUATION",
+        "vwap": 1690.41,
+        "vwap_dist_pct": -0.94
       }
     ],
     "universe_size": 40
