@@ -1,6 +1,6 @@
 {
-  "generated_at": 1781040416,
-  "generated_at_iso": "2026-06-09T21:26:56.623263+00:00",
+  "generated_at": 1781326054,
+  "generated_at_iso": "2026-06-13T04:47:34.878761+00:00",
   "config": {
     "lookback_days": 504,
     "warmup_days": 60,
@@ -13,32 +13,32 @@
   },
   "by_setup_type": {
     "TREND_CONTINUATION": {
-      "n_trades": 767,
-      "win_rate_pct": 46.4,
-      "avg_r": -0.052,
-      "avg_win_r": 0.39,
+      "n_trades": 770,
+      "win_rate_pct": 46.2,
+      "avg_r": -0.055,
+      "avg_win_r": 0.38,
       "avg_loss_r": -0.43,
-      "profit_factor": 0.78,
-      "avg_net_pnl_pct": -0.339,
-      "max_drawdown_r": -47.42,
-      "expectancy_rs": -52.0,
+      "profit_factor": 0.77,
+      "avg_net_pnl_pct": -0.349,
+      "max_drawdown_r": -49.57,
+      "expectancy_rs": -55.0,
       "outcomes": {
-        "CLOSED_MTM": 677,
+        "CLOSED_MTM": 679,
         "T1_HIT": 22,
-        "STOPPED": 68
+        "STOPPED": 69
       },
       "is_profitable": false
     },
     "NEW_HIGH_MOMENTUM": {
       "n_trades": 314,
       "win_rate_pct": 52.9,
-      "avg_r": 0.008,
+      "avg_r": 0.007,
       "avg_win_r": 0.37,
-      "avg_loss_r": -0.39,
+      "avg_loss_r": -0.4,
       "profit_factor": 1.04,
-      "avg_net_pnl_pct": -0.118,
+      "avg_net_pnl_pct": -0.12,
       "max_drawdown_r": -5.71,
-      "expectancy_rs": 8.0,
+      "expectancy_rs": 7.0,
       "outcomes": {
         "STOPPED": 27,
         "CLOSED_MTM": 283,
@@ -48,17 +48,17 @@
       "is_profitable": false
     },
     "PIVOT_BOUNCE": {
-      "n_trades": 57,
-      "win_rate_pct": 35.1,
-      "avg_r": -0.215,
-      "avg_win_r": 0.67,
-      "avg_loss_r": -0.69,
-      "profit_factor": 0.52,
-      "avg_net_pnl_pct": -0.563,
-      "max_drawdown_r": -12.9,
-      "expectancy_rs": -215.0,
+      "n_trades": 59,
+      "win_rate_pct": 35.6,
+      "avg_r": -0.198,
+      "avg_win_r": 0.68,
+      "avg_loss_r": -0.68,
+      "profit_factor": 0.55,
+      "avg_net_pnl_pct": -0.521,
+      "max_drawdown_r": -12.32,
+      "expectancy_rs": -198.0,
       "outcomes": {
-        "CLOSED_MTM": 33,
+        "CLOSED_MTM": 35,
         "T1_HIT": 4,
         "STOPPED": 20
       },
@@ -67,35 +67,35 @@
   },
   "by_side": {
     "SHORT": {
-      "n_trades": 395,
-      "win_rate_pct": 45.6,
-      "avg_r": -0.07,
+      "n_trades": 401,
+      "win_rate_pct": 44.9,
+      "avg_r": -0.078,
       "avg_win_r": 0.36,
       "avg_loss_r": -0.43,
-      "profit_factor": 0.7,
-      "avg_net_pnl_pct": -0.422,
-      "max_drawdown_r": -31.44,
-      "expectancy_rs": -70.0,
+      "profit_factor": 0.67,
+      "avg_net_pnl_pct": -0.449,
+      "max_drawdown_r": -35.19,
+      "expectancy_rs": -78.0,
       "outcomes": {
-        "CLOSED_MTM": 354,
+        "CLOSED_MTM": 358,
         "T1_HIT": 6,
-        "STOPPED": 35
+        "STOPPED": 37
       },
       "is_profitable": false
     },
     "LONG": {
-      "n_trades": 743,
-      "win_rate_pct": 48.7,
-      "avg_r": -0.029,
-      "avg_win_r": 0.4,
+      "n_trades": 742,
+      "win_rate_pct": 48.9,
+      "avg_r": -0.027,
+      "avg_win_r": 0.41,
       "avg_loss_r": -0.44,
-      "profit_factor": 0.87,
-      "avg_net_pnl_pct": -0.219,
-      "max_drawdown_r": -28.04,
-      "expectancy_rs": -29.0,
+      "profit_factor": 0.88,
+      "avg_net_pnl_pct": -0.212,
+      "max_drawdown_r": -26.68,
+      "expectancy_rs": -27.0,
       "outcomes": {
         "CLOSED_MTM": 639,
-        "STOPPED": 80,
+        "STOPPED": 79,
         "T1_HIT": 22,
         "T2_HIT": 2
       },
@@ -103,23 +103,23 @@
     }
   },
   "overall": {
-    "n_trades": 1138,
-    "win_rate_pct": 47.6,
-    "avg_r": -0.043,
+    "n_trades": 1143,
+    "win_rate_pct": 47.5,
+    "avg_r": -0.045,
     "avg_win_r": 0.39,
     "avg_loss_r": -0.44,
-    "profit_factor": 0.81,
-    "avg_net_pnl_pct": -0.289,
-    "max_drawdown_r": -57.06,
-    "expectancy_rs": -43.0,
+    "profit_factor": 0.8,
+    "avg_net_pnl_pct": -0.295,
+    "max_drawdown_r": -58.3,
+    "expectancy_rs": -45.0,
     "outcomes": {
-      "CLOSED_MTM": 993,
-      "STOPPED": 115,
+      "CLOSED_MTM": 997,
+      "STOPPED": 116,
       "T1_HIT": 28,
       "T2_HIT": 2
     },
     "is_profitable": false
   },
-  "total_trades": 1138,
-  "total_signals": 1286
+  "total_trades": 1143,
+  "total_signals": 1294
 }
