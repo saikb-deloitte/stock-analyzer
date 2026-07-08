@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-07T23:29:12.972682+00:00",
+  "updated": "2026-07-08T16:13:39.860031+00:00",
   "universe_size": 246,
   "success_count": 215,
   "failure_count": 31,
@@ -222,8 +222,8 @@
   ],
   "failures": {
     "AGRX": "no result",
-    "ATNF": "no result",
     "AMMO": "no result",
+    "ATNF": "no result",
     "AYRO": "no result",
     "DFS": "no result",
     "EXPR": "no result",
@@ -239,8 +239,8 @@
     "NAKD": "no result",
     "NKLA": "no result",
     "PARA": "no result",
-    "PTRA": "no result",
-    "PXD": "no result"
+    "PXD": "no result",
+    "PTRA": "no result"
   },
-  "duration_s": 15.4
+  "duration_s": 17.4
 }
