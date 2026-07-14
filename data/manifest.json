@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-13T23:26:10.716608+00:00",
+  "updated": "2026-07-14T15:54:56.679904+00:00",
   "universe_size": 246,
   "success_count": 215,
   "failure_count": 31,
@@ -222,16 +222,16 @@
   ],
   "failures": {
     "AGRX": "no result",
-    "AMMO": "no result",
     "ATNF": "no result",
+    "AMMO": "no result",
     "AYRO": "no result",
     "DFS": "no result",
     "EXPR": "no result",
     "GOEV": "no result",
-    "HEXO": "no result",
     "HES": "no result",
-    "IDEX": "no result",
+    "HEXO": "no result",
     "IDRA": "no result",
+    "IDEX": "no result",
     "INVO": "no result",
     "LKCO": "no result",
     "MMAT": "no result",
@@ -242,5 +242,5 @@
     "PTRA": "no result",
     "PXD": "no result"
   },
-  "duration_s": 45.2
+  "duration_s": 26.8
 }
