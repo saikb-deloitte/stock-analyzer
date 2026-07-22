@@ -1,10 +1,11 @@
 {
-  "updated": "2026-07-21T23:28:23.535575+00:00",
+  "updated": "2026-07-22T15:56:43.627157+00:00",
   "universe_size": 246,
-  "success_count": 214,
-  "failure_count": 32,
+  "success_count": 215,
+  "failure_count": 31,
   "tickers": [
     "AAPL",
+    "ABBV",
     "ABT",
     "ACB",
     "ADBE",
@@ -220,7 +221,6 @@
     "ZTS"
   ],
   "failures": {
-    "ABBV": "Too Many Requests. Rate limited. Try after a while.",
     "AGRX": "no result",
     "AMMO": "no result",
     "ATNF": "no result",
@@ -239,7 +239,8 @@
     "NAKD": "no result",
     "NKLA": "no result",
     "PARA": "no result",
+    "PTRA": "no result",
     "PXD": "no result"
   },
-  "duration_s": 26.7
+  "duration_s": 19.5
 }
