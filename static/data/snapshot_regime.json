@@ -1,14 +1,14 @@
 {
-  "generated_at": 1783731784,
-  "generated_at_iso": "2026-07-11T01:03:04.913656+00:00",
+  "generated_at": 1785157943,
+  "generated_at_iso": "2026-07-27T13:12:23.265778+00:00",
   "source": "build_snapshot.py",
   "regime": {
     "kind": "RANGING",
     "direction": "DOWN",
-    "adx": 12.7,
-    "plus_di": 25.1,
-    "minus_di": 30.2,
-    "reason": "ADX 12.7 \u2014 no trend, oscillating market",
+    "adx": 11.3,
+    "plus_di": 23.0,
+    "minus_di": 29.5,
+    "reason": "ADX 11.3 \u2014 no trend, oscillating market",
     "playbook": "Favor oversold-bounce setups. Avoid breakouts (most will fail / be whipsaws)."
   }
 }
