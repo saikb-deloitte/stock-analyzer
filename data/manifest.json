@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-03T16:44:36.556082+00:00",
+  "updated": "2026-08-03T23:35:03.904959+00:00",
   "universe_size": 246,
   "success_count": 214,
   "failure_count": 32,
@@ -226,8 +226,8 @@
     "AYRO": "no result",
     "DFS": "no result",
     "EXPR": "no result",
-    "GOEV": "no result",
     "GREE": "no result",
+    "GOEV": "no result",
     "HES": "no result",
     "HEXO": "no result",
     "IDEX": "no result",
@@ -241,5 +241,5 @@
     "PARA": "no result",
     "PTRA": "no result"
   },
-  "duration_s": 11.0
+  "duration_s": 15.0
 }
