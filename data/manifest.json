@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-03T23:35:03.904959+00:00",
+  "updated": "2026-08-04T16:26:09.377201+00:00",
   "universe_size": 246,
   "success_count": 214,
   "failure_count": 32,
@@ -220,14 +220,14 @@
     "ZTS"
   ],
   "failures": {
-    "AGRX": "no result",
     "AMMO": "no result",
+    "AGRX": "no result",
     "ATNF": "no result",
     "AYRO": "no result",
     "DFS": "no result",
     "EXPR": "no result",
-    "GREE": "no result",
     "GOEV": "no result",
+    "GREE": "no result",
     "HES": "no result",
     "HEXO": "no result",
     "IDEX": "no result",
@@ -239,7 +239,7 @@
     "NAKD": "no result",
     "NKLA": "no result",
     "PARA": "no result",
-    "PTRA": "no result"
+    "PXD": "no result"
   },
-  "duration_s": 15.0
+  "duration_s": 23.8
 }
