@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-04T16:26:09.377201+00:00",
+  "updated": "2026-08-04T23:32:55.630959+00:00",
   "universe_size": 246,
   "success_count": 214,
   "failure_count": 32,
@@ -220,10 +220,10 @@
     "ZTS"
   ],
   "failures": {
-    "AMMO": "no result",
     "AGRX": "no result",
-    "ATNF": "no result",
+    "AMMO": "no result",
     "AYRO": "no result",
+    "ATNF": "no result",
     "DFS": "no result",
     "EXPR": "no result",
     "GOEV": "no result",
@@ -241,5 +241,5 @@
     "PARA": "no result",
     "PXD": "no result"
   },
-  "duration_s": 23.8
+  "duration_s": 15.5
 }
