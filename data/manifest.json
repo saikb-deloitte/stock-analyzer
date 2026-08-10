@@ -1,8 +1,8 @@
 {
-  "updated": "2026-08-07T23:05:09.484309+00:00",
+  "updated": "2026-08-10T15:29:28.464704+00:00",
   "universe_size": 246,
-  "success_count": 214,
-  "failure_count": 32,
+  "success_count": 215,
+  "failure_count": 31,
   "tickers": [
     "AAPL",
     "ABBV",
@@ -147,6 +147,7 @@
     "OGI",
     "ORCL",
     "OXY",
+    "PARA",
     "PEP",
     "PFE",
     "PG",
@@ -220,16 +221,16 @@
     "ZTS"
   ],
   "failures": {
-    "AMMO": "no result",
     "AGRX": "no result",
+    "AMMO": "no result",
     "ATNF": "no result",
     "AYRO": "no result",
     "DFS": "no result",
     "EXPR": "no result",
-    "GOEV": "no result",
     "GREE": "no result",
-    "HEXO": "no result",
+    "GOEV": "no result",
     "HES": "no result",
+    "HEXO": "no result",
     "IDEX": "no result",
     "IDRA": "no result",
     "INVO": "no result",
@@ -238,8 +239,8 @@
     "MULN": "no result",
     "NAKD": "no result",
     "NKLA": "no result",
-    "PARA": "no result",
-    "PTRA": "no result"
+    "PTRA": "no result",
+    "PXD": "no result"
   },
-  "duration_s": 27.0
+  "duration_s": 30.4
 }
