@@ -1,8 +1,8 @@
 {
-  "updated": "2026-08-25T22:54:52.841505+00:00",
+  "updated": "2026-08-26T15:58:11.865386+00:00",
   "universe_size": 246,
-  "success_count": 214,
-  "failure_count": 32,
+  "success_count": 215,
+  "failure_count": 31,
   "tickers": [
     "AAPL",
     "ABBV",
@@ -16,6 +16,7 @@
     "AMAT",
     "AMD",
     "AMGN",
+    "AMMO",
     "AMT",
     "APA",
     "APD",
@@ -221,7 +222,6 @@
   ],
   "failures": {
     "AGRX": "no result",
-    "AMMO": "no result",
     "AYRO": "no result",
     "ATNF": "no result",
     "DFS": "no result",
@@ -231,15 +231,16 @@
     "GREE": "no result",
     "HES": "no result",
     "HEXO": "no result",
-    "IDEX": "no result",
     "IDRA": "no result",
+    "IDEX": "no result",
     "INVO": "no result",
     "LKCO": "no result",
     "MMAT": "no result",
     "MULN": "no result",
     "NAKD": "no result",
     "NKLA": "no result",
-    "PTRA": "no result"
+    "PTRA": "no result",
+    "PXD": "no result"
   },
-  "duration_s": 16.0
+  "duration_s": 17.1
 }
