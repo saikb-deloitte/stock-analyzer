@@ -1,14 +1,14 @@
 {
-  "generated_at": 1785157943,
-  "generated_at_iso": "2026-07-27T13:12:23.265778+00:00",
+  "generated_at": 1788814381,
+  "generated_at_iso": "2026-09-07T20:53:01.204760+00:00",
   "source": "build_snapshot.py",
   "regime": {
-    "kind": "RANGING",
+    "kind": "MIXED",
     "direction": "DOWN",
-    "adx": 11.3,
-    "plus_di": 23.0,
-    "minus_di": 29.5,
-    "reason": "ADX 11.3 \u2014 no trend, oscillating market",
-    "playbook": "Favor oversold-bounce setups. Avoid breakouts (most will fail / be whipsaws)."
+    "adx": 20.4,
+    "plus_di": 15.5,
+    "minus_di": 28.2,
+    "reason": "ADX 20.4 \u2014 weak trend, possible regime shift",
+    "playbook": "Trade smaller. Both trend and mean-reversion setups have lower edge than usual."
   }
 }
