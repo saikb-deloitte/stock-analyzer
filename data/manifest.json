@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-30T01:24:08.067774+00:00",
+  "updated": "2026-09-30T19:31:48.999423+00:00",
   "universe_size": 246,
   "success_count": 215,
   "failure_count": 31,
@@ -222,8 +222,8 @@
   ],
   "failures": {
     "AGRX": "no result",
-    "AYRO": "no result",
     "ATNF": "no result",
+    "AYRO": "no result",
     "DFS": "no result",
     "EA": "no result",
     "EXPR": "no result",
@@ -242,5 +242,5 @@
     "PTRA": "no result",
     "PXD": "no result"
   },
-  "duration_s": 13.7
+  "duration_s": 10.4
 }
