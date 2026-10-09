@@ -1,8 +1,8 @@
 {
-  "updated": "2026-10-09T02:23:39.048138+00:00",
+  "updated": "2026-10-09T19:36:05.385856+00:00",
   "universe_size": 246,
-  "success_count": 215,
-  "failure_count": 31,
+  "success_count": 214,
+  "failure_count": 32,
   "tickers": [
     "AAPL",
     "ABBV",
@@ -211,7 +211,6 @@
     "VLO",
     "VRTX",
     "VZ",
-    "WBD",
     "WELL",
     "WFC",
     "WKHS",
@@ -222,8 +221,8 @@
   ],
   "failures": {
     "AGRX": "no result",
-    "AYRO": "no result",
     "ATNF": "no result",
+    "AYRO": "no result",
     "DFS": "no result",
     "EA": "no result",
     "EXPR": "no result",
@@ -239,8 +238,8 @@
     "MULN": "no result",
     "NAKD": "no result",
     "NKLA": "no result",
-    "PXD": "no result",
-    "PTRA": "no result"
+    "PTRA": "no result",
+    "PXD": "no result"
   },
-  "duration_s": 18.9
+  "duration_s": 19.8
 }
