@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-21T00:44:53.395687+00:00",
+  "updated": "2026-10-21T18:47:31.429566+00:00",
   "universe_size": 246,
   "success_count": 214,
   "failure_count": 32,
@@ -238,8 +238,8 @@
     "MULN": "no result",
     "NAKD": "no result",
     "NKLA": "no result",
-    "PXD": "no result",
-    "PTRA": "no result"
+    "PTRA": "no result",
+    "PXD": "no result"
   },
-  "duration_s": 22.0
+  "duration_s": 16.9
 }
