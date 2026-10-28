@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T01:31:52.231433+00:00",
+  "updated": "2026-10-28T19:42:12.267856+00:00",
   "universe_size": 246,
   "success_count": 214,
   "failure_count": 32,
@@ -235,11 +235,11 @@
     "INVO": "no result",
     "LKCO": "no result",
     "MMAT": "no result",
-    "MULN": "no result",
     "NAKD": "no result",
+    "MULN": "no result",
     "NKLA": "no result",
     "PTRA": "no result",
     "PXD": "no result"
   },
-  "duration_s": 16.4
+  "duration_s": 12.0
 }
