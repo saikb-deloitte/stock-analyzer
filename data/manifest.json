@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-07T02:09:31.450969+00:00",
+  "updated": "2026-11-09T23:29:25.952630+00:00",
   "universe_size": 246,
   "success_count": 214,
   "failure_count": 32,
@@ -226,8 +226,8 @@
     "DFS": "no result",
     "EA": "no result",
     "EXPR": "no result",
-    "GOEV": "no result",
     "GREE": "no result",
+    "GOEV": "no result",
     "HES": "no result",
     "HEXO": "no result",
     "IDEX": "no result",
@@ -241,5 +241,5 @@
     "PTRA": "no result",
     "PXD": "no result"
   },
-  "duration_s": 16.7
+  "duration_s": 11.5
 }
