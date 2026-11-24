@@ -1,9 +1,10 @@
 {
-  "updated": "2026-11-21T03:20:34.935483+00:00",
+  "updated": "2026-11-24T01:45:59.821291+00:00",
   "universe_size": 246,
-  "success_count": 212,
-  "failure_count": 34,
+  "success_count": 213,
+  "failure_count": 33,
   "tickers": [
+    "AAPL",
     "ABBV",
     "ABT",
     "ACB",
@@ -218,26 +219,26 @@
     "ZTS"
   ],
   "failures": {
-    "AAPL": "database is locked",
     "AGRX": "no result",
     "ATNF": "no result",
     "AYRO": "no result",
     "DFS": "no result",
     "EA": "no result",
     "EXPR": "no result",
-    "GOEV": "no result",
     "GREE": "no result",
-    "HES": "no result",
+    "GOEV": "no result",
     "HEXO": "no result",
-    "IDEX": "no result",
+    "HES": "no result",
     "IDRA": "no result",
+    "IDEX": "no result",
     "INVO": "no result",
     "KPTI": "no result",
     "LKCO": "no result",
     "MMAT": "no result",
     "MULN": "no result",
     "NAKD": "no result",
-    "NKLA": "no result"
+    "NKLA": "no result",
+    "PTRA": "no result"
   },
-  "duration_s": 14.4
+  "duration_s": 11.8
 }
